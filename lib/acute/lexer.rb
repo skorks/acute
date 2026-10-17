@@ -252,6 +252,15 @@ module Acute
           when 47
             t.push(SLASH, 0, 0, i, i + 1)
             i += 1
+          when 126
+            # "2014~2018"
+            if t[-5] == NUM && t[-1] == i && i + 1 < n && CLASS[s.getbyte(i + 1)] == DIGIT
+              t.push(DASH, 0, 0, i, i + 1)
+            else
+              return Failure.new(:unknown_word, i, i + 1) unless unknown
+              unknown << i << i + 1
+            end
+            i += 1
           when 43
             t.push(PLUS, 0, 0, i, i + 1)
             i += 1

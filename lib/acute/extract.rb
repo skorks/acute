@@ -52,14 +52,15 @@ module Acute
 
     # The longest mention at the start of the tokens, as [mention, its length in entries]. Only the prefixes
     # the grammar accepts are tried, longest first: a phrase's, then a duration's.
-    def self.longest(text, tokens, make_context)
+    def self.longest(text, all, make_context)
+      tokens = all
       while tokens.size > 0
         tree, t = Grammar.longest(tokens)
         units, d = Grammar.longest(tokens, duration: true)
         return unless tree || units
         j = t.to_i > d.to_i ? t : d
         slice = j == tokens.size ? tokens : tokens[0, j]
-        found = mention(text, slice, j == t ? tree : nil, j == d ? units : nil, make_context)
+        found = !glued?(all, j) && mention(text, slice, j == t ? tree : nil, j == d ? units : nil, make_context)
         return [found, j] if found
         tokens = tokens[0, j - S]
       end
@@ -95,6 +96,12 @@ module Acute
         return false
       end
       k != L::AT && !(k == L::WORD && START_WORDS[tokens[i * S + 1]])
+    end
+
+    # Nor does one end inside a written number, as "2010-2015" in "2010-2015-86"
+    def self.glued?(tokens, j)
+      j + S < tokens.size && GLUE[tokens[j]] && tokens[j - S] == L::NUM && tokens[j + S] == L::NUM &&
+        tokens[j - 1] == tokens[j + 3] && tokens[j + 4] == tokens[j + S + 3]
     end
 
     def self.mention(text, slice, tree, units, make_context)

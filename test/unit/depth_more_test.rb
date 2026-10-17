@@ -222,4 +222,15 @@ class DepthMoreTest < Minitest::Test
     assert_equal "2026-10-18 17:00:00 -04:00", wall(parse("tomorrow at 5 o clock").begin)
     assert_equal "2026-10-18 12:00:00 -04:00", wall(parse("lunch time tomorrow").begin)
   end
+
+  def test_d44_two_four_digit_numbers_dashed_are_years
+    years = ["2014-01-01 00:00:00 -05:00", "2019-01-01 00:00:00 -05:00"]
+    assert_equal years, span("2014-2018")
+    assert_equal years, span("between 2014~2018")
+    assert_equal years, span("from 2014 \u2013 2018")
+    assert_raises(Acute::ParseError) { parse("0900-1700") }
+    assert_raises(Acute::ParseError) { parse("2010-2015-86") }
+    assert_raises(Acute::ParseError) { parse("~3pm") }
+    assert_equal [], Acute.extract("Tel: +86 2010-2015-86", now: "2026-10-17T14:00", zone: NY).mentions
+  end
 end

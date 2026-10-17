@@ -27,7 +27,8 @@ module Acute
             @i += 3 * S
             return Date.new(t[i + 2 * S + 1], v, nil, nil, false)
           end
-          return iso_date if digits == 4
+          # D44: "2014-2018" is a range of years; "0900-1700" and "2010-2015-86" are not
+          return iso_date if digits == 4 && (f & L::DIGITS != 4 || flags & L::ZERO != 0 || @t[i + 3 * S] == L::DASH)
           w = t[i + 2 * S + 1]
           # D44: not before a month's name, where they are its days ("12-14 June")
           if @t[i + 3 * S] == L::DASH || (@t[i + 3 * S] != L::MONTH && ((w > 12 && w <= 31 && v <= 12) || v > 12 && v <= 31 && w <= 12))
