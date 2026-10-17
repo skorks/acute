@@ -1451,6 +1451,7 @@ chronic-tests-test-parsing-rb-95-1
 chronic-tests-test-parsing-rb-960-1
 chronic-tests-test-parsing-rb-976-1
 chronic-tests-test-parsing-rb-98-1
+chrono-node-0001
 chrono-node-0003
 chrono-node-0004
 chrono-node-0005
@@ -1508,6 +1509,10 @@ chrono-node-0075
 chrono-node-0076
 chrono-node-0077
 chrono-node-0078
+chrono-node-0079
+chrono-node-0080
+chrono-node-0081
+chrono-node-0082
 chrono-node-0083
 chrono-node-0084
 chrono-node-0086
@@ -1530,7 +1535,9 @@ chrono-node-0111
 chrono-node-0112
 chrono-node-0114
 chrono-node-0115
+chrono-node-0124
 chrono-node-0125
+chrono-node-0126
 chrono-node-0127
 chrono-node-0128
 chrono-node-0130
@@ -1562,6 +1569,8 @@ chrono-node-0168
 chrono-node-0170
 chrono-node-0177
 chrono-node-0178
+chrono-node-0179
+chrono-node-0180
 chrono-node-0181
 chrono-node-0182
 chrono-node-0184
@@ -1638,6 +1647,7 @@ chrono-node-0280
 chrono-node-0284
 chrono-node-0285
 chrono-node-0286
+chrono-node-0288
 chrono-node-0289
 chrono-node-0290
 chrono-node-0291
@@ -2582,6 +2592,19 @@ duckling-0501
 duckling-0502
 duckling-0503
 duckling-0504
+duckling-0505
+duckling-0506
+duckling-0507
+duckling-0508
+duckling-0509
+duckling-0510
+duckling-0511
+duckling-0514
+duckling-0515
+duckling-0518
+duckling-0519
+duckling-0522
+duckling-0523
 duckling-0524
 duckling-0525
 duckling-0535
@@ -2668,6 +2691,10 @@ duckling-0656
 duckling-0657
 duckling-0665
 duckling-0666
+duckling-0667
+duckling-0668
+duckling-0669
+duckling-0670
 duckling-0671
 duckling-0672
 duckling-0673
@@ -10495,6 +10522,7 @@ natty-0096
 natty-0097
 natty-0107
 natty-0108
+natty-0109
 natty-0110
 natty-0112
 natty-0113
@@ -11002,6 +11030,10 @@ recognizers-0088
 recognizers-0089
 recognizers-0090
 recognizers-0091
+recognizers-0092
+recognizers-0094
+recognizers-0096
+recognizers-0098
 recognizers-0100
 recognizers-0101
 recognizers-0102
@@ -11056,6 +11088,8 @@ recognizers-0162
 recognizers-0163
 recognizers-0164
 recognizers-0165
+recognizers-0167
+recognizers-0168
 recognizers-0169
 recognizers-0170
 recognizers-0171
@@ -11315,6 +11349,10 @@ recognizers-0537
 recognizers-0538
 recognizers-0539
 recognizers-0542
+recognizers-0543
+recognizers-0544
+recognizers-0545
+recognizers-0546
 recognizers-0547
 recognizers-0548
 recognizers-0550
@@ -11322,8 +11360,10 @@ recognizers-0551
 recognizers-0552
 recognizers-0553
 recognizers-0554
+recognizers-0561
 recognizers-0562
 recognizers-0563
+recognizers-0564
 recognizers-0570
 recognizers-0571
 recognizers-0572
@@ -11375,6 +11415,7 @@ recognizers-0623
 recognizers-0624
 recognizers-0625
 recognizers-0627
+recognizers-0629
 recognizers-0631
 recognizers-0632
 recognizers-0633
@@ -11507,6 +11548,7 @@ recognizers-0804
 recognizers-0805
 recognizers-0806
 recognizers-0810
+recognizers-0811
 recognizers-0812
 recognizers-0813
 recognizers-0814
@@ -11529,10 +11571,12 @@ recognizers-0852
 recognizers-0853
 recognizers-0854
 recognizers-0856
+recognizers-0860
 recognizers-0861
 recognizers-0862
 recognizers-0863
 recognizers-0865
+recognizers-0869
 recognizers-0870
 recognizers-0871
 recognizers-0872
@@ -12019,6 +12063,8 @@ rust-parsers-0225
 rust-parsers-0226
 rust-parsers-0227
 rust-parsers-0228
+rust-parsers-0229
+rust-parsers-0231
 rust-parsers-0233
 rust-parsers-0234
 rust-parsers-0235

@@ -97,4 +97,40 @@ class DepthTest < Minitest::Test
     assert_reads "halloween '11", "2011-10-31 00:00:00 -04:00"
     assert_reads "Nov '80", "1980-11-01 00:00:00 -05:00"
   end
+
+  def assert_span(text, b, e, alts = [], **opts)
+    r = parse(text, **opts)
+    assert_equal [b, e], [r.begin.strftime("%F %R"), r.end.strftime("%F %R")], text
+    assert_equal alts, r.alternatives.map { |x| x.begin.strftime("%F %R") }, text
+  end
+
+  def test_d44_a_bare_day_in_a_range_takes_its_month_from_the_other_end
+    assert_span "from 13 to 15 July", "2027-07-13 00:00", "2027-07-16 00:00"
+    assert_span "1-8 september", "2027-09-01 00:00", "2027-09-09 00:00"
+    assert_span "23rd to 26th Oct", "2026-10-23 00:00", "2026-10-27 00:00"
+    assert_span "between the ninth and the seventeenth of april", "2027-04-09 00:00", "2027-04-18 00:00"
+    assert_span "from July 13-15", "2027-07-13 00:00", "2027-07-16 00:00"
+    assert_span "4 to 22 this month", "2026-10-04 00:00", "2026-10-23 00:00"
+    assert_span "5 to 9 next month", "2026-11-05 00:00", "2026-11-10 00:00"
+  end
+
+  def test_d44_a_year_said_at_the_end_of_a_range_is_the_starts_too
+    assert_span "Aug 10 - Nov 12, 2013", "2013-08-10 00:00", "2013-11-13 00:00"
+    assert_span "From December to May 2025", "2024-12-01 00:00", "2025-06-01 00:00"
+    assert_span "10 August - 12 September 2013", "2013-08-10 00:00", "2013-09-13 00:00"
+  end
+
+  def test_d42_a_dash_with_a_space_after_a_machine_clock_is_a_range
+    assert_span "2014-04-18 13:00 - 16:00", "2014-04-18 13:00", "2014-04-18 16:00"
+    assert_equal "2014-04-18 18:00", parse("2014-04-18 13:00-05:00").begin.utc.strftime("%F %R")
+  end
+
+  def test_d44_a_range_of_months_or_dates_under_way_is_the_current_one_then_the_coming_one
+    assert_span "from september to november", "2026-09-01 00:00", "2026-12-01 00:00", ["2027-09-01 00:00"]
+    assert_span "october 1 to 20", "2026-10-01 00:00", "2026-10-21 00:00", ["2027-10-01 00:00"]
+    assert_span "from october 17 to october 20", "2026-10-17 00:00", "2026-10-21 00:00"
+    assert_span "march to may", "2027-03-01 00:00", "2027-06-01 00:00"
+    assert_span "monday to friday", "2026-10-19 00:00", "2026-10-24 00:00"
+    assert_includes codes(parse("from september to november")), :range_under_way
+  end
 end

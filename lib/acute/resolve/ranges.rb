@@ -3,6 +3,7 @@ module Acute
     # Ranges ("monday to friday", "from 3 to 5pm") and open ends ("after friday", "since monday")
     module Ranges
       DAY = Period::DAY
+      UNDER_WAY = Assumption.for(:range_under_way)
 
       def self.spans(node, ctx)
         from = node.from
@@ -11,7 +12,29 @@ module Acute
         f = Resolve.spans(from, ctx)[0]
         return [] unless f
         t = after(to, ctx, f.b)
-        (x = t && finish(f, t)) ? [x] : []
+        list = (x = t && finish(f, t)) ? [x] : []
+        under_way(from, to, f, list, ctx) if !ctx.past? && Periodic.cycle(from) == :year
+        list
+      end
+
+      # D44: a range of dates or months under way ("may to september" in june) is the current one, then the
+      # coming one
+      def self.under_way(from, to, f, list, ctx)
+        now = ctx.now_local
+        if f.b > now
+          b = Periodic.last(from, ctx, Period.index(:year, ctx, now), :year) { |s| s.b <= now }[0]
+          cur = b && (t = after(to, ctx, b.b)) && finish(b, t)
+          return unless cur && cur.e > now
+          list.unshift(cur)
+        else
+          # one that starts today is today's alone, as a date said on its day is
+          return unless list.size == 1 && list[0].e > now && f.b < ctx.today * DAY
+          n = Periodic.first(from, ctx, Period.index(:year, ctx, f.b) + 1, :year) { true }[0]
+          coming = n && (t = after(to, ctx, n.b)) && finish(n, t)
+          return unless coming
+          list << coming
+        end
+        ctx.note(UNDER_WAY)
       end
 
       def self.inside(node, outer, s, ctx)
