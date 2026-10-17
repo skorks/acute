@@ -1,0 +1,47 @@
+#!/usr/bin/env ruby
+# bin/try "tomorrow at 4pm" [--now 2026-10-17T14:00] [--zone America/New_York] [--context past] [--trace]
+# Runs the stages one after another, so --trace needs no hooks in the library.
+require "json"
+require "pp"
+require_relative "../lib/acute"
+
+args = ARGV.dup
+trace = args.delete("--trace")
+opt = ->(name) { (i = args.index(name)) && args.slice!(i, 2)[1] }
+now = opt.("--now") || "2026-10-17T14:00"
+zone = opt.("--zone") || "America/New_York"
+context = (opt.("--context") || "future").to_sym
+text = args.join(" ")
+abort File.read(__FILE__).lines[1].delete_prefix("# ") if text.empty?
+
+if trace
+  ctx = Acute::Context.new(now, zone, context)
+  puts "now:      #{Time.at(ctx.now, in: ctx.zone.offset_at(ctx.now))} (#{ctx.zone.name})"
+  tokens = Acute::Lexer.lex(text)
+  if Acute::Failure === tokens
+    puts "lex:      #{tokens.to_a.inspect}"
+  else
+    puts "tokens:", Acute::Lexer.inspect_tokens(tokens, text).map { |t| "  #{t}" }
+    tree = Acute::Grammar.parse(tokens)
+    puts "tree:"
+    PP.pp(tree, $stdout, 100)
+    unless Acute::Failure === tree
+      readings = Acute::Resolve.call(tree, ctx)
+      puts "readings:"
+      readings.each do |r|
+        b = Time.at(r.begin, in: ctx.zone.offset_at(r.begin))
+        puts "  #{b} +#{r.end - r.begin}s #{r.grain}#{r.dst && " #{r.dst}"}"
+      end
+      puts "rules:", (ctx.notes || []).map { |a| "  #{a.rule || "-"} #{a.code}: #{a.message}" }
+    end
+  end
+end
+
+begin
+  r = Acute.parse!(text, now: now, zone: zone, context: context)
+  puts r
+  puts JSON.pretty_generate(r.to_h)
+rescue Acute::ParseError => e
+  puts "ParseError #{e.code}: #{e.message}", "  position: #{e.position}", ("  hint: #{e.hint}" if e.hint)
+  exit 1
+end

@@ -1,0 +1,32 @@
+# Words the lexer knows, grouped by token kind. bin/generate turns this into lib/acute/tables/words.rb.
+# Matching ignores ASCII case. A word may hold letters, apostrophes and inner dots ("p.m").
+
+day:            # value: days from today
+  today: 0
+  tomorrow: 1
+  tmrw: 1
+  tmr: 1
+  yesterday: -1
+
+meridiem:       # value: hours added to 1-12
+  am: 0
+  a.m: 0
+  a: 0
+  pm: 12
+  p.m: 12
+  p: 12
+
+named:          # value: the hour it names
+  noon: 12
+  midday: 12
+  midnight: 0
+
+now:
+  now: 0
+
+at:
+  at: 0
+
+# D18: a fixed table, only misspellings the corpus has. Each maps to the word it stands for.
+misspellings:
+  tommorow: tomorrow

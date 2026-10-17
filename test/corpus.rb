@@ -1,0 +1,128 @@
+# Runs research/cases against Acute.parse and compares with the ratchet in test/corpus/passing.txt.
+# Expected values are worked out with TZInfo directly, not Acute::Zone, so the two check each other.
+#   ruby test/corpus.rb [--record] [--grep TEXT] [--file NAME] [--list STATUS]
+require "json"
+require "time"
+require "date"
+require "tzinfo"
+require_relative "../lib/acute"
+
+module Corpus
+  ROOT = File.expand_path("..", __dir__)
+  CASES = File.join(ROOT, "research/cases")
+  RATCHET = File.join(ROOT, "test/corpus/passing.txt")
+  WALL = /\A(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)(?::(\d\d))?\z/
+  CHRONIC_ONLY = %w[endian_precedence hours24 ambiguous_time_range ambiguous_year_future_bias].freeze
+  STATUSES = %w[pass alt_differs wrong nil garbage raises chronic_option other_kind].freeze
+  TZS = Hash.new { |h, name| h[name] = TZInfo::Timezone.get(name) }
+
+  module_function
+
+  def load(file: nil, grep: nil)
+    Dir[File.join(CASES, "*.jsonl")].sort.flat_map do |path|
+      next [] if file && !File.basename(path, ".jsonl").include?(file)
+      File.foreach(path).filter_map do |line|
+        next if line.strip.empty?
+        c = JSON.parse(line)
+        c if grep.nil? || c["text"].downcase.include?(grep.downcase)
+      end
+    end
+  end
+
+  # Compatible DST: a repeated wall time takes the earlier instant, a skipped one moves forward by the gap
+  def epoch(str, tz)
+    return Time.iso8601(str).to_i unless (m = WALL.match(str))
+    y, mo, d, h, mi, s = m.captures.map(&:to_i)
+    local = Time.utc(y, mo, d, h, mi, s)
+    periods = tz.periods_for_local(local)
+    offset = case periods.size
+             when 0 then tz.period_for_utc(local - 86_400).observed_utc_offset
+             else periods.map(&:observed_utc_offset).max
+             end
+    local.to_i - offset
+  end
+
+  # Day-or-coarser grains step from the written wall fields: in a gap the instant has been shifted
+  def interval(exp, tz)
+    return exp["span"].map { |s| s && epoch(s, tz) } if exp["span"]
+    str = exp["time"]
+    b = epoch(str, tz)
+    grain = exp.fetch("grain", "second")
+    step = { "second" => 1, "minute" => 60, "hour" => 3600 }[grain]
+    return [b, b + step] if step
+    m = WALL.match(str) || WALL.match(str[0, 19])
+    y, mo, d, h, mi, s = m.captures.map(&:to_i)
+    day = Date.new(y, mo, d)
+    nxt = case grain
+          when "day" then day + 1
+          when "week" then day + 7
+          when "month" then day >> 1
+          when "quarter" then day >> 3
+          when "year" then day >> 12
+          else raise "unknown grain #{grain}"
+          end
+    [b, epoch(format("%04d-%02d-%02dT%02d:%02d:%02d", nxt.year, nxt.month, nxt.day, h, mi, s), tz)]
+  end
+
+  def run_case(c)
+    exp = c["expect"]
+    return ["other_kind", nil] if exp["duration"] || exp["rrule"] || exp["extract"]
+    opts = c["options"] || {}
+    return ["chronic_option", nil] if opts.keys.intersect?(CHRONIC_ONLY)
+
+    tz = TZS[c["tz"]]
+    kwargs = opts.to_h { |k, v| [k.to_sym, k == "context" ? v.to_sym : v] }
+    r = Acute.parse(c["text"], now: Time.at(epoch(c["now"], tz)), zone: c["tz"], **kwargs)
+    got = r && ([r] + r.alternatives).map { |x| [x.begin.to_i, x.end.to_i] }
+    return [r ? "garbage" : "pass", got] if exp["nil"]
+    return ["nil", got] unless r
+
+    want = (exp["alternatives"] || [exp]).map { |e| interval(e, tz) }
+    return ["pass", got] if got == want
+    [got[0] == want[0] ? "alt_differs" : "wrong", got]
+  rescue StandardError, SystemStackError => e
+    ["raises", "#{e.class}: #{e.message[0, 80]}"]
+  end
+
+  def show(c, got)
+    tz = TZS[c["tz"]]
+    fmt = ->(pairs) { pairs.map { |b, e| "#{tz.to_local(Time.at(b)).strftime("%F %T")}+#{e - b}s" }.join(" ; ") }
+    exp = c["expect"]
+    want = exp["nil"] ? "nil" : fmt.((exp["alternatives"] || [exp]).map { |e| interval(e, tz) })
+    shown = got.is_a?(Array) ? fmt.(got) : got.inspect
+    "#{c["id"]} | #{c["text"]} | #{c["now"]} #{c["tz"]} | #{want} | #{shown}"
+  rescue StandardError => e
+    "#{c["id"]} | #{c["text"]} | (#{e.class}: #{e.message})"
+  end
+
+  def main(argv)
+    record = argv.delete("--record")
+    grep = (i = argv.index("--grep")) && argv.slice!(i, 2)[1]
+    file = (i = argv.index("--file")) && argv.slice!(i, 2)[1]
+    list = (i = argv.index("--list")) && argv.slice!(i, 2)[1]
+    cases = load(file: file, grep: grep)
+    results = cases.map { |c| [c, *run_case(c)] }
+
+    counts = results.map { |_, s, _| s }.tally
+    puts "corpus: #{cases.size} cases | " + STATUSES.map { |s| "#{s} #{counts.fetch(s, 0)}" }.join(" | ")
+
+    ratchet = File.exist?(RATCHET) ? File.readlines(RATCHET, chomp: true).reject(&:empty?) : []
+    ids = cases.to_h { |c| [c["id"], true] }
+    passing = results.select { |_, s, _| s == "pass" }.map { |c, _, _| c["id"] }.sort
+    regressions = results.select { |c, s, _| s != "pass" && ratchet.include?(c["id"]) }
+    gained = passing - ratchet
+    regressions.each { |c, s, got| puts "REGRESSION #{s}: #{show(c, got)}" }
+    puts "ratchet: #{ratchet.count { |id| ids[id] }} recorded, #{passing.size} passing, #{gained.size} new, #{regressions.size} regressed"
+    results.select { |_, s, _| s == list }.each { |c, _, got| puts show(c, got) } if list
+
+    if record
+      abort "not recording: fix the regressions first" unless regressions.empty?
+      abort "not recording: --grep/--file run only part of the corpus" if grep || file
+      File.write(RATCHET, passing.join("\n") + "\n")
+      puts "recorded #{passing.size} passing ids in test/corpus/passing.txt"
+    end
+    regressions.empty?
+  end
+end
+
+exit(Corpus.main(ARGV.dup)) if $PROGRAM_NAME == __FILE__

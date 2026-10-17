@@ -1,0 +1,40 @@
+PATH
+  remote: .
+  specs:
+    acute (0.0.1)
+      tzinfo (~> 2.0)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    benchmark (0.5.0)
+    concurrent-ruby (1.3.8)
+    drb (2.2.3)
+    minitest (6.0.6)
+      drb (~> 2.0)
+      prism (~> 1.5)
+    prism (1.9.0)
+    tzinfo (2.0.6)
+      concurrent-ruby (~> 1.0)
+
+PLATFORMS
+  ruby
+  x86_64-linux
+
+DEPENDENCIES
+  acute!
+  benchmark
+  minitest
+  tzinfo-data
+
+CHECKSUMS
+  acute (0.0.1)
+  benchmark (0.5.0)
+  concurrent-ruby (1.3.8)
+  drb (2.2.3)
+  minitest (6.0.6)
+  prism (1.9.0)
+  tzinfo (2.0.6)
+
+BUNDLED WITH
+  4.0.20

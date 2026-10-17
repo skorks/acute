@@ -1,0 +1,41 @@
+#!/usr/bin/env ruby
+# The one command: tables, unit tests, corpus ratchet, fuzz, speed. Prints one line per stage, and the
+# failures of a stage that failed.
+#   bin/check [--record] [--only tables|unit|corpus|fuzz|speed] [--grep TEXT] [--file NAME]
+# --grep and --file narrow the corpus and imply --only corpus. --record updates test/corpus/passing.txt.
+require "open3"
+require "rbconfig"
+
+ROOT = File.expand_path("..", __dir__)
+RUBY = RbConfig.ruby
+UNIT = 'Dir["test/unit/*_test.rb"].sort.each { |f| require_relative File.expand_path(f) }'
+
+args = ARGV.dup
+only = (i = args.index("--only")) && args.slice!(i, 2)[1]
+corpus_args = []
+%w[--grep --file].each { |flag| (i = args.index(flag)) && corpus_args.concat(args.slice!(i, 2)) }
+corpus_args << args.delete("--record") if args.include?("--record")
+abort "unknown arguments: #{args.join(" ")}" unless args.empty?
+only ||= "corpus" if corpus_args.any? { _1 == "--grep" || _1 == "--file" }
+
+STAGES = {
+  "tables" => [[RUBY, "bin/generate", "--check"], ->(out) { out.lines.last }],
+  "unit" => [[RUBY, "-Itest", "-e", UNIT], ->(out) { out[/^\d+ runs.*$/] }],
+  "corpus" => [[RUBY, "test/corpus.rb", *corpus_args], ->(out) { out }],
+  "fuzz" => [[RUBY, "test/fuzz.rb"], ->(out) { out }],
+  "speed" => [[RUBY, "test/speed.rb"], ->(out) { out }]
+}.freeze
+abort "--only takes one of #{STAGES.keys.join(", ")}" if only && !STAGES.key?(only)
+
+started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+failed = STAGES.select { |name, _| only.nil? || only == name }.reject do |name, (cmd, summary)|
+  t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  out, status = Open3.capture2e(*cmd, chdir: ROOT)
+  secs = Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0
+  shown = status.success? ? summary.(out).to_s.strip : out.strip
+  printf "%s %-6s %5.1fs  %s\n", status.success? ? "ok  " : "FAIL", name, secs, shown.gsub("\n", "\n" + " " * 20)
+  status.success?
+end
+printf "%s in %.1fs\n", failed.empty? ? "all passed" : "failed: #{failed.keys.join(", ")}",
+       Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+exit failed.empty?

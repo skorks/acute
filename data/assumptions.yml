@@ -1,0 +1,36 @@
+# Every assumption a result can carry. bin/generate turns this into lib/acute/tables/assumptions.rb.
+# The code is a stable public identifier; the rule points into research/decisions.md.
+
+bare_hour_window:
+  rule: D4
+  message: "no am/pm given: 6-11 read as am, 12 and 1-5 as pm; the other half of the day is an alternative"
+next_occurrence:
+  rule: D23
+  message: "that time has passed today, so it means the next one"
+previous_occurrence:
+  rule: D23
+  message: "that time is still to come today, so in past context it means the previous one"
+equal_to_now:
+  rule: D36
+  message: "that time is now"
+twelve_oclock:
+  rule: D30
+  message: "a time in the 12 o'clock hour without am/pm is read as pm"
+midnight_end_of_day:
+  rule: D6
+  message: "midnight with a day means the end of that day; its start is an alternative"
+machine_time:
+  rule: D29
+  message: "seconds were given, so the time is read as 24-hour"
+tomorrow_after_midnight:
+  rule: D40
+  message: "\"tomorrow\" said before 04:00 means the coming day first; the calendar tomorrow is an alternative"
+dst_repeated_time:
+  rule: D23
+  message: "that wall time happens twice as clocks go back; the earlier one is used"
+dst_skipped_time:
+  rule: D23
+  message: "that wall time doesn't exist as clocks go forward; it is moved forward by the gap"
+zone_inferred:
+  rule:
+  message: "no zone was given; the zone comes from now, Time.zone or the system"
