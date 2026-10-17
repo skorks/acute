@@ -1324,6 +1324,7 @@ chronic-tests-test-parsing-rb-1042-2
 chronic-tests-test-parsing-rb-1043-1
 chronic-tests-test-parsing-rb-1043-2
 chronic-tests-test-parsing-rb-1048-1
+chronic-tests-test-parsing-rb-1048-2
 chronic-tests-test-parsing-rb-1048-3
 chronic-tests-test-parsing-rb-1048-4
 chronic-tests-test-parsing-rb-1057-1
@@ -2821,6 +2822,7 @@ duckling-0272
 duckling-0273
 duckling-0274
 duckling-0275
+duckling-0276
 duckling-0277
 duckling-0279
 duckling-0280
@@ -2887,6 +2889,7 @@ duckling-0355
 duckling-0356
 duckling-0357
 duckling-0358
+duckling-0359
 duckling-0360
 duckling-0362
 duckling-0363

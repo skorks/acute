@@ -348,6 +348,13 @@ class DepthTest < Minitest::Test
     assert_reads "a quarter to six o'clock", "2026-10-17 17:45:00 -04:00", ["2026-10-18 05:45:00 -04:00"]
   end
 
+  def test_d44_digits_to_noon_are_minutes_when_a_range_would_run_backwards
+    assert_reads "15 to noon", "2026-10-18 11:45:00 -04:00"
+    assert_reads "5 to noon", "2026-10-18 11:55:00 -04:00"
+    r = parse("10 to noon", now: "2026-10-17T09:00")
+    assert_equal ["2026-10-17 10:00:00 -04:00", "2026-10-17 12:00:00 -04:00"], [wall(r.begin), wall(r.end)]
+  end
+
   def test_d44_an_edge_of_past_week_is_an_edge_of_last_week
     assert_reads "end of past week", "2026-10-09 00:00:00 -04:00"
     assert_reads "at the beginning of past week", "2026-10-04 00:00:00 -04:00"

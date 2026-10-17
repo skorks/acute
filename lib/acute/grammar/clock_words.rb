@@ -8,8 +8,11 @@ module Acute
     def minutes_to?(i)
       w = @t[i + S + 1]
       return hour?(i + 2 * S) && @t[i + 1].between?(1, 59) if w == :after || w == :before
-      w == :to && @t[i + 2] & L::WORDY != 0 && @t[i + 1].between?(1, 30) && hour?(i + 2 * S) &&
-        !(i >= S && @t[i - S] == L::WORD && (@t[i - S + 1] == :from || @t[i - S + 1] == :between))
+      n = @t[i + 1]
+      w == :to && n.between?(1, 30) && hour?(i + 2 * S) &&
+        !(i >= S && @t[i - S] == L::WORD && (@t[i - S + 1] == :from || @t[i - S + 1] == :between)) &&
+        # D44: "15 to noon" is 11:45, since as a range of hours it would end before it began
+        (@t[i + 2] & L::WORDY != 0 || (@t[i + 2 * S] == L::NAMED && @t[i + 2 * S + 1] == 12 && (n <= 5 || n >= 12)))
     end
 
     def hour?(i) = (@t[i] == L::NUM && @t[i + 1].between?(1, 12)) || @t[i] == L::NAMED
