@@ -103,15 +103,25 @@ module Acute
       out
     end
 
-    # D44: a recurring day beside a shift from now is the one in the week, month or year (its own cycle, or
-    # the shift's unit when that is coarser) that holds the shifted instant: "thanksgiving in 9 months"
+    # D44: a recurring day beside a shift from now is the one in its own cycle that holds the shifted instant:
+    # "thanksgiving in 9 months", "3 months ago saturday"; an ordinal's is the shift's unit when that is
+    # coarser: "first monday in 2 years"
     def self.shifted(node, ctx)
       cyc = Periodic.cycle(node.inner)
       return if !cyc || cyc == :day
       unit = node.outer.unit
-      unit = cyc if G::UNIT_SIZE[cyc] > G::UNIT_SIZE[unit]
+      unit = cyc unless ordinal?(node.inner) && G::UNIT_SIZE[unit] > G::UNIT_SIZE[cyc]
       t = Shift.spans(node.outer, ctx)[0].b
       Periodic.inside(node.inner, nil, Period.span(unit, ctx, Period.index(unit, ctx, t)), ctx)
+    end
+
+    def self.ordinal?(node)
+      case node
+      when G::Nth then true
+      when G::Within then ordinal?(node.outer)
+      when G::Fuzzy then ordinal?(node.node)
+      else false
+      end
     end
 
     # D18: an offset in the text wins over the zone, and fixes the instant; D29: a numeric one makes the time

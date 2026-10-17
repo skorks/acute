@@ -370,8 +370,8 @@
   assert_line: 974
   phrase: 3 months ago saturday at 5:00 pm
   chronic: '2006-05-19 17:00:00'
-  acute: '2006-05-06 17:00:00'
-  rule: D44
+  acute: '2006-05-20 17:00:00'
+  rule: D44, D47
 - test: test_parse_words
   line: 1041
   assert_line: 1041

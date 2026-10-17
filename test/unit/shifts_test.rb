@@ -70,6 +70,18 @@ class ShiftsTest < Minitest::Test
     assert_at "1 week ago Saturday", "2026-10-10 00:00:00 -04:00"
   end
 
+  def test_d47_a_weekday_beside_a_coarser_shift_looks_in_its_own_week
+    assert_at "3 months ago saturday", "2026-07-18 00:00:00 -04:00"
+    assert_at "saturday in 3 months", "2027-01-23 00:00:00 -05:00"
+    assert_at "the 3rd in 2 years", "2028-10-03 00:00:00 -04:00"
+    assert_equal "2006-05-20 17:00:00 -04:00",
+                 wall(parse("3 months ago saturday at 5:00 pm", now: "2006-08-16T14:00").time)
+  end
+
+  def test_d47_an_ordinal_beside_a_coarser_shift_looks_in_the_shifts_unit
+    assert_at "first monday in 2 years", "2028-01-03 00:00:00 -05:00"
+  end
+
   def test_a_count_of_days_that_recur_is_the_nth_one_after_or_before
     assert_at "3 fridays from now", "2026-11-06 00:00:00 -05:00"
     assert_at "1 saturday from now", "2026-10-24 00:00:00 -04:00"
