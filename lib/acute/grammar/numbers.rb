@@ -311,6 +311,10 @@ module Acute
       @i += S
       return Date.new(v, nil, nil, nil, true) if flags & L::SHORT != 0 # "halloween '11"
       @i += 2 * S if in_the_meridiem?
+      if @t[@i + 1] == :around && @t[@i + S] == L::MER && @t[@i] == L::WORD && @t[at + 4] == @t[@i + 3] # D48: "3ish pm"
+        @approx = true
+        @i += S
+      end
       kind = @t[@i]
       if (kind == L::MER || (kind == L::ART && @t[at + 4] == @t[@i + 3])) && digits <= 2 # "8a"
         return failure(:invalid_date, at) if (v < 1 && !midnight_am?(kind)) || v > 12

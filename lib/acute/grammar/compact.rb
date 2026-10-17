@@ -202,7 +202,8 @@ module Acute
       elsif kind == L::NAMED && hour == 12 && min == 0 && sec == 0
         @i += S
         named(@t[@i - S + 1])
-      elsif kind == L::UNIT && @t[@i + 1] == :hour && @t[@i + 4] - @t[at + 4] == 1 # D44: "06:00h"
+      # D44: "06:00h"; D48: "06:00 hours", "18:30 hours", written as a 24-hour clock
+      elsif kind == L::UNIT && @t[@i + 1] == :hour && (@t[@i + 4] - @t[at + 4] == 1 || flags & L::ZERO != 0 || hour > 12)
         @i += S
         Clock.new(hour, min, sec, nil, nil, true, flags & L::SECONDS != 0, frac)
       else

@@ -77,9 +77,11 @@ module Acute
       @i += S
       @i += S if @t[@i - S] == L::ART
       @i += S if @t[@i] == L::UNIT && (@t[@i + 1] == :quarter || @t[@i + 1] == :minute)
-      return failure(:incomplete) unless clock_word?(@i)
-      to = @t[@i + 1] == :to || @t[@i + 1] == :before
-      @i += S
+      # D48: "half three" is 3:30, as said in Britain
+      half = minutes == 30 && @t[@i - S + 1] == :half && @t[@i] == L::NUM
+      return failure(:incomplete) unless half || clock_word?(@i)
+      to = !half && (@t[@i + 1] == :to || @t[@i + 1] == :before)
+      @i += S unless half
       if @t[@i] == L::NAMED
         noon = @t[@i + 1] == 12
         @i += S
@@ -89,14 +91,19 @@ module Acute
       return failure(:incomplete) unless @t[@i] == L::NUM && @t[@i + 1].between?(1, 12)
       hour = @t[@i + 1]
       @i += S
+      min = 0
+      if @t[@i] == L::NUM && @t[@i + 2] & L::WORDY != 0 && @t[@i + 1].between?(10, 59) # D48: "three mins to five thirty"
+        min = @t[@i + 1]
+        @i += S
+      end
       @i += S if @t[@i] == L::WORD && @t[@i + 1] == :oclock
       meridiem = nil
       if @t[@i] == L::MER
         meridiem = @t[@i + 1] == 0 ? :am : :pm
         @i += S
       end
-      return Clock.new(hour == 1 ? 12 : hour - 1, 60 - minutes, 0, meridiem, nil, false, false) if to
-      Clock.new(hour, minutes, 0, meridiem, nil, false, false)
+      t = (hour % 12 * 60 + min + (to ? -minutes : minutes)) % 720
+      Clock.new(t < 60 ? 12 : t / 60, t % 60, 0, meridiem, nil, false, false)
     end
   end
 end

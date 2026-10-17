@@ -29,4 +29,27 @@ class TailTest < Minitest::Test
     assert_nil Acute.parse("in 1 mon", now: "2026-10-17T14:00", zone: NY)
     assert_nil Acute.parse("twenty and four hours", now: "2026-10-17T14:00", zone: NY)
   end
+
+  def clock(text, **opts) = parse(text, **opts).begin.strftime("%R")
+
+  def test_d48_ish_between_a_number_and_its_meridiem
+    assert_equal "15:00", clock("3ish pm")
+    assert_includes parse("3ish pm").assumptions.map(&:code), :approximate
+  end
+
+  def test_d48_a_24_hour_clock_before_hours_is_the_clock
+    assert_equal "06:00", clock("06:00 hours")
+    assert_equal "18:30", clock("18:30 hours")
+    assert_nil Acute.parse("1:30 hours", now: "2026-10-17T14:00", zone: NY)
+  end
+
+  def test_d48_half_an_hour_is_half_past_it
+    assert_equal "15:30", clock("half three")
+    assert_equal "15:30", clock("half 3")
+  end
+
+  def test_d48_minutes_to_a_clock_with_its_minutes
+    assert_equal "17:27", clock("three mins to five thirty")
+    assert_equal "11:40", clock("twenty to twelve")
+  end
 end
