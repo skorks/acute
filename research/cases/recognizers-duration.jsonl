@@ -71,3 +71,4 @@
 {"id":"recognizers-duration-0071","text":"30 minutes","now":"2018-07-19T20:00:00","tz":"UTC","expect":{"duration":"PT30M"},"source":"recognizers:Specs/DateTime/English/DateTimeModelComplexCalendar.json#147","tags":["duration"]}
 {"id":"recognizers-duration-0072","text":"30min","now":"2019-06-12T12:00:00","tz":"UTC","expect":{"duration":"PT30M"},"source":"recognizers:Specs/DateTime/English/DateTimeModelComplexCalendar.json#348","tags":["duration"]}
 {"id":"recognizers-duration-0073","text":"30 minute","now":"2018-07-31T14:00:00","tz":"UTC","expect":{"duration":"PT30M"},"source":"recognizers:Specs/DateTime/English/DateTimeModelExtendedTypes.json#28","tags":["duration"]}
+{"id":"recognizers-duration-0074","text":"a fortnight","now":"2016-11-07T00:00:00","tz":"UTC","expect":{"duration":"P2W"},"source":"recognizers:Specs/DateTime/English/DurationParser.json#55","tags":["duration"]}

@@ -64,8 +64,8 @@
 {"id":"timelib-0064","text":"2001-12-21","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2001-12-21T00:00:00","grain":"day"},"source":"timelib:tests/c/parse_date.cpp:1021","tags":["timezone"]}
 {"id":"timelib-0065","text":"Dec 21  2001","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2001-12-21T00:00:00","grain":"day"},"source":"timelib:tests/c/parse_date.cpp:1029"}
 {"id":"timelib-0066","text":"2001-12-21 12:16","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2001-12-21T12:16:00","grain":"minute"},"source":"timelib:tests/c/parse_date.cpp:1037"}
-{"id":"timelib-0067","text":"Dec 21 2001 12:16","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"alternatives":[{"time":"2001-12-21T12:16:00","grain":"minute"},{"time":"2001-12-21T00:16:00","grain":"minute"}]},"source":"timelib:tests/c/parse_date.cpp:1048"}
-{"id":"timelib-0068","text":"Dec 21  12:16","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"alternatives":[{"time":"2010-12-21T12:16:00","grain":"minute"},{"time":"2010-12-21T00:16:00","grain":"minute"}]},"source":"timelib:tests/c/parse_date.cpp:1059"}
+{"id":"timelib-0067","text":"Dec 21 2001 12:16","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2001-12-21T12:16:00","grain":"minute"},"source":"timelib:tests/c/parse_date.cpp:1048"}
+{"id":"timelib-0068","text":"Dec 21  12:16","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2010-12-21T12:16:00","grain":"minute"},"source":"timelib:tests/c/parse_date.cpp:1059"}
 {"id":"timelib-0069","text":"2001-10-22 21:19:58","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2001-10-22T21:19:58","grain":"second"},"source":"timelib:tests/c/parse_date.cpp:1070"}
 {"id":"timelib-0070","text":"2001-10-22 21:19:58-02","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2001-10-22T23:19:58","grain":"second"},"source":"timelib:tests/c/parse_date.cpp:1081","tags":["timezone"]}
 {"id":"timelib-0071","text":"2001-10-22 21:19:58-0213","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2001-10-22T23:32:58","grain":"second"},"source":"timelib:tests/c/parse_date.cpp:1093","tags":["timezone"]}
@@ -643,3 +643,18 @@
 {"id":"timelib-0643","text":"mIdNiGhT","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2010-06-16T00:00:00","grain":"minute"},"source":"timelib:tests/c/parse_date.cpp:1686"}
 {"id":"timelib-0644","text":"yEsTeRdAY mIdNiGht","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"alternatives":[{"time":"2010-06-15T00:00:00","grain":"minute"},{"time":"2010-06-14T00:00:00","grain":"minute"}]},"source":"timelib:tests/c/parse_date.cpp:1730","tags":["relative"]}
 {"id":"timelib-0645","text":"2314","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2314-01-01T00:00:00","grain":"year"},"source":"timelib:tests/c/parse_date.cpp:2755"}
+{"id":"timelib-0646","text":"this weekday","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2010-06-15T00:00:00","grain":"day"},"source":"timelib:tests/c/parse_date.cpp:4252","tags":["relative"]}
+{"id":"timelib-0647","text":"last weekday","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2010-06-14T00:00:00","grain":"day"},"source":"timelib:tests/c/parse_date.cpp:4259","tags":["relative"]}
+{"id":"timelib-0648","text":"next weekday","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2010-06-16T00:00:00","grain":"day"},"source":"timelib:tests/c/parse_date.cpp:4266","tags":["relative"]}
+{"id":"timelib-0649","text":"this weekday","now":"2006-04-21T00:00:00","tz":"Europe/Amsterdam","expect":{"time":"2006-04-21T00:00:00","grain":"day"},"source":"timelib:tests/c/create_ts_from_string.cpp:386","tags":["relative"]}
+{"id":"timelib-0650","text":"last weekday","now":"2006-04-21T00:00:00","tz":"Europe/Amsterdam","expect":{"time":"2006-04-20T00:00:00","grain":"day"},"source":"timelib:tests/c/create_ts_from_string.cpp:387","tags":["relative"]}
+{"id":"timelib-0651","text":"last weekday","now":"2006-04-22T00:00:00","tz":"Europe/Amsterdam","expect":{"time":"2006-04-21T00:00:00","grain":"day"},"source":"timelib:tests/c/create_ts_from_string.cpp:388","tags":["relative"]}
+{"id":"timelib-0652","text":"last weekday","now":"2006-04-23T00:00:00","tz":"Europe/Amsterdam","expect":{"time":"2006-04-21T00:00:00","grain":"day"},"source":"timelib:tests/c/create_ts_from_string.cpp:389","tags":["relative"]}
+{"id":"timelib-0653","text":"00:00:00","now":"2005-05-20T00:00:00","tz":"UTC","expect":{"time":"2005-05-20T00:00:00","grain":"second"},"source":"timelib:tests/c/create_ts_from_string.cpp:773"}
+{"id":"timelib-0654","text":"00:00:00","now":"2005-05-19T00:00:00","tz":"UTC","expect":{"time":"2005-05-19T00:00:00","grain":"second"},"source":"timelib:tests/c/create_ts_from_string.cpp:780"}
+{"id":"timelib-0655","text":"00:00:00","now":"2005-05-21T00:00:00","tz":"UTC","expect":{"time":"2005-05-21T00:00:00","grain":"second"},"source":"timelib:tests/c/create_ts_from_string.cpp:809"}
+{"id":"timelib-0656","text":"00:00:00","now":"2005-05-14T00:00:00","tz":"UTC","expect":{"time":"2005-05-14T00:00:00","grain":"second"},"source":"timelib:tests/c/create_ts_from_string.cpp:812"}
+{"id":"timelib-0657","text":"00:00:00","now":"2005-06-04T00:00:00","tz":"UTC","expect":{"time":"2005-06-04T00:00:00","grain":"second"},"source":"timelib:tests/c/create_ts_from_string.cpp:833"}
+{"id":"timelib-0658","text":"00:00:00","now":"2005-04-30T00:00:00","tz":"UTC","expect":{"time":"2005-04-30T00:00:00","grain":"second"},"source":"timelib:tests/c/create_ts_from_string.cpp:836"}
+{"id":"timelib-0659","text":"this weekday","now":"2006-04-22T00:00:00","tz":"Europe/Amsterdam","expect":{"time":"2006-04-24T00:00:00","grain":"day"},"source":"timelib:tests/c/create_ts_from_string.cpp:395","tags":["relative"]}
+{"id":"timelib-0660","text":"this weekday","now":"2006-04-23T00:00:00","tz":"Europe/Amsterdam","expect":{"time":"2006-04-24T00:00:00","grain":"day"},"source":"timelib:tests/c/create_ts_from_string.cpp:396","tags":["relative"]}
