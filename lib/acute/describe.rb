@@ -34,6 +34,54 @@ module Acute
       Duration.new(**p.except(:hours, :minutes, :seconds), hours: h, minutes: m, seconds: s).to_s
     end
 
+    # "9am", "9:30am", "9:00:30am", "12am" for midnight
+    def self.clock(secs, meridiem = true)
+      h = secs / 3600
+      m = secs / 60 % 60
+      s = secs % 60
+      out = (h % 12 == 0 ? 12 : h % 12).to_s
+      out << format(":%02d", m) if m != 0 || s != 0
+      out << format(":%02d", s) if s != 0
+      out << (h < 12 ? "am" : "pm") if meridiem
+      out
+    end
+
+    # A value as the span it stands for: an instant, or begin and end with either open
+    Target = Struct.new(:b, :e, :point, :instant) do
+      def self.for(value, ctx)
+        case value
+        when Result
+          new(value.begin&.to_i, value.end&.to_i, value.time.to_i, value.instant?)
+        when Range then range(value, ctx)
+        when Date then range(value..value, ctx)
+        when DateTime, Time then new(nil, nil, value.to_time.to_i, true)
+        else
+          raise ArgumentError, "expected a Result, Time, Date, Range or Duration, got #{value.class}" unless value.respond_to?(:time_zone)
+          new(nil, nil, value.to_time.to_i, true)
+        end
+      end
+
+      # The end is exclusive, as in a Result; a Date end includes its day unless the range excludes it
+      def self.range(r, ctx)
+        b = edge(r.begin, false, ctx)
+        e = edge(r.end, !r.exclude_end?, ctx)
+        raise ArgumentError, "a range needs at least one end" unless b || e
+        raise ArgumentError, "the range runs backwards or is empty (a day the zone skipped is empty)" if b && e && e <= b
+        new(b, e, nil, false)
+      end
+
+      def self.edge(x, through, ctx)
+        case x
+        when nil then nil
+        when DateTime, Time then x.to_time.to_i
+        when Date then ctx.zone.local_to_utc((x.jd - 2_440_588 + (through ? 1 : 0)) * DAY, ctx)
+        else
+          raise ArgumentError, "a range's ends must be Times or Dates, got #{x.class}" unless x.respond_to?(:time_zone)
+          x.to_time.to_i
+        end
+      end
+    end
+
     def initialize(value, calendar, ctx, opts)
       @calendar = calendar
       @ctx = ctx
@@ -41,7 +89,8 @@ module Acute
       @opts = opts
       @today = ctx.today
       @day_first = ctx.locale.day_first
-      target(value)
+      t = Target.for(value, ctx)
+      @b, @e, @point, @instant = t.b, t.e, t.point, t.instant
     end
 
     def text
@@ -54,46 +103,6 @@ module Acute
     end
 
     private
-
-    def target(value)
-      case value
-      when Result
-        @b = value.begin&.to_i
-        @e = value.end&.to_i
-        @point = value.time.to_i
-        @instant = value.instant?
-      when Range then range(value)
-      when DateTime, Time then instant_at(value.to_time.to_i)
-      when Date then range(value..value)
-      else
-        raise ArgumentError, "describe takes a Result, Time, Date, Range or Duration, got #{value.class}" unless value.respond_to?(:time_zone)
-        instant_at(value.to_time.to_i)
-      end
-    end
-
-    def instant_at(epoch)
-      @point = epoch
-      @instant = true
-    end
-
-    # The end is exclusive, as in a Result; a Date end includes its day unless the range excludes it
-    def range(r)
-      @b = edge(r.begin, false)
-      @e = edge(r.end, !r.exclude_end?)
-      raise ArgumentError, "a range needs at least one end" unless @b || @e
-      raise ArgumentError, "the range runs backwards or is empty (a day the zone skipped is empty)" if @b && @e && @e <= @b
-    end
-
-    def edge(x, through)
-      case x
-      when nil then nil
-      when DateTime, Time then x.to_time.to_i
-      when Date then day_start(x.jd - 2_440_588 + (through ? 1 : 0))
-      else
-        raise ArgumentError, "a range's ends must be Times or Dates, got #{x.class}" unless x.respond_to?(:time_zone)
-        x.to_time.to_i
-      end
-    end
 
     def fits?(text)
       @last = text
@@ -277,17 +286,7 @@ module Acute
       @day_first ? "#{wd} #{md(d, year)}" : "#{wd}, #{md(d, year)}"
     end
 
-    # "9am", "9:30am", "9:00:30am", "12am" for midnight
-    def clock(secs, meridiem = true)
-      h = secs / 3600
-      m = secs / 60 % 60
-      s = secs % 60
-      out = (h % 12 == 0 ? 12 : h % 12).to_s
-      out << format(":%02d", m) if m != 0 || s != 0
-      out << format(":%02d", s) if s != 0
-      out << (h < 12 ? "am" : "pm") if meridiem
-      out
-    end
+    def clock(secs, meridiem = true) = Describe.clock(secs, meridiem)
 
     def local(epoch) = epoch + @zone.offset_at(epoch)
 

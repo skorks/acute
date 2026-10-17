@@ -10,6 +10,7 @@ require_relative "acute/duration"
 require_relative "acute/extract"
 require_relative "acute/read"
 require_relative "acute/describe"
+require_relative "acute/verify"
 
 module Acute
   MAX_LENGTH = 512

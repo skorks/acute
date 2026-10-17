@@ -78,10 +78,17 @@ class DescribeRoundTripTest < Minitest::Test
     return assert_raises(ArgumentError) { Acute.describe(x, **opts) } if want[:value].uniq.size == 1 && !want[:instant]
     text = Acute.describe(x, **opts)
     r = Acute.parse(text, **opts.except(:style))
+    verified(x, opts) if Acute::Result === x && opts[:style] == :relative
     got = r && !r.ambiguous? && (want[:instant] ? [r.time.to_i] : [r.begin&.to_i, r.end&.to_i])
     return if got == want[:value]
     @misread << "#{show(x)} #{opts[:zone]} now=#{opts[:now].to_i} #{opts.values_at(:locale, :context, :style)} " \
                  "→ #{text.inspect} → #{r ? [r.begin, r.end, r.alternatives.size].inspect : 'nil'}"
+  end
+
+  # verify agrees: a reading checked against itself is a match
+  def verified(x, opts)
+    v = Acute.verify(x.text, x.instant? ? x.time : x.range, **opts.except(:style))
+    @misread << "verify #{x.text.inspect} #{opts[:zone]} now=#{opts[:now].to_i}: #{v.message}" unless v.status == :match
   end
 
   def expected(x, zone)
