@@ -78,6 +78,10 @@ module Acute
       case v
       when :in
         @i += S
+        if @t[@i + 1] == :around # D14: "in about 5 hours"
+          @approx = true
+          @i += S
+        end
         if (q = quantity)
           return q if Failure === q
           return shifts(1, q, more_units, nil)
@@ -89,6 +93,10 @@ module Acute
         atom(false)
       when :within
         @i += S
+        if @t[@i + 1] == :around
+          @approx = true
+          @i += S
+        end
         q = quantity
         q && !(Failure === q) ? Rel.new(:next, q) : failure(:incomplete, i) # D31
       when :q

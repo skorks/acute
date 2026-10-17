@@ -11,6 +11,8 @@ module Acute
   #             | atom+ (between item and | from item to) item
   #   item   := atom+ [zone]        each atom is one constituent: a date, a weekday, a clock, a shift...
   #
+  # "around" anywhere in an item makes the whole phrase Approx (D14).
+  #
   # An item's atoms are nested by size, the coarsest outside: "friday 3pm" is Within(Clock, Weekday) and
   # "christmas 2015" is Within(Holiday, Date 2015). Two atoms of the same size conflict.
   #
@@ -84,6 +86,7 @@ module Acute
       @t = tokens
       @n = tokens.size
       @i = 0
+      @approx = false
     end
 
     attr_reader :stuck
@@ -94,7 +97,7 @@ module Acute
       return node if Failure === node
       return failure(:conflict) if @i < @n
       return failure(:incomplete) if Unit === node
-      node
+      @approx ? Approx.new(node) : node
     end
 
     private
@@ -113,8 +116,8 @@ module Acute
         Open.new(dir, node)
       elsif @t[@i] == L::WORD && w == :around
         @i += S
-        node = body
-        Failure === node ? node : Approx.new(node)
+        @approx = true
+        body
       else
         body(w)
       end
@@ -171,6 +174,10 @@ module Acute
           at = true
           next
         elsif k == L::WORD && (v == :the || v == :on)
+          @i += S
+          next
+        elsif k == L::WORD && v == :around
+          @approx = true # D14: "tomorrow around 10am", "3pm approximately", "11ish"
           @i += S
           next
         elsif k == L::WORD && (v == :from || v == :between) && last && !@mid

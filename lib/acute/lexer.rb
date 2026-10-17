@@ -81,6 +81,7 @@ module Acute
     phrases.each { |k, list| WORDS[k] = [*(WORDS[k] || [nil, nil, 0, false]).first(4), list.freeze] }
     WORDS.each_value(&:freeze).freeze
     MID = pack("mid")
+    ISH = pack("ish")
 
     # Each byte's class, so the main loop tests one value a byte; the punctuation it keeps is its own byte
     SPACE = 1
@@ -161,6 +162,9 @@ module Acute
           elsif i - st > 3 && i - st < 13 && k >> 5 * (i - st - 3) == MID && (rest = WORDS[k & (1 << 5 * (i - st - 3)) - 1]) && rest[0]
             # "midweek", "midmorning": "mid" and a word
             t.push(FUZZ, :mid, 0, st, st + 3, rest[0], rest[1], rest[2], st + 3, i)
+          elsif i - st > 5 && k & 32_767 == ISH && (stem = WORDS[k >> 15]) && stem[0]
+            # "noonish", "tenish": a word of three letters or more, then "ish" as "around" (D14), not "dish"
+            t.push(stem[0], stem[1], stem[2], st, i - 3, WORD, :around, 0, i - 3, i)
           else
             return Failure.new(:unknown_word, st, i) unless unknown
             unknown << st << i

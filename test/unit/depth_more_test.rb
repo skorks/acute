@@ -88,4 +88,29 @@ class DepthMoreTest < Minitest::Test
     r = parse("11 o'clock lunchtime")
     assert_equal ["2026-10-18 11:00:00 -04:00", []], [wall(r.begin), alt_walls(r)]
   end
+
+  def test_d14_an_approximate_time_anywhere_in_the_phrase_is_the_exact_time_flagged
+    {
+      "tomorrow around 10am" => "2026-10-18 10:00:00 -04:00",
+      "friday at about 2pm" => "2026-10-23 14:00:00 -04:00",
+      "3pm approximately" => "2026-10-17 15:00:00 -04:00",
+      "approx 6pm" => "2026-10-17 18:00:00 -04:00",
+      "circa 5 in the morning" => "2026-10-18 05:00:00 -04:00",
+      "3pm-ish" => "2026-10-17 15:00:00 -04:00",
+      "noonish" => "2026-10-18 12:00:00 -04:00",
+      "11ish" => "2026-10-18 11:00:00 -04:00",
+      "in about 5 hours" => "2026-10-17 19:00:00 -04:00"
+    }.each do |text, at|
+      r = parse(text)
+      assert_equal at, wall(r.begin), text
+      assert_includes r.assumptions.map(&:code), :approximate, text
+    end
+    assert_equal ["2026-10-17 14:00:00 -04:00", "2026-10-17 17:00:00 -04:00"], span("within around 3 hours")
+    refute_includes parse("tomorrow 10am").assumptions.map(&:code), :approximate
+  end
+
+  def test_d14_ish_after_a_short_word_is_no_suffix
+    assert_raises(Acute::ParseError) { parse("dish") }
+    assert_raises(Acute::ParseError) { parse("wish") }
+  end
 end

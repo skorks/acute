@@ -101,7 +101,7 @@ module Acute
         return shift_tail(q) if q
       end
       loose ||= @n == S + i || nk == L::DASH || (nk == L::WORD && (RANGE[t[i + S + 1]] || t[i + S + 1] == :and)) ||
-                part_next?(i + S)
+                part_next?(i + S) || (@n == 2 * S + i && t[i + S + 1] == :around) # "11ish"
       number(v, flags, loose)
     end
 

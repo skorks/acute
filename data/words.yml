@@ -288,6 +288,9 @@ word:           # function words; the grammar gives them their meaning
   about: around
   approximately: around
   roughly: around
+  approx: around
+  circa: around
+  ish: around
   o'clock: oclock
   half: half
   for: for
