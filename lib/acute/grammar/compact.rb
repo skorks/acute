@@ -187,7 +187,9 @@ module Acute
       sec = v % 100
       at = @i
       @i += S
-      return failure(:invalid_date, at) if (hour > 23 && v != 240_000) || min > 59 || sec > 59
+      f = flags >> L::FRACTION
+      frac = Rational(f >> 5, 10**(f & 31)) if f > 0
+      return failure(:invalid_date, at) if (hour > 23 && (v != 240_000 || frac)) || min > 59 || sec > 59
       @i += 2 * S if in_the_meridiem?
       kind = @t[@i]
       # D44: "24:00" is the end of the day, 24-hour only
@@ -196,15 +198,15 @@ module Acute
         return failure(:invalid_date, at) if (hour < 1 && !midnight_am?(kind)) || hour > 12
         meridiem = kind == L::ART || @t[@i + 1] == 0 ? :am : :pm
         @i += S
-        Clock.new(hour, min, sec, meridiem, nil, false, flags & L::SECONDS != 0)
+        Clock.new(hour, min, sec, meridiem, nil, false, flags & L::SECONDS != 0, frac)
       elsif kind == L::NAMED && hour == 12 && min == 0 && sec == 0
         @i += S
         named(@t[@i - S + 1])
       elsif kind == L::UNIT && @t[@i + 1] == :hour && @t[@i + 4] - @t[at + 4] == 1 # D44: "06:00h"
         @i += S
-        Clock.new(hour, min, sec, nil, nil, true, flags & L::SECONDS != 0)
+        Clock.new(hour, min, sec, nil, nil, true, flags & L::SECONDS != 0, frac)
       else
-        Clock.new(hour, min, sec, nil, nil, flags & L::ZERO != 0, flags & L::SECONDS != 0)
+        Clock.new(hour, min, sec, nil, nil, flags & L::ZERO != 0, flags & L::SECONDS != 0, frac)
       end
     end
   end

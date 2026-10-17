@@ -6,7 +6,7 @@ class SchemaTest < Minitest::Test
   DIR = File.expand_path("../../schema", __dir__)
   TYPES = { "object" => Hash, "array" => Array, "string" => String, "number" => Numeric, "null" => NilClass,
             "boolean" => [true, false] }.freeze
-  ISO = /\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d[+-]\d\d:\d\d\z/
+  ISO = /\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?[+-]\d\d:\d\d\z/
 
   def schema(name) = JSON.parse(File.read(File.join(DIR, "#{name}.json")))
 

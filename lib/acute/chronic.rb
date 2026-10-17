@@ -29,7 +29,7 @@ module Chronic
       endian_precedence: %i[middle little], ambiguous_year_future_bias: 50
     }.freeze
 
-    Reading = Struct.new(:begin, :end, :point, :span)
+    Reading = Struct.new(:begin, :end, :point, :span, :frac)
     Notes = Struct.new(:dst)
     NUMERIC_DATE = %r{(?<!\d)(\d{1,2})[/\-.](\d{1,2})(?!\d)}
 
@@ -75,7 +75,7 @@ module Chronic
     def choose(result, text, zone)
       codes = result.assumptions.map(&:code)
       all = ([result] + result.alternatives).map do |r|
-        Reading.new(r.begin&.to_i, r.end&.to_i, r.time.to_i, r.span?)
+        Reading.new(r.begin&.to_i, r.end&.to_i, r.time.to_i, r.span?, r.time.subsec)
       end
       all = prefer(all) { |r| hour_window.include?(wall(r.point, zone) / 3600 % 24) } if codes.include?(:bare_hour_window)
       # only when given: without it the locale decides, as D10 says
@@ -104,10 +104,11 @@ module Chronic
       start...start + 12
     end
 
-    # Epochs, or a Range of them when guess is false, which in chronic always returns a Span
+    # Epochs, or a Range of them when guess is false, which in chronic always returns a Span; an instant keeps
+    # its written fraction of a second (D47)
     def guess_reading(r, zone, mode)
-      return r.begin..r.end unless mode || (r.begin.nil? && r.end.nil?)
-      return r.point unless r.span && r.begin && r.end
+      return (r.begin && r.begin + r.frac)..(r.end && r.end + r.frac) unless mode || (r.begin.nil? && r.end.nil?)
+      return r.point + r.frac unless r.span && r.begin && r.end
       return r.end if mode == :end
       return r.begin unless mode == true || mode == :middle
       mid = (wall(r.begin, zone) + wall(r.end, zone)) / 2

@@ -43,6 +43,9 @@ module Acute
     CAP = 256      # written with a capital
     SHORT = 512    # two digits after an apostrophe: a year with its century left out, "'26"
     PLURAL = 1024  # "fridays": only after a count
+    # A CLOCK keeps its written fraction of a second in the flags above this bit: the digits after the point as
+    # a number, times 32, plus how many there are (D47)
+    FRACTION = 12
 
     KINDS = {
       day: DAY, meridiem: MER, named: NAMED, now: NOW, at: AT, weekday: WDAY, month: MONTH, unit: UNIT,
@@ -229,9 +232,22 @@ module Acute
               sec = a * 10 + b - 528
               i += 3
               flags |= SECONDS
-              if i + 1 < n && s.getbyte(i) == 46 && CLASS[s.getbyte(i + 1)] == DIGIT # fractions of a second are dropped
+              # D47: ".345", or ":000536" (three digits or more, so not a fourth field)
+              fc = i + 1 < n ? s.getbyte(i) : 0
+              if (fc == 46 && CLASS[s.getbyte(i + 1)] == DIGIT) ||
+                 (fc == 58 && i + 3 < n && CLASS[s.getbyte(i + 1)] == DIGIT && CLASS[s.getbyte(i + 2)] == DIGIT &&
+                  CLASS[s.getbyte(i + 3)] == DIGIT)
                 i += 1
-                i += 1 while i < n && CLASS[s.getbyte(i)] == DIGIT
+                f = 0
+                nf = 0
+                while i < n && CLASS[fc = s.getbyte(i)] == DIGIT
+                  if nf < 31
+                    f = f * 10 + fc - 48
+                    nf += 1
+                  end
+                  i += 1
+                end
+                flags |= (f << 5 | nf) << FRACTION if f > 0
               end
             end
             t.push(CLOCK, v * 10_000 + mi * 100 + sec, flags, st, i)

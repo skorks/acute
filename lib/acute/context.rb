@@ -34,6 +34,8 @@ module Acute
     # past: true in past context; :back while resolve looks back for the most recent one, which adds no
     # alternatives of its own (D44)
     attr_accessor :dst, :past, :machine
+    # D47: the fraction of a second a clock in the text was written with
+    attr_accessor :frac
 
     # The zone a TimeWithZone, or a Time made with a TZInfo zone, brings with it
     def self.carried_zone(now)

@@ -17,6 +17,7 @@ module Acute
 
       # Seconds of the day, most likely first
       def self.candidates(c, ctx, attached)
+        ctx.frac = c.frac if c.frac
         secs = c.min * 60 + c.sec
         if c.named == :noon then NOON
         elsif c.named == :midnight

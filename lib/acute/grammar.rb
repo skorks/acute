@@ -20,7 +20,7 @@ module Acute
   # end. A function word's Symbol is no other kind's value, so `@t[@i + 1] == :of` is the word "of".
   class Grammar
     # h24: written with a leading zero, a 24-hour form (D4); seconds: written with seconds, or :hour for an hour alone
-    Clock = Struct.new(:hour, :min, :sec, :meridiem, :named, :h24, :seconds)
+    Clock = Struct.new(:hour, :min, :sec, :meridiem, :named, :h24, :seconds, :frac)
     DayRef = Struct.new(:offset)
     # Any of the three may be nil. With sep (:slash, :dash, :dot, :space), month and day are the first and
     # second numbers as written and resolve picks the order (D10, D37); short: a two-digit year (D23)

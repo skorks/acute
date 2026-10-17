@@ -11,7 +11,7 @@ module Corpus
   ROOT = File.expand_path("..", __dir__)
   CASES = File.join(ROOT, "research/cases")
   RATCHET = File.join(ROOT, "test/corpus/passing.txt")
-  WALL = /\A(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)(?::(\d\d))?\z/
+  WALL = /\A(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)(?::(\d\d))?(\.\d+)?\z/
   CHRONIC_ONLY = %w[endian_precedence hours24 ambiguous_time_range].freeze
   # chronic's names for acute's options (D47)
   RENAMED = { "ambiguous_year_future_bias" => :year_bias }.freeze
@@ -39,15 +39,15 @@ module Corpus
 
   # Compatible DST: a repeated wall time takes the earlier instant, a skipped one moves forward by the gap
   def epoch(str, tz)
-    return Time.iso8601(str).to_i unless (m = WALL.match(str))
-    y, mo, d, h, mi, s = m.captures.map(&:to_i)
+    return Time.iso8601(str).to_r unless (m = WALL.match(str))
+    y, mo, d, h, mi, s = m.captures.take(6).map(&:to_i)
     local = Time.utc(y, mo, d, h, mi, s)
     periods = tz.periods_for_local(local)
     offset = case periods.size
              when 0 then tz.period_for_utc(local - 86_400).observed_utc_offset
              else periods.map(&:observed_utc_offset).max
              end
-    local.to_i - offset
+    local.to_i - offset + (m[7] ? m[7].to_r : 0)
   end
 
   # Day-or-coarser grains step from the written wall fields: in a gap the instant has been shifted
@@ -59,7 +59,7 @@ module Corpus
     step = { "second" => 1, "minute" => 60, "hour" => 3600 }[grain]
     return [b, b + step] if step
     m = WALL.match(str) || WALL.match(str[0, 19])
-    y, mo, d, h, mi, s = m.captures.map(&:to_i)
+    y, mo, d, h, mi, s = m.captures.take(6).map(&:to_i)
     day = Date.new(y, mo, d)
     nxt = case grain
           when "day" then day + 1
@@ -81,7 +81,7 @@ module Corpus
 
     tz = TZS[c["tz"]]
     r = Acute.parse(c["text"], **context(c))
-    got = r && ([r] + r.alternatives).map { |x| [x.begin&.to_i, x.end&.to_i] }
+    got = r && ([r] + r.alternatives).map { |x| [x.begin&.to_r, x.end&.to_r] }
     return [r ? "garbage" : "pass", got] if exp["nil"]
     return ["nil", got] unless r
 

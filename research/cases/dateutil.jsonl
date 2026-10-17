@@ -40,11 +40,11 @@
 {"id":"dateutil-0040","text":"July 4, 1976 12:01:02 am","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"1976-07-04T00:01:02","grain":"second"},"source":"dateutil:tests/test_parser.py:86"}
 {"id":"dateutil-0041","text":"Mon Jan  2 04:24:27 1995","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"1995-01-02T04:24:27","grain":"second"},"source":"dateutil:tests/test_parser.py:87"}
 {"id":"dateutil-0042","text":"04.04.95 00:22","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"1995-04-04T00:22:00","grain":"minute"},"source":"dateutil:tests/test_parser.py:88","tags":["two-digit-year"]}
-{"id":"dateutil-0043","text":"Jan 1 1999 11:23:34.578","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"1999-01-01T11:23:34","grain":"second"},"source":"dateutil:tests/test_parser.py:89"}
+{"id":"dateutil-0043","text":"Jan 1 1999 11:23:34.578","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"1999-01-01T11:23:34.578","grain":"second"},"source":"dateutil:tests/test_parser.py:89"}
 {"id":"dateutil-0044","text":"3rd of May 2001","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2001-05-03T00:00:00","grain":"day"},"source":"dateutil:tests/test_parser.py:91"}
 {"id":"dateutil-0045","text":"5th of March 2001","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2001-03-05T00:00:00","grain":"day"},"source":"dateutil:tests/test_parser.py:92"}
 {"id":"dateutil-0046","text":"1st of May 2003","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-05-01T00:00:00","grain":"day"},"source":"dateutil:tests/test_parser.py:93"}
-{"id":"dateutil-0047","text":"20080227T21:26:01.123456789","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2008-02-27T21:26:01","grain":"second"},"source":"dateutil:tests/test_parser.py:96"}
+{"id":"dateutil-0047","text":"20080227T21:26:01.123456789","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2008-02-27T21:26:01.123456789","grain":"second"},"source":"dateutil:tests/test_parser.py:96"}
 {"id":"dateutil-0048","text":"13NOV2017","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2017-11-13T00:00:00","grain":"day"},"source":"dateutil:tests/test_parser.py:97"}
 {"id":"dateutil-0049","text":"Thu Sep 25 10:36:28","now":"2003-09-25T00:00:00","tz":"UTC","expect":{"time":"2003-09-25T10:36:28","grain":"second"},"source":"dateutil:tests/test_parser.py:116"}
 {"id":"dateutil-0050","text":"Thu 10:36:28","now":"2003-09-25T00:00:00","tz":"UTC","expect":{"alternatives":[{"time":"2003-09-25T10:36:28","grain":"second"},{"time":"2003-10-02T10:36:28","grain":"second"}]},"source":"dateutil:tests/test_parser.py:118","tags":["weekday"],"note":"a bare weekday naming today may mean today or a week today"}
@@ -84,7 +84,7 @@
 {"id":"dateutil-0084","text":"Tue Apr 4 00:22:12 PDT 1995","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"1995-04-04T00:22:12-07:00","grain":"second"},"source":"dateutil:tests/test_parser.py:198","tags":["timezone"]}
 {"id":"dateutil-0085","text":"20030925T104941-0300","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T10:49:41-03:00","grain":"second"},"source":"dateutil:tests/test_parser.py:209","tags":["timezone"]}
 {"id":"dateutil-0086","text":"Thu, 25 Sep 2003 10:49:41 -0300","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T10:49:41-03:00","grain":"second"},"source":"dateutil:tests/test_parser.py:211","tags":["timezone"]}
-{"id":"dateutil-0087","text":"2003-09-25T10:49:41.5-03:00","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T10:49:41-03:00","grain":"second"},"source":"dateutil:tests/test_parser.py:213","tags":["timezone"]}
+{"id":"dateutil-0087","text":"2003-09-25T10:49:41.5-03:00","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T10:49:41.5-03:00","grain":"second"},"source":"dateutil:tests/test_parser.py:213","tags":["timezone"]}
 {"id":"dateutil-0088","text":"2003-09-25T10:49:41-03:00","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T10:49:41-03:00","grain":"second"},"source":"dateutil:tests/test_parser.py:215","tags":["timezone"]}
 {"id":"dateutil-0089","text":"20030925T104941.5-0300","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T10:49:41-03:00","grain":"second"},"source":"dateutil:tests/test_parser.py:217","tags":["timezone"]}
 {"id":"dateutil-0090","text":"2003-09-25T10:49:41+03:00","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T10:49:41+03:00","grain":"second"},"source":"dateutil:tests/test_parser.py:473","tags":["timezone"]}
@@ -129,10 +129,10 @@
 {"id":"dateutil-0129","text":"shouldfail","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"nil":true},"source":"dateutil:tests/test_parser.py:570","tags":["strict"]}
 {"id":"dateutil-0130","text":"04/04/32/423","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"nil":true},"source":"dateutil:tests/test_parser.py:574","tags":["garbage"]}
 {"id":"dateutil-0131","text":"04/04/0d4","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"nil":true},"source":"dateutil:tests/test_parser.py:578","tags":["garbage"]}
-{"id":"dateutil-0132","text":"00:11:25.01","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2010-06-16T00:11:25","grain":"second"},"source":"dateutil:tests/test_parser.py:600"}
-{"id":"dateutil-0133","text":"00:12:10.01","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2010-06-16T00:12:10","grain":"second"},"source":"dateutil:tests/test_parser.py:601"}
-{"id":"dateutil-0134","text":"2008-02-27T21:26:01.100001","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2008-02-27T21:26:01","grain":"second"},"source":"dateutil:tests/test_parser.py:605"}
-{"id":"dateutil-0135","text":"2008-02-27T21:26:01.000098","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2008-02-27T21:26:01","grain":"second"},"source":"dateutil:tests/test_parser.py:605"}
+{"id":"dateutil-0132","text":"00:11:25.01","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2010-06-16T00:11:25.01","grain":"second"},"source":"dateutil:tests/test_parser.py:600"}
+{"id":"dateutil-0133","text":"00:12:10.01","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2010-06-16T00:12:10.01","grain":"second"},"source":"dateutil:tests/test_parser.py:601"}
+{"id":"dateutil-0134","text":"2008-02-27T21:26:01.100001","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2008-02-27T21:26:01.100001","grain":"second"},"source":"dateutil:tests/test_parser.py:605"}
+{"id":"dateutil-0135","text":"2008-02-27T21:26:01.000098","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2008-02-27T21:26:01.000098","grain":"second"},"source":"dateutil:tests/test_parser.py:605"}
 {"id":"dateutil-0136","text":"2015 09 25","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2015-09-25T00:00:00","grain":"day"},"source":"dateutil:tests/test_parser.py:682"}
 {"id":"dateutil-0137","text":"201A-01-01T23:58:39.239769+03:00","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"nil":true},"source":"dateutil:tests/test_parser.py:717","tags":["garbage"]}
 {"id":"dateutil-0138","text":"2020-13-97T44:61:83","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"nil":true},"source":"dateutil:tests/test_parser.py:727","tags":["invalid-date"]}

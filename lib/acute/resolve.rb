@@ -10,8 +10,8 @@ module Acute
   module Resolve
     G = Grammar
     # begin and end are epochs, end exclusive, either nil when open; dst is the code of a DST adjustment made
-    # to begin, if any; point is the D1 point of a part of day
-    Reading = Struct.new(:begin, :end, :grain, :dst, :point)
+    # to begin, if any; point is the D1 point of a part of day; frac the fraction of a second an instant was written with (D47)
+    Reading = Struct.new(:begin, :end, :grain, :dst, :point, :frac)
     # The same in local wall seconds. An instant ("now", "in 3 hours", a time with an offset) also carries its
     # UTC in ub and ue, so a wall time the clocks repeat keeps the side it is on
     Span = Struct.new(:b, :e, :grain, :point, :ub, :ue)
@@ -159,6 +159,7 @@ module Acute
 
     def self.readings(spans, ctx)
       zone = ctx.zone
+      frac = ctx.frac
       out = []
       spans.each do |s|
         ctx.dst = nil
@@ -179,7 +180,7 @@ module Acute
           point &&= zone.local_to_utc(point, ctx, ctx.dst_policy)
         end
         next if !out.empty? && out.any? { |o| o.begin == b && o.end == e }
-        out << Reading.new(b, e, s.grain, dst, point)
+        out << Reading.new(b, e, s.grain, dst, point, frac && e && b && e - b == 1 ? frac : nil)
       end
       out
     end

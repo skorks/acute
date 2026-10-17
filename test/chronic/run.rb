@@ -15,8 +15,8 @@ module ChronicRun
   FILE = File.join(__dir__, "differences.yml")
   SOURCE = "chronic-0.10.2:test_parsing.rb:"
   # test_normalizing_day_portions calls pre_normalize, chronic's tokeniser, which acute has no counterpart for.
-  # test_now_changes passes only when a second boundary falls between two parses 0.1 s apart, since acute's
-  # times are whole seconds (D46).
+  # test_now_changes passes only when a second boundary falls between two parses 0.1 s apart, since acute
+  # takes now to the whole second (D47).
   SKIPPED = %w[test_normalizing_day_portions test_now_changes].freeze
 
   module_function
@@ -61,13 +61,9 @@ module ChronicRun
       ours, theirs = call && check.expected.equal?(call.got) ? [check.expected, check.actual] : [check.actual, check.expected]
       entry["chronic"] = show(theirs)
       entry["acute"] = show(ours)
-      entry["rule"] = "D46" if subsecond?(theirs, ours)
     end
     entry
   end
-
-  # acute's times are whole seconds (D46)
-  def subsecond?(a, b) = [a, b].all? { _1.is_a?(Time) || _1.is_a?(Numeric) } && (a.to_f - b.to_f).abs < 1
 
   def key(entry) = entry.values_at("test", "line", "assert_line", "phrase", "options", "compared_with")
 

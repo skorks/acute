@@ -23,6 +23,7 @@ module Acute
       @begin_epoch = main.begin
       @end_epoch = main.end
       @grain = main.grain
+      @frac = main.frac
       @zone = zone
       @assumptions = assumptions
     end
@@ -31,11 +32,11 @@ module Acute
 
     def matched = @matched || @text
 
-    def time = @time ||= at(@point)
+    def time = @time ||= at(@point, @frac)
 
-    def begin = @begin_epoch && (@begin ||= at(@begin_epoch))
+    def begin = @begin_epoch && (@begin ||= at(@begin_epoch, @frac))
 
-    def end = @end_epoch && (@end ||= at(@end_epoch))
+    def end = @end_epoch && (@end ||= at(@end_epoch, @frac))
 
     def range = self.begin...self.end
 
@@ -87,8 +88,10 @@ module Acute
       secs = local - days * 86_400
       hour = secs / 3600
       clock = (hour % 12 == 0 ? 12 : hour % 12).to_s
-      clock << format(":%02d", secs / 60 % 60) if secs % 3600 != 0
-      clock << format(":%02d", secs % 60) if @grain == :second && secs % 60 != 0
+      seconds = @grain == :second && (secs % 60 != 0 || @frac)
+      clock << format(":%02d", secs / 60 % 60) if secs % 3600 != 0 || seconds
+      clock << format(":%02d", secs % 60) if seconds
+      clock << decimals(@frac) if @frac
       "#{date}, #{clock}#{hour < 12 ? "am" : "pm"} #{@zone.abbreviation_at(@point)}"
     end
 
@@ -98,8 +101,22 @@ module Acute
 
     def local(epoch) = epoch + @zone.offset_at(epoch)
 
-    def at(epoch) = Time.at(epoch, in: @zone.offset_at(epoch))
+    def at(epoch, frac = nil)
+      t = Time.at(epoch, in: @zone.offset_at(epoch))
+      frac ? t + frac : t
+    end
 
-    def iso(t) = t&.strftime("%FT%T%:z")
+    def iso(t)
+      return unless t
+      return t.strftime("%FT%T%:z") if t.subsec == 0
+      "#{t.strftime("%FT%T")}#{decimals(t.subsec)}#{t.strftime("%:z")}"
+    end
+
+    # ".345": the fewest digits that give a fraction of a second exactly
+    def decimals(frac)
+      n = 1
+      n += 1 until (frac * 10**n).denominator == 1
+      format(".%0*d", n, frac * 10**n)
+    end
   end
 end
