@@ -522,6 +522,7 @@ chronic-issues-134-3
 chronic-issues-134-4
 chronic-issues-134-5
 chronic-issues-134-6
+chronic-issues-139-1
 chronic-issues-139-2
 chronic-issues-141-1
 chronic-issues-141-2
@@ -1404,6 +1405,7 @@ chronic-tests-test-parsing-rb-215-1
 chronic-tests-test-parsing-rb-218-1
 chronic-tests-test-parsing-rb-221-1
 chronic-tests-test-parsing-rb-227-1
+chronic-tests-test-parsing-rb-230-1
 chronic-tests-test-parsing-rb-235-1
 chronic-tests-test-parsing-rb-238-1
 chronic-tests-test-parsing-rb-241-1
@@ -2896,11 +2898,13 @@ duckling-0196
 duckling-0197
 duckling-0198
 duckling-0199
+duckling-0200
 duckling-0201
 duckling-0202
 duckling-0203
 duckling-0204
 duckling-0205
+duckling-0206
 duckling-0207
 duckling-0208
 duckling-0209
@@ -2927,6 +2931,7 @@ duckling-0232
 duckling-0233
 duckling-0234
 duckling-0235
+duckling-0236
 duckling-0237
 duckling-0238
 duckling-0239
@@ -2956,6 +2961,7 @@ duckling-0264
 duckling-0265
 duckling-0266
 duckling-0267
+duckling-0268
 duckling-0269
 duckling-0270
 duckling-0271
@@ -3200,6 +3206,7 @@ duckling-0542
 duckling-0543
 duckling-0544
 duckling-0546
+duckling-0547
 duckling-0548
 duckling-0549
 duckling-0550
@@ -12969,6 +12976,7 @@ recognizers-0364
 recognizers-0365
 recognizers-0366
 recognizers-0367
+recognizers-0368
 recognizers-0369
 recognizers-0370
 recognizers-0371
@@ -13036,6 +13044,7 @@ recognizers-0435
 recognizers-0436
 recognizers-0437
 recognizers-0438
+recognizers-0439
 recognizers-0440
 recognizers-0441
 recognizers-0442
@@ -13419,6 +13428,11 @@ recognizers-0823
 recognizers-0824
 recognizers-0825
 recognizers-0826
+recognizers-0827
+recognizers-0828
+recognizers-0829
+recognizers-0830
+recognizers-0831
 recognizers-0832
 recognizers-0833
 recognizers-0834
@@ -13560,6 +13574,8 @@ recognizers-0969
 recognizers-0970
 recognizers-0971
 recognizers-0972
+recognizers-0973
+recognizers-0974
 recognizers-0975
 recognizers-0976
 recognizers-0977

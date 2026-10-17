@@ -34,7 +34,7 @@ module Acute
     end
 
     # D44: "330 pm", "at 730 in the evening", "tonight 815": three digits marked as a time, by am or pm after
-    # them or "at" or a part of day before, are its hour and minutes
+    # them or "at" or a part of day before, are its hour and minutes; so are four before am or pm, "1140 a.m." (D5)
     def three_digits(v, at)
       h = v / 100
       m = v % 100
@@ -173,6 +173,36 @@ module Acute
       return false unless @t[i + 2] & L::DIGITS <= 2 && v.between?(1, 53)
       k = @t[i + S]
       k != L::UNIT && k != L::MER && k != L::SLASH && k != L::DOT && k != L::MONTH
+    end
+
+    # D44: "3 in the AM", "4:30 in the pm": am or pm after "in the" is the clock's
+    def in_the_meridiem? = @t[@i + 1] == :in && @t[@i + S + 1] == :the && @t[@i + 2 * S] == L::MER && @t[@i] == L::WORD
+
+    def written(v, flags)
+      hour = v / 10_000
+      min = v / 100 % 100
+      sec = v % 100
+      at = @i
+      @i += S
+      return failure(:invalid_date, at) if (hour > 23 && v != 240_000) || min > 59 || sec > 59
+      @i += 2 * S if in_the_meridiem?
+      kind = @t[@i]
+      # D44: "24:00" is the end of the day, 24-hour only
+      return Clock.new(24, 0, 0, nil, nil, true, flags & L::SECONDS != 0) if hour == 24 && kind != L::MER && kind != L::ART
+      if kind == L::MER || (kind == L::ART && @t[at + 4] == @t[@i + 3]) # "9:00a"
+        return failure(:invalid_date, at) if hour < 1 || hour > 12
+        meridiem = kind == L::ART || @t[@i + 1] == 0 ? :am : :pm
+        @i += S
+        Clock.new(hour, min, sec, meridiem, nil, false, flags & L::SECONDS != 0)
+      elsif kind == L::NAMED && hour == 12 && min == 0 && sec == 0
+        @i += S
+        named(@t[@i - S + 1])
+      elsif kind == L::UNIT && @t[@i + 1] == :hour && @t[@i + 4] - @t[at + 4] == 1 # D44: "06:00h"
+        @i += S
+        Clock.new(hour, min, sec, nil, nil, true, flags & L::SECONDS != 0)
+      else
+        Clock.new(hour, min, sec, nil, nil, flags & L::ZERO != 0, flags & L::SECONDS != 0)
+      end
     end
   end
 end

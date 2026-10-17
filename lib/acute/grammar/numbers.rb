@@ -97,6 +97,11 @@ module Acute
       elsif nk == L::NUM
         return w if flags & L::WORDY != 0 && (w = said(v, i))
         return spaced_date(v, digits) if spaced_date?(i, digits)
+        # D44: "at 3 15", "at 12 05": after "at", an hour then two digits are its minutes, as said aloud
+        if digits <= 2 && v <= 23 && i >= S && t[i - S] == L::AT && t[i + S + 2] & (L::DIGITS | L::WORDY) == 2 && t[i + S + 1] <= 59
+          @i += S
+          return written(v * 10_000 + t[i + S + 1] * 100, flags & L::ZERO)
+        end
       end
       if nk == L::UNIT || nk == L::SLASH
         # D44: "20 minutes past 3pm", "ten minutes to three"
@@ -252,6 +257,7 @@ module Acute
       at = @i
       @i += S
       return Date.new(v, nil, nil, nil, true) if flags & L::SHORT != 0 # "halloween '11"
+      @i += 2 * S if in_the_meridiem?
       kind = @t[@i]
       if (kind == L::MER || (kind == L::ART && @t[at + 4] == @t[@i + 3])) && digits <= 2 # "8a"
         return failure(:invalid_date, at) if v < 1 || v > 12
@@ -261,7 +267,7 @@ module Acute
       elsif kind == L::NAMED && v == 12 && digits <= 2
         @i += S
         named(@t[@i - S + 1])
-      elsif digits == 3 && (kind == L::MER || (at >= S && (@t[at - S] == L::AT || @t[at - S] == L::PART)))
+      elsif (digits == 3 && (at >= S && (@t[at - S] == L::AT || @t[at - S] == L::PART))) || ((digits == 3 || digits == 4) && kind == L::MER)
         three_digits(v, at)
       elsif digits == 4
         four_digits(v, flags, at)
@@ -272,32 +278,6 @@ module Acute
         Clock.new(v, 0, 0, nil, nil, zero, false)
       else
         failure(:incomplete, at)
-      end
-    end
-
-    def written(v, flags)
-      hour = v / 10_000
-      min = v / 100 % 100
-      sec = v % 100
-      at = @i
-      @i += S
-      return failure(:invalid_date, at) if (hour > 23 && v != 240_000) || min > 59 || sec > 59
-      kind = @t[@i]
-      # D44: "24:00" is the end of the day, 24-hour only
-      return Clock.new(24, 0, 0, nil, nil, true, flags & L::SECONDS != 0) if hour == 24 && kind != L::MER && kind != L::ART
-      if kind == L::MER || (kind == L::ART && @t[at + 4] == @t[@i + 3]) # "9:00a"
-        return failure(:invalid_date, at) if hour < 1 || hour > 12
-        meridiem = kind == L::ART || @t[@i + 1] == 0 ? :am : :pm
-        @i += S
-        Clock.new(hour, min, sec, meridiem, nil, false, flags & L::SECONDS != 0)
-      elsif kind == L::NAMED && hour == 12 && min == 0 && sec == 0
-        @i += S
-        named(@t[@i - S + 1])
-      elsif kind == L::UNIT && @t[@i + 1] == :hour && @t[@i + 4] - @t[at + 4] == 1 # D44: "06:00h"
-        @i += S
-        Clock.new(hour, min, sec, nil, nil, true, flags & L::SECONDS != 0)
-      else
-        Clock.new(hour, min, sec, nil, nil, flags & L::ZERO != 0, flags & L::SECONDS != 0)
       end
     end
   end

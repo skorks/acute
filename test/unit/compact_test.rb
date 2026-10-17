@@ -61,4 +61,28 @@ class CompactTest < Minitest::Test
     assert_raises(Acute::ParseError) { parse("24:01") }
     assert_raises(Acute::ParseError) { parse("24:00 pm") }
   end
+
+  def test_d44_four_digits_before_am_or_pm_are_a_clock
+    assert_span "1140 a.m.", "2026-10-18 11:40:00 -04:00", 60
+    assert_span "oct 5 2012 1045pm", "2012-10-05 22:45:00 -04:00", 60
+    assert_raises(Acute::ParseError) { parse("1300 pm") }
+  end
+
+  def test_d44_am_or_pm_after_in_the_is_the_clocks
+    assert_span "3 in the AM", "2026-10-18 03:00:00 -04:00", 60
+    assert_span "from 3 to 4 in the PM", "2026-10-17 15:00:00 -04:00", 3600
+  end
+
+  def test_d44_early_or_late_before_a_part_beside_a_clock_adds_nothing
+    assert_span "early morning at 8:00", "2026-10-18 08:00:00 -04:00", 60
+    assert_span "Sunday late evening at 10:00", "2026-10-18 22:00:00 -04:00", 60
+  end
+
+  def test_d44_at_an_hour_then_two_digits_is_its_minutes
+    r = parse("at 3 15")
+    assert_equal "2026-10-17 15:15:00 -04:00", wall(r.begin)
+    assert_equal ["2026-10-18 03:15:00 -04:00"], r.alternatives.map { wall(_1.begin) }
+    assert_span "at 12 15", "2026-10-18 12:15:00 -04:00", 60
+    assert_raises(Acute::ParseError) { parse("at 3 75") }
+  end
 end

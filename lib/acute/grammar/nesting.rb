@@ -4,6 +4,9 @@ module Acute
     private
 
     def pair(x, xs, y, ys)
+      if Clock === x && fuzzy_part?(y) then y = y.node
+      elsif Clock === y && fuzzy_part?(x) then x = x.node
+      end
       a = size(x)
       b = size(y)
       a >= b ? nest(x, y, a == b, ys) : nest(y, x, false, xs)
@@ -12,6 +15,7 @@ module Acute
     def combine(atoms, starts)
       return atoms[0] if atoms.size == 1
       return pair(atoms[0], starts[0], atoms[1], starts[1]) if atoms.size == 2
+      atoms.map! { fuzzy_part?(_1) ? _1.node : _1 } if atoms.any? { Clock === _1 }
       sizes = atoms.map { size(_1) }
       # coarsest first, in the order said among equals; an insertion sort, as there are only a few
       order = []
@@ -45,6 +49,10 @@ module Acute
       # D37: a weekday with a date only picks among the date's readings
       Weekday === node && Date === a ? Within.new(node, a) : Within.new(a, node)
     end
+
+    # D44: "early morning at 8:00": beside a clock, early or late adds nothing to what the part says, its half
+    # of the day
+    def fuzzy_part?(a) = Fuzzy === a && Part === a.node
 
     # D44: a shift from now beside a day moves a day that is already fixed ("3 years ago tomorrow"); one that
     # recurs is within it, which resolve reads as the one in the period around the shifted instant
