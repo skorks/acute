@@ -29,11 +29,11 @@ text ──lex──▶ tokens ──grammar──▶ tree ──resolve(ctx)─
 - fuzz;
 - speed.
 
-Options: `--only STAGE`, `--grep TEXT` / `--file NAME` (corpus only), `--record`.
+Options: `--only STAGE`, `--grep TEXT` / `--file NAME` (corpus only), `--rule D20` (the cases and unit tests about one rule, plus the rules no case covers), `--record`.
 
 ## Adding a phrase
 
-1. Find its case in `research/cases/*.jsonl`, or add one. The format is in `research/cases/CASE_FORMAT.md`.
+1. Find its case in `research/cases/*.jsonl`, or add one. The format is in `research/cases/CASE_FORMAT.md`. `bin/case "phrase" --now ... --zone ...` appends acute's current answer to `research/cases/new.jsonl` as a starting point; correct it from the rules.
 2. Run `bin/try "phrase" --now 2026-10-17T14:00 --zone America/New_York --trace`. It prints the tokens, the tree, the readings and the rules applied.
 3. Fix it in the right place:
    - wrong tree → `grammar.rb`, or a word in `data/words.yml`;

@@ -1,6 +1,6 @@
 # Runs research/cases against Acute.parse and compares with the ratchet in test/corpus/passing.txt.
 # Expected values are worked out with TZInfo directly, not Acute::Zone, so the two check each other.
-#   ruby test/corpus.rb [--record] [--grep TEXT] [--file NAME] [--list STATUS]
+#   ruby test/corpus.rb [--record] [--grep TEXT] [--file NAME] [--rule D20] [--list STATUS]
 require "json"
 require "time"
 require "date"
@@ -13,10 +13,16 @@ module Corpus
   RATCHET = File.join(ROOT, "test/corpus/passing.txt")
   WALL = /\A(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)(?::(\d\d))?\z/
   CHRONIC_ONLY = %w[endian_precedence hours24 ambiguous_time_range ambiguous_year_future_bias].freeze
+  GRAINS = %w[second minute hour day week month quarter year].freeze
   STATUSES = %w[pass alt_differs wrong nil garbage raises chronic_option other_kind].freeze
   TZS = Hash.new { |h, name| h[name] = TZInfo::Timezone.get(name) }
 
   module_function
+
+  # D-rules a case is tagged with or names in its note
+  def rules(c) = (c["tags"] || []).grep(/\AD\d+\z/) | c["note"].to_s.scan(/\bD\d+\b/)
+
+  def all_rules = File.read(File.join(ROOT, "research/decisions.md")).scan(/^### (D\d+)\./).flatten
 
   def load(file: nil, grep: nil)
     Dir[File.join(CASES, "*.jsonl")].sort.flat_map do |path|
@@ -101,7 +107,13 @@ module Corpus
     grep = (i = argv.index("--grep")) && argv.slice!(i, 2)[1]
     file = (i = argv.index("--file")) && argv.slice!(i, 2)[1]
     list = (i = argv.index("--list")) && argv.slice!(i, 2)[1]
+    rule = (i = argv.index("--rule")) && argv.slice!(i, 2)[1]
     cases = load(file: file, grep: grep)
+    if rule
+      covered = cases.flat_map { |c| rules(c) }.uniq
+      puts "rules with no cases: #{(all_rules - covered).join(", ")}"
+      cases = cases.select { |c| rules(c).include?(rule) }
+    end
     results = cases.map { |c| [c, *run_case(c)] }
 
     counts = results.map { |_, s, _| s }.tally
@@ -118,7 +130,7 @@ module Corpus
 
     if record
       abort "not recording: fix the regressions first" unless regressions.empty?
-      abort "not recording: --grep/--file run only part of the corpus" if grep || file
+      abort "not recording: --grep/--file/--rule run only part of the corpus" if grep || file || rule
       File.write(RATCHET, passing.join("\n") + "\n")
       puts "recorded #{passing.size} passing ids in test/corpus/passing.txt"
     end

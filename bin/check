@@ -1,8 +1,10 @@
 #!/usr/bin/env ruby
 # The one command: tables, unit tests, corpus ratchet, fuzz, speed. Prints one line per stage, and the
 # failures of a stage that failed.
-#   bin/check [--record] [--only tables|unit|corpus|fuzz|speed] [--grep TEXT] [--file NAME]
+#   bin/check [--record] [--only tables|unit|corpus|fuzz|speed] [--grep TEXT] [--file NAME] [--rule D20]
 # --grep and --file narrow the corpus and imply --only corpus. --record updates test/corpus/passing.txt.
+# --rule runs the cases tagged with or noting that rule and the unit tests that mention it, and lists the
+# rules no case covers.
 require "open3"
 require "rbconfig"
 
@@ -15,20 +17,37 @@ only = (i = args.index("--only")) && args.slice!(i, 2)[1]
 corpus_args = []
 %w[--grep --file].each { |flag| (i = args.index(flag)) && corpus_args.concat(args.slice!(i, 2)) }
 corpus_args << args.delete("--record") if args.include?("--record")
+rule = (i = args.index("--rule")) && args.slice!(i, 2)[1]
 abort "unknown arguments: #{args.join(" ")}" unless args.empty?
+abort "--rule takes a rule like D20" if rule && !rule.match?(/\AD\d+\z/)
 only ||= "corpus" if corpus_args.any? { _1 == "--grep" || _1 == "--file" }
+
+# The unit tests whose name, body or the comment above them mentions the rule
+def tests_naming(rule)
+  Dir[File.join(ROOT, "test/unit/*_test.rb")].flat_map do |path|
+    File.read(path).split(/^(?=(?:  #.*\n)*  def )/).filter_map do |chunk|
+      name = chunk[/^  def (test_\w+)/, 1]
+      name if name && (chunk.match?(/\b#{rule}\b/) || name.match?(/_#{rule.downcase}_/))
+    end
+  end
+end
 
 STAGES = {
   "tables" => [[RUBY, "bin/generate", "--check"], ->(out) { out.lines.last }],
-  "unit" => [[RUBY, "-Itest", "-e", UNIT], ->(out) { out[/^\d+ runs.*$/] }],
-  "corpus" => [[RUBY, "test/corpus.rb", *corpus_args], ->(out) { out }],
+  "unit" => if rule && (names = tests_naming(rule)).empty?
+              [[RUBY, "-e", "puts 'no unit tests mention #{rule}'"], ->(out) { out }]
+            else
+              [[RUBY, "-Itest", "-e", UNIT, *(["--", "-n", "/^(?:#{names.join("|")})$/"] if rule)], ->(out) { out[/^\d+ runs.*$/] }]
+            end,
+  "corpus" => [[RUBY, "test/corpus.rb", *corpus_args, *(["--rule", rule] if rule)], ->(out) { out }],
   "fuzz" => [[RUBY, "test/fuzz.rb"], ->(out) { out }],
   "speed" => [[RUBY, "test/speed.rb"], ->(out) { out }]
 }.freeze
 abort "--only takes one of #{STAGES.keys.join(", ")}" if only && !STAGES.key?(only)
+abort "--rule runs the unit and corpus stages" if rule && only && !%w[unit corpus].include?(only)
 
 started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-failed = STAGES.select { |name, _| only.nil? || only == name }.reject do |name, (cmd, summary)|
+failed = STAGES.select { |name, _| only ? only == name : !rule || %w[unit corpus].include?(name) }.reject do |name, (cmd, summary)|
   t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
   out, status = Open3.capture2e(*cmd, chdir: ROOT)
   secs = Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0
