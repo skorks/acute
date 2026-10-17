@@ -194,6 +194,10 @@ module Acute
           numeric = true
           @i += 2 * S
           next
+        elsif k == L::DASH && Date === last && last.sep && last.day && @t[@i + S] == L::CLOCK &&
+              @t[@i + 3] == @t[@i - 1] && @t[@i + 4] == @t[@i + S + 3]
+          @i += S # D44: "05/31/2024-14:15": a clock joined to a numeric date by a dash is its time, as after a T
+          next
         elsif k == L::DASH || (k == L::WORD && (RANGE[v] || v == :and))
           break
         end

@@ -67,13 +67,15 @@ module Acute
                      false, from.seconds)
       end
 
-      # D40: a clock range under way is today's, one answer; otherwise the next one (the previous in past
-      # context)
+      # D40: a clock range under way is today's, one answer, or yesterday's when it runs past midnight (D44);
+      # otherwise the next one (the previous in past context)
       def self.clocks(from, to, ctx)
         now = ctx.now_local
         f = Periodic.inside(from, nil, Period.span(:day, ctx, ctx.today), ctx)[0]
         span = Span.new(f.b, clock_after(to, ctx, f.b), f.grain, nil)
-        if ctx.past? ? span.b > now : span.e <= now
+        if span.b > now && span.e - DAY > now
+          span = Span.new(span.b - DAY, span.e - DAY, span.grain, nil)
+        elsif ctx.past? ? span.b > now : span.e <= now
           k = ctx.past? ? -DAY : DAY
           span = Span.new(span.b + k, span.e + k, span.grain, nil)
         end

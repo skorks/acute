@@ -41,7 +41,7 @@ module Acute
           return cur if cyc == :day # D1: "this morning" is today's, even once it has passed
           prev = Periodic.at(x, ctx, i - 1, cyc)
           return prev if prev.any? && prev[0].b <= now && prev[0].e > now # D8: the weekend under way
-          return cur if cur.empty? || cur[0].e > now
+          return cur if cur.empty? || cur[0].e > now || ctx.past # D44: looking back, the one passed
           ctx.note(THIS_PASSED)
           merge(Periodic.first(x, ctx, i + 1, cyc) { |s| s.e > now }, cur)
         else

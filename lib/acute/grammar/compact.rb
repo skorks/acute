@@ -70,10 +70,12 @@ module Acute
       end
     end
 
-    # D44: "9.30pm", "12.55 pm", "01.03.12 a.m.": numbers joined by dots before am or pm are a clock
+    # D44: "9.30pm", "12.55 pm", "01.03.12 a.m.", "at 12.30": numbers joined by dots before am or pm, or two
+    # after "at", are a clock
     def dotted_clock?(i)
       j = i + 2 * S
       return false unless @t[i + 2] & L::DIGITS <= 2 && @t[j] == L::NUM && @t[j + 2] & L::DIGITS == 2
+      return @t[j + S] != L::DOT && @t[j + 1] <= 59 if i >= S && @t[i - S] == L::AT
       j += 2 * S if @t[j + S] == L::DOT && @t[j + 2 * S] == L::NUM && @t[j + 2 * S + 2] & L::DIGITS == 2
       @t[j + S] == L::MER
     end
