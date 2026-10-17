@@ -40,4 +40,25 @@ class CompactTest < Minitest::Test
     assert_span "01.03.12pm", "2026-10-18 13:03:12 -04:00", 1
     assert_equal "2014-12-11", parse("11.12.2014").begin.strftime("%F")
   end
+
+  def test_d44_twelve_or_fourteen_digits_are_a_date_and_its_time
+    assert_span "19970902090807", "1997-09-02 09:08:07 -04:00", 1
+    assert_span "199709020908", "1997-09-02 09:08:00 -04:00", 60
+    assert_equal "2004-04-24 23:05:41 +00:00", wall(parse("20040425010541 CEST", zone: "UTC").begin)
+    assert_raises(Acute::ParseError) { parse("123456789012") }
+  end
+
+  def test_d44_an_apostrophe_year_or_one_past_31_comes_first
+    assert_equal "1969-05-31", parse("'69-5-31", now: "2010-06-15T14:00").begin.strftime("%F")
+    assert_equal "1969-05-31", parse("'69.05.31", now: "2010-06-15T14:00").begin.strftime("%F")
+    assert_equal "1978-12-22", parse("78-12-22", now: "2010-06-15T14:00").begin.strftime("%F")
+  end
+
+  def test_d44_24_00_is_the_end_of_the_day
+    assert_span "24:00", "2026-10-18 00:00:00 -04:00", 60
+    assert_span "24 o'clock", "2026-10-18 00:00:00 -04:00", 60
+    assert_span "2026-10-23 24:00", "2026-10-24 00:00:00 -04:00", 60
+    assert_raises(Acute::ParseError) { parse("24:01") }
+    assert_raises(Acute::ParseError) { parse("24:00 pm") }
+  end
 end

@@ -231,6 +231,11 @@ module Acute
             # "1990s", "90's"
             i = j
             t.push(DECADE, v, flags, st, i)
+          elsif nd == 12 || nd == 14
+            # D44: "19970902090807", a compact date and its time, lexed as "19970902T090807" is
+            f = nd - 8
+            f |= ZERO if s.getbyte(st + 8) == 48
+            t.push(NUM, s.byteslice(st, 8).to_i, 8, st, st + 8, NUM, s.byteslice(st + 8, nd - 8).to_i, f, st + 8, i)
           else
             flags |= SHORT if nd == 2 && st > 0 && s.getbyte(st - 1) == 39
             t.push(NUM, v, flags, st, i)

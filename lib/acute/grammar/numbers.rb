@@ -74,6 +74,10 @@ module Acute
           end
         end
         if t[i + S + 1] == :oclock
+          if v == 24 && @t[i + 2 * S] != L::MER # D44: as "24:00"
+            @i += 2 * S
+            return Clock.new(24, 0, 0, nil, nil, true, false)
+          end
           @i += S # read from the o'clock, so a meridiem after it is the clock's: "11 o'clock pm"
           return number(v, flags, true)
         end
@@ -134,10 +138,12 @@ module Acute
       short = false
       if @t[@i] == t[i + S] && @t[@i + S] == L::NUM
         digits = t[@i + S + 2] & L::DIGITS
-        # D37: year first only when the first number has four digits: "2026/11/23"
-        if t[i + 2] & L::DIGITS == 4 && digits <= 2
+        # D37: year first only when the first number has four digits: "2026/11/23"; D44: or is marked as a
+        # year by an apostrophe, or is past 31: "'69-5-31", "78-12-22"
+        f = t[i + 2]
+        if digits <= 2 && (f & L::DIGITS == 4 || (f & L::DIGITS == 2 && (f & L::SHORT != 0 || a > 31)))
           @i += 2 * S
-          return Date.new(a, b, t[@i - S + 1], nil, false)
+          return Date.new(a, b, t[@i - S + 1], nil, f & L::DIGITS == 2)
         end
         return failure(:invalid_date, @i + S) unless digits == 2 || digits == 4
         year = t[@i + S + 1]
@@ -275,8 +281,10 @@ module Acute
       sec = v % 100
       at = @i
       @i += S
-      return failure(:invalid_date, at) if hour > 23 || min > 59 || sec > 59
+      return failure(:invalid_date, at) if (hour > 23 && v != 240_000) || min > 59 || sec > 59
       kind = @t[@i]
+      # D44: "24:00" is the end of the day, 24-hour only
+      return Clock.new(24, 0, 0, nil, nil, true, flags & L::SECONDS != 0) if hour == 24 && kind != L::MER && kind != L::ART
       if kind == L::MER || (kind == L::ART && @t[at + 4] == @t[@i + 3]) # "9:00a"
         return failure(:invalid_date, at) if hour < 1 || hour > 12
         meridiem = kind == L::ART || @t[@i + 1] == 0 ? :am : :pm
