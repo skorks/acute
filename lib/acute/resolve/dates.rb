@@ -3,6 +3,8 @@ module Acute
     # Calendar dates: "2026-10-23", "oct 23", "10/23", "23.10.2026", "2015"
     module Dates
       ORDER = Assumption.for(:numeric_date_order)
+      CENTURY = Assumption.for(:century_from_00)
+      DECADE_CENTURY = Assumption.for(:decade_or_century)
       DAY = Period::DAY
       LONGEST = [0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31].freeze
 
@@ -13,7 +15,7 @@ module Acute
           return out
         end
         return Periodic.bare(d, ctx) unless d.year
-        y = d.year
+        y = d.short ? two_digit_year(d.year, ctx) : d.year
         return [] if y < 1 # D18
         m = d.month
         if (day = d.day)
@@ -27,6 +29,22 @@ module Acute
         else
           [Span.new(Calendar.year_start(y) * DAY, Calendar.year_start(y + 1) * DAY, :year, nil)]
         end
+      end
+
+      # D12: "the 15th century" from 1400, then from 1401; "the 90s" in the two-digit window; "the 2000s" the
+      # decade, then the century
+      def self.years(node, ctx)
+        y = node.short ? two_digit_year(node.year, ctx) : node.year
+        b = Calendar.year_start(y) * DAY
+        if node.unit == :century
+          ctx.note(CENTURY)
+          return [Span.new(b, Calendar.year_start(y + 100) * DAY, :century, nil),
+                  Span.new(Calendar.year_start(y + 1) * DAY, Calendar.year_start(y + 101) * DAY, :century, nil)]
+        end
+        decade = Span.new(b, Calendar.year_start(y + 10) * DAY, :decade, nil)
+        return [decade] unless y % 100 == 0 && !node.short
+        ctx.note(DECADE_CENTURY)
+        [decade, Span.new(b, Calendar.year_start(y + 100) * DAY, :century, nil)]
       end
 
       # D10, D37: the locale's order first (dots are always day first), then the other order when it is also

@@ -129,6 +129,18 @@ module Acute
       "thirty" => [:number, 30].freeze,
       "forty" => [:number, 40].freeze,
       "fifty" => [:number, 50].freeze,
+      "sixty" => [:number, 60].freeze,
+      "seventy" => [:number, 70].freeze,
+      "eighty" => [:number, 80].freeze,
+      "ninety" => [:number, 90].freeze,
+      "twenties" => [:decade, 20].freeze,
+      "thirties" => [:decade, 30].freeze,
+      "forties" => [:decade, 40].freeze,
+      "fifties" => [:decade, 50].freeze,
+      "sixties" => [:decade, 60].freeze,
+      "seventies" => [:decade, 70].freeze,
+      "eighties" => [:decade, 80].freeze,
+      "nineties" => [:decade, 90].freeze,
       "first" => [:ordinal, 1].freeze,
       "second" => [:ordinal, 2].freeze,
       "third" => [:ordinal, 3].freeze,
@@ -222,6 +234,8 @@ module Acute
       "t" => [:word, :t].freeze,
       "q" => [:word, :q].freeze,
       "fy" => [:word, :fy].freeze,
+      "ad" => [:word, :ad].freeze,
+      "a.d" => [:word, :ad].freeze,
       "tommorow" => [:day, 1].freeze,
     }.freeze
 
@@ -245,6 +259,6 @@ module Acute
 
     ENGLISH = ["may", "march", "sat", "sun", "second", "fall", "a", "mon", "wed", "start", "end", "last", "past", "this", "next", "d", "m", "s", "h", "w", "y", "lunch"].freeze
 
-    HINT_WORDS = ["a.m", "about", "aedt", "aest", "after", "afternoon", "ago", "and", "approximately", "apr", "april", "around", "aug", "august", "autumn", "before", "beginning", "between", "bst", "cdt", "centuries", "century", "cest", "cet", "christmas", "coming", "cst", "day", "days", "dec", "decade", "decades", "december", "early", "edt", "eight", "eighteen", "eighteenth", "eighth", "eleven", "eleventh", "end", "est", "evening", "fall", "feb", "february", "fifteen", "fifteenth", "fifth", "fifty", "first", "five", "fortnight", "fortnights", "forty", "four", "fourteen", "fourteenth", "fourth", "fri", "friday", "from", "gmt", "half", "halloween", "hence", "hour", "hours", "hrs", "jan", "january", "jul", "july", "jun", "june", "last", "late", "later", "lunch", "lunchtime", "mar", "march", "may", "mdt", "mid", "midday", "midnight", "min", "mins", "minute", "minutes", "mon", "monday", "month", "months", "morning", "mst", "next", "night", "nine", "nineteen", "nineteenth", "ninth", "noon", "nov", "november", "now", "o'clock", "oct", "october", "one", "p.m", "past", "pdt", "prev", "previous", "pst", "quarter", "quarters", "roughly", "sat", "saturday", "sec", "second", "seconds", "secs", "sep", "sept", "september", "seven", "seventeen", "seventeenth", "seventh", "since", "six", "sixteen", "sixteenth", "sixth", "spring", "start", "summer", "sun", "sunday", "ten", "tenth", "thanksgiving", "the", "third", "thirteen", "thirteenth", "thirtieth", "thirty", "this", "three", "through", "thru", "thu", "thur", "thurs", "thursday", "til", "till", "tmr", "tmrw", "today", "tomorrow", "tonight", "tue", "tues", "tuesday", "twelfth", "twelve", "twentieth", "twenty", "two", "until", "upcoming", "utc", "wed", "wednesday", "week", "weekend", "weekends", "weeks", "winter", "within", "wks", "xmas", "year", "years", "yesterday", "yrs"].freeze
+    HINT_WORDS = ["a.d", "a.m", "about", "aedt", "aest", "after", "afternoon", "ago", "and", "approximately", "apr", "april", "around", "aug", "august", "autumn", "before", "beginning", "between", "bst", "cdt", "centuries", "century", "cest", "cet", "christmas", "coming", "cst", "day", "days", "dec", "decade", "decades", "december", "early", "edt", "eight", "eighteen", "eighteenth", "eighth", "eighties", "eighty", "eleven", "eleventh", "end", "est", "evening", "fall", "feb", "february", "fifteen", "fifteenth", "fifth", "fifties", "fifty", "first", "five", "forties", "fortnight", "fortnights", "forty", "four", "fourteen", "fourteenth", "fourth", "fri", "friday", "from", "gmt", "half", "halloween", "hence", "hour", "hours", "hrs", "jan", "january", "jul", "july", "jun", "june", "last", "late", "later", "lunch", "lunchtime", "mar", "march", "may", "mdt", "mid", "midday", "midnight", "min", "mins", "minute", "minutes", "mon", "monday", "month", "months", "morning", "mst", "next", "night", "nine", "nineteen", "nineteenth", "nineties", "ninety", "ninth", "noon", "nov", "november", "now", "o'clock", "oct", "october", "one", "p.m", "past", "pdt", "prev", "previous", "pst", "quarter", "quarters", "roughly", "sat", "saturday", "sec", "second", "seconds", "secs", "sep", "sept", "september", "seven", "seventeen", "seventeenth", "seventh", "seventies", "seventy", "since", "six", "sixteen", "sixteenth", "sixth", "sixties", "sixty", "spring", "start", "summer", "sun", "sunday", "ten", "tenth", "thanksgiving", "the", "third", "thirteen", "thirteenth", "thirties", "thirtieth", "thirty", "this", "three", "through", "thru", "thu", "thur", "thurs", "thursday", "til", "till", "tmr", "tmrw", "today", "tomorrow", "tonight", "tue", "tues", "tuesday", "twelfth", "twelve", "twenties", "twentieth", "twenty", "two", "until", "upcoming", "utc", "wed", "wednesday", "week", "weekend", "weekends", "weeks", "winter", "within", "wks", "xmas", "year", "years", "yesterday", "yrs"].freeze
   end
 end

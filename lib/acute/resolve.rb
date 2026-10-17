@@ -59,6 +59,7 @@ module Acute
       when :open then Ranges.open(node, ctx)
       when :fuzzy then Fuzzy.spans(node, ctx)
       when :fiscal then Period.fiscal(node, ctx)
+      when :years then Dates.years(node, ctx)
       when :approx
         ctx.note(APPROXIMATE) # D14: the exact time, flagged
         spans(node.node, ctx)

@@ -39,6 +39,12 @@ module Acute
         end
       elsif nk == L::REL
         return clock_words(v) if t[i + S + 1] == :past && flags & L::WORDY != 0 || (v <= 30 && @t[i + 2 * S] == L::NUM)
+      elsif nk == L::DECADE
+        # "nineteen seventies"
+        if flags & L::WORDY != 0 && t[i + S + 2] & L::WORDY != 0 && v >= 10
+          @i += 2 * S
+          return Years.new(:decade, v * 100 + t[i + S + 1], false)
+        end
       elsif nk == L::NUM
         # "four twenty-three"
         if flags & L::WORDY != 0 && t[i + S + 2] & L::WORDY != 0 && v.between?(1, 12) && t[i + S + 1].between?(10, 59)
@@ -119,7 +125,7 @@ module Acute
     # "23 oct", "23 oct 2026"
     def day_month(day, i)
       @i = i + S
-      Date.new(year, @t[i + 1], day, nil, false)
+      dated(@t[i + 1], day)
     end
 
     # "oct", "oct 23", "oct 23rd, 2026", "may 2010"
@@ -128,20 +134,23 @@ module Acute
       @i += S
       day = nil
       k = @t[@i]
-      if (k == L::NUM || k == L::ORD) && @t[@i + 2] & L::DIGITS <= 2 && @t[@i + 1] >= 1 && @t[@i + 1] <= 31 &&
+      if (k == L::NUM || k == L::ORD) && @t[@i + 2] & (L::DIGITS | L::SHORT) <= 2 && @t[@i + 1] >= 1 && @t[@i + 1] <= 31 &&
          @t[@i + S] != L::MER && @t[@i + S] != L::UNIT
         day = @t[@i + 1]
         @i += S
       end
-      Date.new(year, m, day, nil, false)
+      dated(m, day)
     end
 
-    # An optional year after a date: four digits, or "of 2026"
-    def year
+    # The date with its optional year after it: four digits, "of 2026", or "'26" (D23)
+    def dated(m, day)
       @i += S if @t[@i + 1] == :of && @t[@i + S] == L::NUM
-      return unless @t[@i] == L::NUM && @t[@i + 2] & L::DIGITS == 4 && @t[@i + 2] & L::ZERO == 0
-      @i += S
-      @t[@i - S + 1]
+      f = @t[@i + 2]
+      if @t[@i] == L::NUM && ((f & L::DIGITS == 4 && f & L::ZERO == 0) || f & L::SHORT != 0)
+        @i += S
+        return Date.new(@t[@i - S + 1], m, day, nil, f & L::SHORT != 0)
+      end
+      Date.new(nil, m, day, nil, false)
     end
 
     def named(hour) = Clock.new(hour, 0, 0, nil, hour == 12 ? :noon : :midnight, false, false)
@@ -152,6 +161,7 @@ module Acute
       zero = flags & L::ZERO != 0
       at = @i
       @i += S
+      return Date.new(v, nil, nil, nil, true) if flags & L::SHORT != 0 # "halloween '11"
       kind = @t[@i]
       if (kind == L::MER || (kind == L::ART && @t[at + 4] == @t[@i + 3])) && digits <= 2 # "8a"
         return failure(:invalid_date, at) if v < 1 || v > 12

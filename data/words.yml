@@ -146,6 +146,20 @@ number:
   thirty: 30
   forty: 40
   fifty: 50
+  sixty: 60
+  seventy: 70
+  eighty: 80
+  ninety: 90
+
+decade:         # D12: value: the decade's last two digits
+  twenties: 20
+  thirties: 30
+  forties: 40
+  fifties: 50
+  sixties: 60
+  seventies: 70
+  eighties: 80
+  nineties: 90
 
 ordinal:        # "second" is also the unit, by context
   first: 1
@@ -257,6 +271,8 @@ word:           # function words; the grammar gives them their meaning
   t: t
   q: q
   fy: fy
+  ad: ad
+  a.d: ad
 
 # Several words read as one token, longest first. Spaces in a key stand for any run of spaces or hyphens.
 phrases:

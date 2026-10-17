@@ -28,6 +28,8 @@ module Acute
     Holiday = Struct.new(:name)
     Weekend = Struct.new(:count)
     Fiscal = Struct.new(:year)
+    # A decade or century from its first year; short: a decade's two digits, for the 50-year window (D12)
+    Years = Struct.new(:unit, :year, :short)
     # A unit, alone ("next week") or counted ("next 3 days", "3 days" in "3 days ago")
     Unit = Struct.new(:unit, :count)
     Rel = Struct.new(:word, :node)              # next / this / last / past / coming
@@ -46,12 +48,13 @@ module Acute
     KIND = { Clock => :clock, DayRef => :day_ref, Date => :date, Weekday => :weekday, Part => :part, Season => :season,
              Holiday => :holiday, Weekend => :weekend, Fiscal => :fiscal, Unit => :unit, Rel => :rel, Shift => :shift,
              Nth => :nth, Within => :within, Range => :range, Open => :open, Approx => :approx, Fuzzy => :fuzzy,
-             Zoned => :zoned, Now => :now }.freeze
+             Zoned => :zoned, Now => :now, Years => :years }.freeze
 
     L = Lexer
     S = Lexer::STRIDE
     OPEN = { after: :after, before: :before, since: :since, until: :until, by: :until }.freeze
     RANGE = { to: true, through: true, until: true }.freeze
+    SHIFT_TAIL = { ago: true, hence: true, later: true, from: true, after: true, before: true }.freeze
     UNIT_SIZE = { second: 0, minute: 0, hour: 0, day: 2, business_day: 2, week: 3, fortnight: 3, month: 5,
                   quarter: 6, year: 7, decade: 8, century: 9 }.freeze
 

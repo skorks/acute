@@ -31,8 +31,9 @@ module Acute
     DASH = 21
     DOT = 22    # only between digits
     PLUS = 23
+    DECADE = 24 # value: the number as written, 90 or 1990; flags: digit count, WORDY
     KIND_NAMES = Ractor.make_shareable(%w[NUM CLOCK MER DAY NAMED NOW AT WDAY MONTH UNIT REL ORD PART SEASON HOLIDAY WEEKEND ZONE FUZZ ART
-                    WORD SLASH DASH DOT PLUS])
+                    WORD SLASH DASH DOT PLUS DECADE])
 
     DIGITS = 15
     ZERO = 16
@@ -40,11 +41,12 @@ module Acute
     WORDY = 64     # a number or ordinal written as a word
     ENGLISH = 128  # also an ordinary English word ("may", "sat", "second"), for extraction
     CAP = 256      # written with a capital
+    SHORT = 512    # two digits after an apostrophe: a year with its century left out, "'26"
 
     KINDS = {
       day: DAY, meridiem: MER, named: NAMED, now: NOW, at: AT, weekday: WDAY, month: MONTH, unit: UNIT,
       relative: REL, number: NUM, ordinal: ORD, part: PART, season: SEASON, holiday: HOLIDAY, weekend: WEEKEND,
-      zone: ZONE, fuzzy: FUZZ, article: ART, word: WORD
+      zone: ZONE, fuzzy: FUZZ, article: ART, word: WORD, decade: DECADE
     }.freeze
 
     # A word packs into an Integer, 5 bits a character, so lookup needs no substring
@@ -60,7 +62,7 @@ module Acute
     # [kind, value, flags, whether it is "one" to "nine" or "first" to "ninth", which join a "twenty" before them]
     def self.entry(word, kind, value)
       kind = KINDS.fetch(kind)
-      flags = kind == NUM || kind == ORD ? WORDY : 0
+      flags = kind == NUM || kind == ORD || kind == DECADE ? WORDY : 0
       flags |= ENGLISH if Tables::ENGLISH.include?(word)
       [kind, value, flags, flags & WORDY != 0 && value < 10].freeze
     end
@@ -146,6 +148,8 @@ module Acute
             else
               t.push(kind, value, flags, st, i)
             end
+          elsif k == 28 && i < n && CLASS[s.getbyte(i)] == DIGIT
+            # an apostrophe for the century left out: "'90s", "'00"
           else
             return Failure.new(:unknown_word, st, i) unless unknown
             unknown << st << i
@@ -189,7 +193,12 @@ module Acute
           elsif i + 1 < n && SUFFIX[(c | 32) << 8 | (s.getbyte(i + 1) | 32)] && (i + 2 >= n || !ALPHA[s.getbyte(i + 2)])
             i += 2
             t.push(ORD, v, flags, st, i)
+          elsif (c | 32 == 115 || c == 39) && (nd == 2 || nd == 4) && v % 10 == 0 && (j = decade_end(s, i, n))
+            # "1990s", "90's"
+            i = j
+            t.push(DECADE, v, flags, st, i)
           else
+            flags |= SHORT if nd == 2 && st > 0 && s.getbyte(st - 1) == 39
             t.push(NUM, v, flags, st, i)
             # "2026-10-23": the hyphens and month of an ISO date at once, as the loop would lex them
             if nd == 4 && c == 45 && i + 4 < n && CLASS[a = s.getbyte(i + 1)] == DIGIT &&
@@ -247,6 +256,13 @@ module Acute
         return [j, entry] if ok && (j >= n || !ALPHA[s.getbyte(j)])
       end
       nil
+    end
+
+    # Where a decade's "s" or "'s" ends, or nil
+    def self.decade_end(s, i, n)
+      i += 1 if i + 1 < n && s.getbyte(i) == 39
+      return unless i < n && s.getbyte(i) | 32 == 115
+      i + 1 >= n || !ALPHA[s.getbyte(i + 1)] ? i + 1 : nil
     end
 
     # A malformed clock ("4:3", "123:00") is one unknown word, to the end of its digits, colons and letters

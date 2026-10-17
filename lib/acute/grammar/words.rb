@@ -44,8 +44,17 @@ module Acute
       elsif k == L::UNIT
         return clock_words(15) if v == :quarter && @t[i + S] == L::REL || @t[i + S + 1] == :to
         failure(:incomplete)
+      elsif k == L::DECADE then decade_atom
       else failure(:conflict)
       end
+    end
+
+    # "the 90s", "1990s"; "30s ago" is seconds
+    def decade_atom
+      return shift_tail(quantity) if @t[@i + 2] == 2 && SHIFT_TAIL[@t[@i + S + 1]]
+      v = @t[@i + 1]
+      @i += S
+      Years.new(:decade, v, v < 100)
     end
 
     def word_atom(v)
@@ -92,6 +101,9 @@ module Acute
           count = Rational(count, @t[i + 2 * S + 1])
           i += 2 * S
         end
+      elsif @t[i] == L::DECADE && @t[i + 2] == 2 # "30s": seconds, not the thirties
+        @i = i + S
+        return Unit.new(:second, @t[i + 1])
       else return
       end
       unit = unit_at(i + S)
@@ -161,16 +173,22 @@ module Acute
       n = @t[@i + 1]
       @i += S
       k = @t[@i]
+      # D12: "the 15th century", "the 3rd century A.D."
+      if k == L::UNIT && @t[@i + 1] == :century && @t[@i + S + 1] != :of && n >= 1
+        @i += S
+        @i += S if @t[@i + 1] == :ad
+        return Years.new(:century, (n - 1) * 100, false)
+      end
       if k == L::WDAY || k == L::UNIT || k == L::WEEKEND
         inner = k == L::WDAY ? Weekday.new(@t[@i + 1]) : k == L::UNIT ? Unit.new(@t[@i + 1], nil) : WEEKEND
         @i += S
         return of(Nth.new(n, inner))
       elsif k == L::MONTH
         @i += S
-        return Date.new(year, @t[@i - S + 1], n, nil, false)
+        return dated(@t[@i - S + 1], n)
       elsif @t[@i + 1] == :of && @t[@i + S] == L::MONTH
         @i += 2 * S
-        return Date.new(year, @t[@i - S + 1], n, nil, false)
+        return dated(@t[@i - S + 1], n)
       end
       return failure(:invalid_date, @i - S) if n < 1 || n > 31
       # "first" alone is not a date; "the first" and "first of next month" are
@@ -244,6 +262,7 @@ module Acute
       @i += S
       @i += S if @t[@i + 1] == :of
       @i += S if @t[@i + 1] == :the
+      @i += S if @t[@i] == L::DASH && (@t[@i + S] == L::NUM || @t[@i + S] == L::DECADE) # "mid-1990s"
       return failure(:incomplete) if @i >= @n
       node = @t[@i] == L::UNIT ? this_unit : atom(true)
       Failure === node ? node : Fuzzy.new(pos, node)

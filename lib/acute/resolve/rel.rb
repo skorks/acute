@@ -6,15 +6,17 @@ module Acute
       NEXT_TWO = Assumption.for(:next_two_readings)
       THIS_PASSED = Assumption.for(:this_passed)
       ROLLING = Assumption.for(:rolling_window)
+      CENTURY = Assumption.for(:century_from_00)
       TONIGHT = G::Part.new(:tonight).freeze
 
       def self.spans(node, ctx)
         x = node.node
         word = node.word
         return periodic(word, x, ctx) unless G::Unit === x || G::Clock === x
+        return unit(word, x.unit, ctx) if G::Unit === x && !x.count
         word = :next if word == :coming
         return clock(word, x, ctx) if G::Clock === x
-        x.count ? counted(word, x.count, x.unit, ctx) : unit(word, x.unit, ctx)
+        counted(word, x.count, x.unit, ctx)
       end
 
       # D20, D21, D32, D40
@@ -67,9 +69,9 @@ module Acute
       # "next week", "this month", "last year"; D38 for hours and minutes; D31 for "past week"
       def self.unit(word, u, ctx)
         now = ctx.now_local
-        return counted(word == :this ? :next : word, 2, :week, ctx) if u == :fortnight # D40
+        return counted(word == :this || word == :coming ? :next : word, 2, :week, ctx) if u == :fortnight # D40
         return counted(:past, 1, u, ctx) if word == :past
-        k = word == :next ? 1 : word == :this ? 0 : -1
+        k = word == :next || word == :coming ? 1 : word == :this ? 0 : -1
         if u == :business_day
           b = Period.business(Period.day(now) * DAY, k)
           return [Span.new(b, b + DAY, :day, nil)]
@@ -77,6 +79,16 @@ module Acute
         cur = Period.unit(u, ctx, now)
         b = Period.add(cur.b, k, u)
         calendar = Span.new(b, Period.add(b, 1, u), cur.grain, nil)
+        if u == :century # D12, D44
+          ctx.note(CENTURY)
+          return [calendar, Span.new(Period.add(b, 1, :year), Period.add(calendar.e, 1, :year), cur.grain, nil)]
+        end
+        if u == :decade && k != 0 && word != :coming # D40: the ten years from now first; "this coming" is the next to start
+          rolling = k > 0 ? Span.new(now, Period.add(now, 1, u), u, nil) : Span.new(Period.add(now, -1, u), now, u, nil)
+          return [calendar] if rolling.b == calendar.b
+          ctx.note(ROLLING)
+          return [rolling, calendar]
+        end
         # D42: not "next second", whose rolling reading would be this second
         return [calendar] unless (u == :hour || u == :minute) && k != 0
         ctx.note(ROLLING)

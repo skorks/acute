@@ -49,6 +49,12 @@ weekend_friday_evening:
 meteorological_season:
   rule: D3
   message: "seasons are meteorological (three whole months) for the locale's hemisphere"
+century_from_00:
+  rule: D12
+  message: "a century runs from its 00 year, as most people count it; the 01-to-00 reading is an alternative"
+decade_or_century:
+  rule: D12
+  message: "a decade at a century's start (\"the 2000s\") is the decade; the whole century is an alternative"
 season_year:
   rule: D3
   message: "a season that runs over New Year belongs to the year it starts in; the one ending in that year is an alternative"

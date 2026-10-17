@@ -49,7 +49,7 @@ module Acute
       return unless y
       d = atoms.index { |a| Date === a && a.year.nil? && a.month }
       return unless d
-      atoms[d] = Date.new(atoms[y].year, atoms[d].month, atoms[d].day, atoms[d].sep, false)
+      atoms[d] = Date.new(atoms[y].year, atoms[d].month, atoms[d].day, atoms[d].sep, atoms[y].short)
       atoms.delete_at(y)
       starts.delete_at(y)
     end
@@ -64,7 +64,7 @@ module Acute
       when :date then a.day ? 2 : a.month ? 5 : 7
       when :season then 6
       when :fiscal then 7
-      when :unit then UNIT_SIZE[a.unit]
+      when :unit, :years then UNIT_SIZE[a.unit]
       when :rel then size(a.node)
       when :fuzzy then size(a.node) - 1
       when :nth then Unit === a.node ? UNIT_SIZE[a.node.unit] : size(a.node)
