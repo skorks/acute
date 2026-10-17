@@ -148,6 +148,10 @@ module Acute
       elsif (d = t[i + 2 * S + 2] & L::DIGITS) == 4 || t[i + 2] & L::DIGITS == 4
         # D44: "11/2026", "2013/12": a month and its year
         return d == 4 ? Date.new(b, a, nil, nil, false) : Date.new(a, b, nil, nil, false) if (d == 4 ? a : b).between?(1, 12)
+      elsif @t[@i] == L::NUM && short_year?(@t[@i + 2]) # D44: "08/12,15", as "3 jan 10"
+        year = @t[@i + 1]
+        short = true
+        @i += S
       end
       Date.new(year, a, b, sep, short)
     end

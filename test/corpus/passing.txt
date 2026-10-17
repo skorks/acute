@@ -12174,6 +12174,7 @@ recognizers-0015
 recognizers-0016
 recognizers-0017
 recognizers-0018
+recognizers-0019
 recognizers-0020
 recognizers-0021
 recognizers-0022
@@ -12613,6 +12614,7 @@ recognizers-0506
 recognizers-0507
 recognizers-0508
 recognizers-0511
+recognizers-0513
 recognizers-0514
 recognizers-0515
 recognizers-0516

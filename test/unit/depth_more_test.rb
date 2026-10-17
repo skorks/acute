@@ -38,4 +38,10 @@ class DepthMoreTest < Minitest::Test
     assert_equal ["2026-10-19 00:00:00 -04:00", "2026-10-22 00:00:00 -04:00"], span("3 days starting from next Monday")
     assert_equal ["2027-02-04 00:00:00 -05:00", "2027-02-11 00:00:00 -05:00"], span("the week commencing february 4")
   end
+
+  def test_d44_two_digits_after_a_numeric_day_and_month_are_its_year
+    r = parse("08/12,15")
+    assert_equal ["2015-08-12 00:00:00 -04:00", :day], [wall(r.begin), r.grain]
+    assert_equal "2027-08-12 15:00:00 -04:00", wall(parse("08/12 15:00").begin)
+  end
 end
