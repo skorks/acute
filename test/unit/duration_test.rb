@@ -107,6 +107,47 @@ class DurationTest < Minitest::Test
     assert_equal({ seconds: 30 }, Acute.duration("30s").parts)
   end
 
+  NOW = Time.new(2026, 10, 17, 14, 0, 0, "-04:00")
+
+  def after(text, time = NOW, **opts) = wall(Acute.duration(text).after(time, zone: NY, **opts))
+
+  def test_d47_after_reads_as_from_that_time
+    assert_equal "2026-10-31 14:00:00 -04:00", after("2 weeks")
+    assert_equal "2026-10-21 14:00:00 -04:00", after("3 business days")
+    assert_equal "2026-10-17 15:30:00 -04:00", after("1h30m")
+    assert_equal "2027-02-28 00:00:00 -05:00", after("1 month", Time.new(2027, 1, 31, 0, 0, 0, "-05:00"))
+    assert_equal wall(parse("1 year 2 months 3 days 4 hours from now").time), after("1 year 2 months 3 days 4 hours")
+  end
+
+  def test_d47_after_keeps_the_wall_clock_for_days_and_elapsed_time_for_hours
+    fall_back = Time.new(2026, 10, 31, 12, 0, 0, "-04:00")
+    assert_equal "2026-11-01 12:00:00 -05:00", after("1 day", fall_back)
+    assert_equal "2026-11-01 11:00:00 -05:00", after("24 hours", fall_back)
+  end
+
+  def test_d47_after_keeps_fractions_of_a_second
+    t = Acute.duration("123.45 seconds").after(NOW + Rational(1, 10), zone: NY)
+    assert_equal NOW + Rational(12_355, 100), t
+    assert_equal NOW, Acute::Duration.new(seconds: 0).after(NOW, zone: NY)
+  end
+
+  def test_d47_seconds_from_a_time
+    assert_equal 2_419_200, Acute.duration("1 month").seconds(from: Time.new(2027, 2, 1, 0, 0, 0, "-05:00"), zone: NY)
+    assert_equal 2_678_400, Acute.duration("1 month").seconds(from: Time.new(2027, 1, 1, 0, 0, 0, "-05:00"), zone: NY)
+    assert_equal 90_000, Acute.duration("1 day").seconds(from: Time.new(2026, 10, 31, 12, 0, 0, "-04:00"), zone: NY)
+    assert_raises(ArgumentError) { Acute.duration("1 month").seconds }
+  end
+
+  def test_d47_duration_bang_raises_what_duration_returns_nil_for
+    assert_equal Acute.duration("90 min"), Acute.duration!("90 min")
+    e = assert_raises(Acute::ParseError) { Acute.duration!("3 bananas") }
+    assert_equal :unknown_word, e.code
+    e = assert_raises(Acute::ParseError) { Acute.duration!("next friday") }
+    assert_equal :conflict, e.code
+    assert_equal :too_long, assert_raises(Acute::ParseError) { Acute.duration!("1 hour " * 200) }.code
+    assert_raises(ArgumentError) { Acute.duration!(5) }
+  end
+
   def test_equal_by_parts
     assert_equal Acute::Duration.new(minutes: 30, hours: 1), Acute.duration("1h30m")
     assert_raises(ArgumentError) { Acute::Duration.new(fortnights: 1) }

@@ -38,13 +38,26 @@ module Acute
   # the same calls as everything else; a length doesn't depend on them.
   def self.duration(text, now: nil, zone: nil, context: :future, locale: nil, week_start: nil, hemisphere: nil,
                     fiscal_year_start: nil, strict: true, dst: nil, holidays: nil, business_days: nil, year_bias: nil)
-    raise ArgumentError, "text must be a String, got #{text.class}" unless String === text
-    return if text.bytesize > MAX_LENGTH
-    tokens = Lexer.lex(text)
-    return if Failure === tokens
-    units = Grammar.duration(tokens)
-    Failure === units ? nil : Duration.from_units(units)
+    out = length(text)
+    Duration === out ? out : nil
   end
+
+  def self.duration!(text, now: nil, zone: nil, context: :future, locale: nil, week_start: nil, hemisphere: nil,
+                     fiscal_year_start: nil, strict: true, dst: nil, holidays: nil, business_days: nil, year_bias: nil)
+    out = length(text)
+    raise Explain.error(out, text) if Failure === out
+    out
+  end
+
+  def self.length(text)
+    raise ArgumentError, "text must be a String, got #{text.class}" unless String === text
+    return Failure.new(:too_long, 0, text.bytesize) if text.bytesize > MAX_LENGTH
+    tokens = Lexer.lex(text)
+    return tokens if Failure === tokens
+    units = Grammar.duration(tokens)
+    Failure === units ? units : Duration.from_units(units)
+  end
+  private_class_method :length
 
   # strict: is taken and has no effect: extract always skips the words it doesn't know
   def self.extract(text, now: nil, zone: nil, context: :future, locale: nil, week_start: nil, hemisphere: nil,

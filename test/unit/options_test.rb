@@ -97,6 +97,7 @@ class OptionsTest < Minitest::Test
     assert_equal "2026-10-21 14:00:00 -04:00", wall(parse("3 business days from now").time)
     assert_equal "2026-10-22 14:00:00 -04:00", wall(parse("3 business days from now", holidays: o).time)
     assert_equal Date.new(2026, 10, 20), parse("next business day", holidays: o).date
+    assert_equal "2026-10-22 14:00:00 -04:00", wall(Acute.duration("3 business days").after(Time.new(2026, 10, 17, 14, 0, 0, "-04:00"), zone: NY, holidays: o))
   end
 
   def test_d47_built_in_holidays_are_not_days_off

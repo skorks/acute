@@ -14,6 +14,8 @@ module Acute
     LONG = Ractor.make_shareable({ years: "year", months: "month", weeks: "week", business_days: "business day",
                                    days: "day", hours: "hour", minutes: "minute", seconds: "second" })
     ORDER = SHORT.keys.freeze
+    UNIT = { years: :year, months: :month, weeks: :week, business_days: :business_day, days: :day, hours: :hour,
+             minutes: :minute }.freeze
 
     attr_reader :parts
 
@@ -43,12 +45,29 @@ module Acute
 
     def kind = :duration
 
-    def seconds
+    # With from:, the seconds from that Time to #after it
+    def seconds(from: nil, **ctx)
+      return whole(after(from, **ctx).to_r - from.to_r) if from
       calendar = @parts.keys - FIXED.keys
       if calendar.any?
         raise ArgumentError, "a #{LONG[calendar[0]]} has no fixed length; use #after or #seconds(from:)"
       end
       @parts.sum { |k, n| n * FIXED[k] }
+    end
+
+    # D47: the Time this long after time, as "<this> from <time>" reads (D23): years and months first, on the
+    # calendar, then weeks and days of wall clock, then hours to seconds of elapsed time
+    def after(time, zone: nil, context: :future, locale: nil, week_start: nil, hemisphere: nil, fiscal_year_start: nil,
+              strict: true, dst: nil, holidays: nil, business_days: nil, year_bias: nil)
+      ctx = Context.new(time, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays,
+                        business_days, year_bias)
+      seconds = @parts.fetch(:seconds, 0)
+      node = @parts.reduce(nil) do |anchor, (part, n)|
+        part == :seconds ? anchor : Grammar::Shift.new(n, UNIT[part], anchor)
+      end
+      node = Grammar::Shift.new(seconds.floor, :second, node) if node.nil? || seconds.floor != 0
+      epoch = Resolve.call(node, ctx)[0].begin
+      Time.at(epoch, in: ctx.zone.offset_at(epoch)) + (seconds - seconds.floor) + (Time === time ? time.subsec : 0)
     end
 
     # Weeks alone stay weeks ("P2W"); ISO 8601 has no business days, so those give nil

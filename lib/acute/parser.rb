@@ -50,6 +50,8 @@ module Acute
 
     def duration(text, **ctx) = Acute.duration(text, **@options, **ctx)
 
+    def duration!(text, **ctx) = Acute.duration!(text, **@options, **ctx)
+
     def with(**more) = Parser.new(**@options, **more)
 
     def inspect = "#<Acute::Parser #{@options.map { "#{_1}: #{_2.inspect}" }.join(", ")}>"

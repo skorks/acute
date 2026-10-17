@@ -15,6 +15,8 @@ class ParserTest < Minitest::Test
     assert_equal Date.new(2027, 2, 1), SYD.parse("1/2/2027").date
     assert_equal Date.new(2027, 1, 2), Acute.with(zone: NY).parse("1/2/2027").date
     assert_equal 5400, SYD.duration("90 min").seconds
+    assert_equal 5400, SYD.duration!("90 min").seconds
+    assert_raises(Acute::ParseError) { SYD.duration!("next friday") }
   end
 
   def test_every_entry_point_uses_the_options
