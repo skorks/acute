@@ -59,7 +59,7 @@ class ExtractTest < Minitest::Test
   end
 
   def test_the_longest_accepted_prefix_wins
-    assert_equal [[:time, "two days ago 00:00:00", 0...21]], mentions("two days ago 00:00:00 am")
+    assert_equal [[:time, "two days ago 00:00:00", 0...21]], mentions("two days ago 00:00:00 pm")
     assert_equal [[:time, "2004-05-05 12:00:00", 0...19], [:duration, "6 months", 20...28]],
                  mentions("2004-05-05 12:00:00 6 months")
   end

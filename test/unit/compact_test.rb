@@ -85,4 +85,16 @@ class CompactTest < Minitest::Test
     assert_span "at 12 15", "2026-10-18 12:15:00 -04:00", 60
     assert_raises(Acute::ParseError) { parse("at 3 75") }
   end
+
+  def test_d44_two_digits_past_31_after_a_month_are_its_year
+    assert_span "dec 79", "1979-12-01 00:00:00 -05:00", 31 * 86_400
+    assert_equal "2032-08-01", parse("August 32").begin.strftime("%F")
+    assert_raises(Acute::ParseError) { parse("may 40 pm") }
+  end
+
+  def test_d44_hour_0_with_am_is_midnight
+    assert_span "monday 0am", "2026-10-19 00:00:00 -04:00", 60
+    assert_span "00:00:00 am", "2026-10-18 00:00:00 -04:00", 1
+    assert_raises(Acute::ParseError) { parse("0pm") }
+  end
 end

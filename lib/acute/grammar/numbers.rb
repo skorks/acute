@@ -234,7 +234,9 @@ module Acute
         @i += 2 * S
         return Date.new(@t[@i - 2 * S + 1], m, day, nil, false)
       end
-      if @t[@i] == L::NUM && ((f & L::DIGITS == 4 && f & L::ZERO == 0) || f & L::SHORT != 0 || (day && short_year?(f)))
+      # D44: "dec 79", "may 97": with no day, two digits past 31 are the year
+      if @t[@i] == L::NUM && ((f & L::DIGITS == 4 && f & L::ZERO == 0) || f & L::SHORT != 0 ||
+                              ((day || @t[@i + 1] > 31) && short_year?(f)))
         @i += S
         return Date.new(@t[@i - S + 1], m, day, nil, f & L::DIGITS != 4)
       end
@@ -260,7 +262,7 @@ module Acute
       @i += 2 * S if in_the_meridiem?
       kind = @t[@i]
       if (kind == L::MER || (kind == L::ART && @t[at + 4] == @t[@i + 3])) && digits <= 2 # "8a"
-        return failure(:invalid_date, at) if v < 1 || v > 12
+        return failure(:invalid_date, at) if (v < 1 && !midnight_am?(kind)) || v > 12
         meridiem = kind == L::ART || @t[@i + 1] == 0 ? :am : :pm
         @i += S
         Clock.new(v, 0, 0, meridiem, nil, false, false)

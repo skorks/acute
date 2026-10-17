@@ -178,6 +178,9 @@ module Acute
     # D44: "3 in the AM", "4:30 in the pm": am or pm after "in the" is the clock's
     def in_the_meridiem? = @t[@i + 1] == :in && @t[@i + S + 1] == :the && @t[@i + 2 * S] == L::MER && @t[@i] == L::WORD
 
+    # D44: "0am", "00:00 am": hour 0 with am is midnight, as said by those who write 24-hour clocks
+    def midnight_am?(kind) = kind == L::MER && @t[@i + 1] == 0
+
     def written(v, flags)
       hour = v / 10_000
       min = v / 100 % 100
@@ -190,7 +193,7 @@ module Acute
       # D44: "24:00" is the end of the day, 24-hour only
       return Clock.new(24, 0, 0, nil, nil, true, flags & L::SECONDS != 0) if hour == 24 && kind != L::MER && kind != L::ART
       if kind == L::MER || (kind == L::ART && @t[at + 4] == @t[@i + 3]) # "9:00a"
-        return failure(:invalid_date, at) if hour < 1 || hour > 12
+        return failure(:invalid_date, at) if (hour < 1 && !midnight_am?(kind)) || hour > 12
         meridiem = kind == L::ART || @t[@i + 1] == 0 ? :am : :pm
         @i += S
         Clock.new(hour, min, sec, meridiem, nil, false, flags & L::SECONDS != 0)

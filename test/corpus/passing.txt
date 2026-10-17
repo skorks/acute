@@ -418,6 +418,7 @@ chronic-forks-test-test-parsing-rb-58-1
 chronic-forks-test-test-parsing-rb-585-1
 chronic-forks-test-test-parsing-rb-61-1
 chronic-forks-test-test-parsing-rb-65-1
+chronic-forks-test-test-parsing-rb-68-1
 chronic-forks-test-test-parsing-rb-685-1
 chronic-forks-test-test-parsing-rb-688-1
 chronic-forks-test-test-parsing-rb-708-1
@@ -496,6 +497,7 @@ chronic-issues-122-2
 chronic-issues-122-3
 chronic-issues-124-1
 chronic-issues-124-2
+chronic-issues-125-2
 chronic-issues-126-1
 chronic-issues-126-2
 chronic-issues-127-1
@@ -958,6 +960,8 @@ chronic-issues-378-3
 chronic-issues-378-4
 chronic-issues-380-1
 chronic-issues-380-2
+chronic-issues-383-1
+chronic-issues-383-2
 chronic-issues-385-1
 chronic-issues-386-1
 chronic-issues-386-2
@@ -989,6 +993,7 @@ chronic-issues-397-3
 chronic-issues-397-4
 chronic-issues-397-5
 chronic-issues-397-6
+chronic-issues-40-1
 chronic-issues-400-1
 chronic-issues-400-2
 chronic-issues-402-1
@@ -1389,6 +1394,8 @@ chronic-tests-test-parsing-rb-147-1
 chronic-tests-test-parsing-rb-15-1
 chronic-tests-test-parsing-rb-150-1
 chronic-tests-test-parsing-rb-153-1
+chronic-tests-test-parsing-rb-161-1
+chronic-tests-test-parsing-rb-167-1
 chronic-tests-test-parsing-rb-172-1
 chronic-tests-test-parsing-rb-177-1
 chronic-tests-test-parsing-rb-18-1
@@ -1457,6 +1464,7 @@ chronic-tests-test-parsing-rb-427-1
 chronic-tests-test-parsing-rb-43-1
 chronic-tests-test-parsing-rb-442-1
 chronic-tests-test-parsing-rb-46-1
+chronic-tests-test-parsing-rb-460-1
 chronic-tests-test-parsing-rb-465-1
 chronic-tests-test-parsing-rb-468-1
 chronic-tests-test-parsing-rb-472-1
@@ -1682,6 +1690,7 @@ chrono-node-0084
 chrono-node-0086
 chrono-node-0088
 chrono-node-0089
+chrono-node-0090
 chrono-node-0091
 chrono-node-0092
 chrono-node-0093
@@ -13021,6 +13030,8 @@ recognizers-0410
 recognizers-0411
 recognizers-0412
 recognizers-0413
+recognizers-0414
+recognizers-0415
 recognizers-0416
 recognizers-0417
 recognizers-0418
