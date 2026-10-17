@@ -16,7 +16,7 @@ class ZoneTest < Minitest::Test
       zone = Acute::Zone.for(name)
       tz = TZInfo::Timezone.get(name)
       probes = tz.transitions_up_to(Time.utc(2200), Time.utc(1900)).flat_map { |t| [t.timestamp_value - 1, t.timestamp_value] }
-      (probes + [Time.utc(1900).to_i, Time.utc(2199, 7).to_i]).each do |epoch|
+      (probes + [Time.utc(1900).to_i]).each do |epoch|
         period = tz.period_for_utc(Time.at(epoch).utc)
         assert_equal period.observed_utc_offset, zone.offset_at(epoch), "#{name} #{epoch}"
         assert_equal period.abbreviation, zone.abbreviation_at(epoch), "#{name} #{epoch}"
@@ -78,6 +78,39 @@ class ZoneTest < Minitest::Test
   def test_accepts_a_tzinfo_zone_and_shares_one_table
     assert_same Acute::Zone.for("Asia/Tokyo"), Acute::Zone.for(TZInfo::Timezone.get("Asia/Tokyo"))
     assert Acute::Zone.for("Asia/Tokyo").frozen?
+  end
+
+  # The nth (or, with -1, last) Sunday of a month, at hour o'clock UTC
+  def sunday(y, m, nth, hour)
+    days = (1..Date.new(y, m, -1).day).map { Date.new(y, m, _1) }.select(&:sunday?)
+    Time.utc(y, m, days[nth > 0 ? nth - 1 : nth].day, hour).to_i
+  end
+
+  def test_d47_clock_changes_go_on_past_tzinfos_data_to_2200
+    ny = Acute::Zone.for("America/New_York")
+    sydney = Acute::Zone.for("Australia/Sydney")
+    london = Acute::Zone.for("Europe/London")
+    (2026..2199).each do |y|
+      us_on = sunday(y, 3, 2, 7)
+      us_off = sunday(y, 11, 1, 6)
+      assert_equal [-18_000, -14_400, -14_400, -18_000], [ny.offset_at(us_on - 1), ny.offset_at(us_on), ny.offset_at(us_off - 1), ny.offset_at(us_off)], y
+      au_off = sunday(y, 4, 1, 3 - 11 + 24) - 86_400
+      au_on = sunday(y, 10, 1, 2 - 10 + 24) - 86_400
+      assert_equal [39_600, 36_000, 36_000, 39_600], [sydney.offset_at(au_off - 1), sydney.offset_at(au_off), sydney.offset_at(au_on - 1), sydney.offset_at(au_on)], y
+      assert_equal %w[GMT BST], [london.abbreviation_at(sunday(y, 3, -1, 1) - 1), london.abbreviation_at(sunday(y, 3, -1, 1))], y
+    end
+  end
+
+  def test_d47_far_dates_follow_dst
+    assert_equal "2079-07-04T12:00:00-04:00", parse("2079-07-04 12:00").iso8601
+    assert_equal "2079-01-04T12:00:00-05:00", parse("2079-01-04 12:00").iso8601
+    assert_equal "2150-01-04T12:00:00+11:00", parse("2150-01-04 12:00", zone: "Australia/Sydney").iso8601
+    assert_equal "2150-07-04T12:00:00+10:00", parse("2150-07-04 12:00", zone: "Australia/Sydney").iso8601
+  end
+
+  def test_d47_a_zone_that_stopped_changing_its_clocks_stays_stopped
+    mexico = Acute::Zone.for("America/Mexico_City")
+    assert_equal [-21_600], [2030, 2100, 2199].flat_map { |y| [1, 7].map { mexico.offset_at(Time.utc(y, _1).to_i) } }.uniq
   end
 
   def test_rejects_unknown_zones

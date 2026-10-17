@@ -1,5 +1,5 @@
 # Runs research/cases against Acute.parse and compares with the ratchet in test/corpus/passing.txt.
-# Expected values are worked out with TZInfo directly, not Acute::Zone, so the two check each other.
+# Expected values are worked out with the system zoneinfo through TZInfo, not Acute::Zone, so the two check each other.
 #   ruby test/corpus.rb [--record] [--grep TEXT] [--file NAME] [--rule D20] [--list STATUS]
 require "json"
 require "time"
@@ -17,7 +17,9 @@ module Corpus
   RENAMED = { "ambiguous_year_future_bias" => :year_bias }.freeze
   GRAINS = %w[second minute hour day week month quarter year].freeze
   STATUSES = %w[pass alt_differs wrong nil garbage raises chronic_option other_kind].freeze
-  TZS = Hash.new { |h, name| h[name] = TZInfo::Timezone.get(name) }
+  # The system's zoneinfo, whose rules run a century on where tzinfo-data's transitions stop at about 2076 (D47)
+  ZONEINFO = TZInfo::DataSources::ZoneinfoDataSource.new
+  TZS = Hash.new { |h, name| h[name] = ZONEINFO.get_timezone_info(name).create_timezone }
 
   module_function
 

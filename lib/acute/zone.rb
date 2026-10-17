@@ -57,11 +57,54 @@ module Acute
       tz = TZInfo::Timezone.get(name)
       trs = tz.transitions_up_to(TO, FROM)
       first = trs.empty? ? tz.period_for_utc(FROM).offset : trs.first.previous_offset
-      new(name, trs.map(&:timestamp_value), trs.map { |t| t.offset.observed_utc_offset },
-          trs.map { |t| t.offset.abbreviation }, first.observed_utc_offset, first.abbreviation)
+      ats = trs.map(&:timestamp_value)
+      offsets = trs.map { |t| t.offset.observed_utc_offset }
+      abbreviations = trs.map { |t| t.offset.abbreviation }
+      recurring(trs).each do |at, offset, abbreviation|
+        ats << at
+        offsets << offset
+        abbreviations << abbreviation
+      end
+      new(name, ats, offsets, abbreviations, first.observed_utc_offset, first.abbreviation)
     rescue TZInfo::InvalidTimezoneIdentifier
       raise ArgumentError, "unknown zone #{name.inspect}"
     end
+
+    RULE_YEARS = 8
+    # Every source's data runs at least this far (2038 is the 32-bit limit), and a zone whose clock changes
+    # stop before it has stopped changing its clocks
+    RULES_RUN_TO = Time.utc(2037).to_i
+
+    # D47: tzinfo's data can stop decades short of TO (tzinfo-data's about fifty years out). When the last
+    # 2 * RULE_YEARS changes alternate between two that each fall yearly on one weekday on or after one day of
+    # their month, at one wall time, and run past RULES_RUN_TO, both are carried on to TO.
+    def self.recurring(trs)
+      return [] unless trs.last && trs.last.timestamp_value > RULES_RUN_TO
+      changes = trs.last(2 * RULE_YEARS).map do |t|
+        before = t.previous_offset.observed_utc_offset
+        local = t.timestamp_value + before
+        days = local.div(86_400)
+        ymd = Calendar.civil_from_days(days)
+        [ymd / 10_000, ymd / 100 % 100, ymd % 100, Calendar.weekday(days), local % 86_400, before,
+         t.offset.observed_utc_offset, t.offset.abbreviation]
+      end
+      return [] if changes.size < 2 * RULE_YEARS
+      [0, 1].flat_map do |s|
+        years = (0...RULE_YEARS).map { changes[2 * _1 + s] }
+        return [] unless years.each_cons(2).all? { |a, b| b[0] == a[0] + 1 }
+        return [] unless years.map { |c| c.values_at(1, 3, 4, 5, 6, 7) }.uniq.size == 1
+        day = years.map { _1[2] }.min
+        return [] if years.map { _1[2] }.max - day > 6
+        _, month, _, weekday, wall, before, offset, abbreviation = years[-1]
+        ((years[-1][0] + 1)...TO.year).map do |y|
+          first = Calendar.days_from_civil(y, month, day)
+          d = first + (weekday - Calendar.weekday(first)) % 7
+          d -= 7 if d - first + day > Calendar.days_in_month(y, month) # "the last Sunday of February"
+          [d * 86_400 + wall - before, offset, abbreviation]
+        end
+      end.sort_by!(&:first)
+    end
+    private_class_method :recurring
 
     attr_reader :name
 
