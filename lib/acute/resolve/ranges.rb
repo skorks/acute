@@ -130,6 +130,7 @@ module Acute
             if clock?(s) && !(s.grain == :second && s.e % DAY == 0) then Span.new(now, s.b, s.grain, nil, ctx.now, s.ub)
             else Span.new(now, s.e, s.grain, nil, ctx.now, s.ue)
             end
+          when :upto then Span.new(now, s.b, s.grain, nil, ctx.now, s.ub) # D9: "up to <date>" leaves it out
           when :before then Span.new(nil, s.b, s.grain, nil, nil, s.ub)
           when :from then Span.new(s.b, nil, s.grain, nil, s.ub)
           else clock?(s) ? Span.new(s.b, nil, s.grain, nil, s.ub) : Span.new(s.e, nil, s.grain, nil, s.ue)

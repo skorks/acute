@@ -42,7 +42,7 @@ module Acute
     Nth = Struct.new(:n, :node)                 # the nth (n = -1: the last) node inside its outer period
     Within = Struct.new(:inner, :outer)
     Range = Struct.new(:from, :to)
-    Open = Struct.new(:dir, :node)              # :after, :before, :since, :until, :from
+    Open = Struct.new(:dir, :node)              # :after, :before, :since, :until, :upto, :from
     Lasting = Struct.new(:unit, :start)         # a counted Unit from the start's start: "3 days starting monday"
     Approx = Struct.new(:node)
     Fuzzy = Struct.new(:pos, :node)             # :early, :mid, :late, :start, :end
@@ -59,7 +59,7 @@ module Acute
 
     L = Lexer
     S = Lexer::STRIDE
-    OPEN = { after: :after, before: :before, since: :since, until: :until, by: :until }.freeze
+    OPEN = { after: :after, before: :before, since: :since, until: :until, by: :until, upto: :upto }.freeze
     RANGE = { to: true, through: true, until: true }.freeze
     BEFORE_DAY = { the: true, from: true, between: true }.freeze # words that make "ninth" a day
     SHIFT_TAIL = { ago: true, hence: true, later: true, from: true, after: true, before: true }.freeze

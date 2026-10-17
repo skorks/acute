@@ -257,6 +257,10 @@ fuzzy:          # D2
   start: start
   end: end
   eod: eod
+  eom: eom
+  eoy: eoy
+  bom: bom
+  boy: boy
 
 article:        # "a" is also the meridiem in "8a"
   a: 1
@@ -407,9 +411,35 @@ phrases:
   a m: [meridiem, 0]
   p m: [meridiem, 12]
   prior to: [word, before]
+  up to: [word, upto]
+  right now: [now, 0]
+  just now: [now, 0]
+  at the moment: [now, 0]
+  at the minute: [now, 0]
+  at present: [now, 0]
+  at the present time: [now, 0]
+  at this time: [now, 0]
+  this time: [word, sametime]
+  same time: [word, sametime]
+  minutes time: [unit, minute]
+  minutes' time: [unit, minute]
+  hours time: [unit, hour]
+  hours' time: [unit, hour]
+  days time: [unit, day]
+  days' time: [unit, day]
+  weeks time: [unit, week]
+  weeks' time: [unit, week]
+  months time: [unit, month]
+  months' time: [unit, month]
+  years time: [unit, year]
+  years' time: [unit, year]
+  a couple of: [word, couple]
+  a couple: [word, couple]
+  couple of: [word, couple]
 
 # Words that are also plain English. In extraction they need a neighbour that confirms the date reading.
-english: [may, march, following, sat, sun, second, fall, a, mon, wed, start, end, last, past, this, next, d, m, s, h, w, y, lunch]
+english: [may, march, following, sat, sun, second, fall, a, mon, wed, start, end, last, past, this, next, d, m, s, h, w, y, lunch,
+          boy]
 
 # D44: plurals, which only count ("3 fridays from now"); alone they recur, which is not a time. Plural units
 # let "2 upcoming weeks" be "next 2 weeks" while "3 next week" is not.
@@ -421,3 +451,5 @@ plural: [sundays, mondays, tuesdays, wednesdays, thursdays, fridays, saturdays, 
 misspellings:
   tommorow: tomorrow
   tonite: tonight
+  febuary: february
+  wensday: wednesday

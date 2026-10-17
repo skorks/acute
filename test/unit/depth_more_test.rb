@@ -137,4 +137,39 @@ class DepthMoreTest < Minitest::Test
   def test_d31_within_the_next_n_units_is_within_n_units
     assert_equal ["2026-10-17 14:00:00 -04:00", "2026-10-17 20:00:00 -04:00"], span("within the next 6 hours")
   end
+
+  def test_d2_eom_eoy_bom_boy_are_this_months_or_years_edge
+    assert_equal "2026-10-31 00:00:00 -04:00", wall(parse("EOM").begin)
+    assert_equal "2026-12-31 00:00:00 -05:00", wall(parse("at the EOY").begin)
+    assert_equal "2026-10-01 00:00:00 -04:00", wall(parse("the BOM").begin)
+    assert_equal ["2026-10-17 14:00:00 -04:00", "2026-11-01 00:00:00 -04:00"], span("by EOM")
+  end
+
+  def test_d9_up_to_a_day_leaves_it_out
+    assert_equal ["2026-10-17 14:00:00 -04:00", "2026-10-19 00:00:00 -04:00"], span("up to monday")
+    assert_equal ["2026-10-17 14:00:00 -04:00", "2026-10-17 17:00:00 -04:00"], span("up to 5pm")
+  end
+
+  def test_now_said_other_ways
+    %w[right\ now just\ now at\ the\ moment at\ present at\ this\ time].each do |text|
+      assert_equal "2026-10-17 14:00:00 -04:00", wall(parse(text).begin), text
+    end
+    assert_equal "2026-10-17 12:00:00 -04:00", wall(parse("now - 2 hours").begin)
+  end
+
+  def test_a_couple_is_two_and_only_before_a_unit
+    assert_equal "2026-10-15 14:00:00 -04:00", wall(parse("a couple of days ago").begin)
+    assert_equal "2026-10-31 14:00:00 -04:00", wall(parse("in a couple weeks").begin)
+    assert_raises(Acute::ParseError) { parse("at a couple of") }
+  end
+
+  def test_a_time_or_day_a_week_on
+    assert_equal "2026-10-18 14:00:00 -04:00", wall(parse("this time tomorrow").begin)
+    assert_equal "2026-10-24 14:00:00 -04:00", wall(parse("same time next week").begin)
+    assert_equal "2026-10-24 00:00:00 -04:00", wall(parse("a week today").begin)
+    assert_equal "2026-10-25 00:00:00 -04:00", wall(parse("tomorrow week").begin)
+    assert_equal "2026-10-27 00:00:00 -04:00", wall(parse("a week on tuesday").begin)
+    assert_equal "2026-11-07 14:00:00 -05:00", wall(parse("in three weeks' time").begin)
+    assert_raises(Acute::ParseError) { parse("this time") }
+  end
 end

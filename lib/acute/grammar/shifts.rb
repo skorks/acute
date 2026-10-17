@@ -3,6 +3,8 @@ module Acute
   class Grammar
     private
 
+    WEEKS = { week: true, fortnight: true }.freeze
+
     # After a quantity: "ago", "from now", "from tomorrow", "after next tuesday", or nothing. D44: more
     # quantities before the tail are each applied in the order said ("1 week and a day from now").
     def shift_tail(q)
@@ -27,6 +29,12 @@ module Acute
         return anchor if Failure === anchor
         shifts(w == :before ? -1 : 1, q, more, Now === anchor ? nil : anchor)
       else
+        # "a week today", "a fortnight on tuesday": that long after the day
+        if WEEKS[q.unit] && !more && (@t[@i] == L::DAY || (@t[@i + 1] == :on && @t[@i + S] == L::WDAY))
+          @i += S if @t[@i] != L::DAY
+          anchor = atom(true)
+          return Failure === anchor ? anchor : shifts(1, q, nil, anchor)
+        end
         return q unless !more && starting?(@i)
         @i += S
         @i += S if @t[@i + 1] == :from
@@ -110,7 +118,8 @@ module Acute
     # before it, or now. After other atoms a minus needs a space before it and none after.
     def signed?(last)
       return false unless @t[@i + S] == L::NUM && unit_at(@i + 2 * S)
-      @t[@i] == L::PLUS || last.nil? || (@t[@i + 3] > @t[@i - 1] && @t[@i + 4] == @t[@i + S + 3])
+      # "now - 2 hours" is two hours ago, never a range
+      @t[@i] == L::PLUS || last.nil? || last.equal?(NOW) || (@t[@i + 3] > @t[@i - 1] && @t[@i + 4] == @t[@i + S + 3])
     end
 
     # Each sign holds for the unsigned counts after it: "+1 day 2 hours", "+1 decade -2 years"
@@ -148,6 +157,8 @@ module Acute
       elsif @t[i + 1] == :half && @t[i + S] == L::ART # "half an hour"
         count = Rational(1, 2)
         i += S
+      elsif @t[i + 1] == :couple # D44: "a couple of days" is two
+        count = 2
       elsif @t[i] == L::DECADE && @t[i + 2] == 2 # "30s": seconds, not the thirties
         @i = i + S
         return Unit.new(:second, @t[i + 1])
@@ -157,6 +168,19 @@ module Acute
       return unless unit
       @i = i + 2 * S
       Unit.new(unit, count)
+    end
+
+    # "this time tomorrow", "same time next week": now moved by the day or unit
+    def same_time
+      i = @i
+      @i += S
+      return failure(:incomplete) if @i >= @n
+      x = atom(true)
+      if DayRef === x then Shift.new(x.offset, :day, nil)
+      elsif Rel === x && Unit === x.node && !x.node.count && (x.word == :next || x.word == :last)
+        Shift.new(x.word == :next ? 1 : -1, x.node.unit, nil)
+      else Failure === x ? x : failure(:conflict, i)
+      end
     end
 
     # "second" is the ordinal unless it follows a count

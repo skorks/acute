@@ -274,7 +274,16 @@ module Acute
     # Tries each phrase starting with the word just read: [stop, token entry] on a match. Phrases are rare, so
     # this path may rescan and allocate.
     def self.phrase(s, i, n, cands)
+      j = i
+      j += 1 while j < n && ((c = s.getbyte(j)) == 32 || c == 45 || c == 46)
+      return if j == i
+      first = 0
+      while j < n && (ALPHA[c = s.getbyte(j)] || c == 39)
+        first = first * 32 + CODE[c]
+        j += 1
+      end
       cands.each do |rest, entry|
+        next unless rest[0] == first
         j = i
         ok = rest.all? do |want|
           gap = j

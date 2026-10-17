@@ -13,6 +13,11 @@ module Acute
       elsif k == L::CLOCK then written(v, t[i + 2])
       elsif k == L::DAY
         @i += S
+        # "tomorrow week": a week after it
+        if t[i + S] == L::UNIT && WEEKS[u = t[i + S + 1]] && (k = t[i + 2 * S]) != L::NUM && k != L::ORD
+          @i += S
+          return Shift.new(1, u, DayRef.new(v))
+        end
         DayRef.new(v)
       elsif k == L::WDAY
         return failure(:incomplete) if t[i + 2] & L::PLURAL != 0
@@ -112,6 +117,9 @@ module Acute
         Fiscal.new(@t[i + S + 2] & L::DIGITS == 2 ? 2000 + y : y)
       when :half
         (q = quantity) ? shift_tail(q) : clock_words(30)
+      when :sametime then same_time
+      when :couple
+        (q = quantity) ? shift_tail(q) : failure(@i + S < @n ? :conflict : :incomplete, @i + S)
       else failure(:conflict)
       end
     end
@@ -247,6 +255,8 @@ module Acute
       end
     end
 
+    EDGES = { eod: %i[end day], eom: %i[end month], eoy: %i[end year], bom: %i[start month], boy: %i[start year] }.freeze
+
     def day_named?(i)
       k = @t[i]
       k == L::DAY || k == L::WDAY || k == L::MONTH
@@ -261,11 +271,17 @@ module Acute
         @i += S
         return named(day ? 12 : 0)
       end
-      # D2: "EOD", "end of day tomorrow", "EOD friday": the end of the day named next, else of today
-      if pos == :eod || (@t[@i + 1] == :of && @t[@i + S] == L::UNIT && @t[@i + S + 1] == :day && day_named?(@i + 2 * S))
-        @i += 2 * S unless pos == :eod
-        node = day_named?(@i) ? atom(true) : Rel.new(:this, Unit.new(:day, nil))
-        return Failure === node ? node : Fuzzy.new(pos == :eod ? :end : pos, node)
+      # D2: "EOD", "end of day tomorrow", "EOD friday": the end of the day named next, else of today; "EOM",
+      # "BOY": of this month or year
+      if (edge = EDGES[pos])
+        pos, unit = edge
+      elsif @t[@i + 1] == :of && @t[@i + S] == L::UNIT && @t[@i + S + 1] == :day && day_named?(@i + 2 * S)
+        @i += 2 * S
+        unit = :day
+      end
+      if unit
+        node = unit == :day && day_named?(@i) ? atom(true) : Rel.new(:this, Unit.new(unit, nil))
+        return Failure === node ? node : Fuzzy.new(pos, node)
       end
       # "early tomorrow evening", "late friday night": the part of that day
       if (@t[@i] == L::DAY || @t[@i] == L::WDAY) && @t[@i + S] == L::PART
