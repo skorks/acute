@@ -372,14 +372,6 @@
   chronic: '2006-05-19 17:00:00'
   acute: '2006-05-20 17:00:00'
   rule: D44, D47
-- test: test_parse_words
-  line: 1041
-  assert_line: 1041
-  phrase: two million eight hundred and sixty seven thousand five hundred and thirty two seconds from now
-  compared_with: 2867532 seconds from now
-  chronic: '2006-09-18 18:32:12'
-  acute: '2006-08-16 14:00:32'
-  rule: D46
 - test: test_relative_to_an_hour_before
   line: 1048
   assert_line: 1048

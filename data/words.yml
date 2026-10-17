@@ -335,6 +335,8 @@ word:           # function words; the grammar gives them their meaning
   ish: around
   o'clock: oclock
   thousand: thousand
+  hundred: hundred
+  million: million
   oh: oh            # "twelve oh three"
   o: oh
   zero: oh

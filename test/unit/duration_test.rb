@@ -12,6 +12,11 @@ class DurationTest < Minitest::Test
     assert_equal({ business_days: 5 }, Acute.duration("5 business days").parts)
   end
 
+  def test_d47_counts_in_words_past_ninety_nine
+    assert_equal 205, Acute.duration("two hundred and five seconds").seconds
+    assert_equal 360_000, Acute.duration("a hundred hours").seconds
+  end
+
   def test_spoken_fractions
     assert_equal "P2Y6M", Acute.duration("two and a half years").iso8601
     assert_equal "PT5M30S", Acute.duration("5 and an half minutes").iso8601

@@ -78,6 +78,20 @@ class ShiftsTest < Minitest::Test
                  wall(parse("3 months ago saturday at 5:00 pm", now: "2006-08-16T14:00").time)
   end
 
+  def test_d47_counts_in_words_past_ninety_nine
+    assert_equal "2006-09-18 18:32:12 -04:00",
+                 wall(parse("two million eight hundred and sixty seven thousand five hundred and thirty two seconds from now",
+                            now: "2006-08-16T14:00").time)
+    assert_at "in a hundred days", "2027-01-25 14:00:00 -05:00"
+    assert_at "fifteen hundred seconds ago", "2026-10-17 13:35:00 -04:00"
+    assert_at "in one thousand and one minutes", "2026-10-18 06:41:00 -04:00"
+    assert_at "three hundred thousand seconds from now", "2026-10-21 01:20:00 -04:00"
+    assert_equal 2000, parse("two thousand").begin.year
+    assert_equal 2018, parse("two thousand and eighteen").begin.year
+    assert_raises(Acute::ParseError) { parse("two thousand three thousand days ago") }
+    assert_raises(Acute::ParseError) { parse("one hundred") }
+  end
+
   def test_d47_an_ordinal_beside_a_coarser_shift_looks_in_the_shifts_unit
     assert_at "first monday in 2 years", "2028-01-03 00:00:00 -05:00"
   end

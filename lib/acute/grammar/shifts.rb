@@ -162,7 +162,9 @@ module Acute
     def quantity
       i = @i
       count = nil
-      if @t[i] == L::ART then count = 1
+      if (said = spoken(i))
+        count, i = said
+      elsif @t[i] == L::ART then count = 1
       elsif @t[i] == L::NUM
         count = @t[i + 1]
         if @t[i + S] == L::SLASH && @t[i + 2 * S] == L::NUM && @t[i + 2 * S + 1] > 0

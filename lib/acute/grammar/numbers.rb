@@ -1,7 +1,52 @@
 module Acute
   # Atoms led by digits or a number word: clocks, numeric and ISO dates, years
   class Grammar
+    MULTIPLIERS = { hundred: 100, thousand: 1000, million: 1_000_000 }.freeze
+
     private
+
+    # D47: a count said past ninety-nine, "two million eight hundred and sixty seven thousand five hundred and
+    # thirty two", "a hundred": its value and the index of its last token, or nil without a hundred, thousand or
+    # million straight after the first number
+    def spoken(i)
+      t = @t
+      return unless t[i + S] == L::WORD && MULTIPLIERS[t[i + S + 1]]
+      if t[i] == L::ART then group = 1
+      elsif t[i] == L::NUM && t[i + 1].between?(1, 99) then group = t[i + 1]
+      else return
+      end
+      total = 0
+      hundred = false
+      below = nil # each thousand or million is smaller than the one before
+      last = i
+      j = i + S
+      while j < @n
+        k = t[j]
+        m = k == L::WORD && MULTIPLIERS[t[j + 1]]
+        if m == 100
+          break if hundred || group < 1 || group > 99
+          group *= 100
+          hundred = true
+        elsif m
+          break if group < 1 || (below && m >= below)
+          total += group * m
+          group = 0
+          hundred = false
+          below = m
+        elsif k == L::WORD && t[j + 1] == :and && t[j + S] == L::NUM && t[last] == L::WORD
+          j += S
+          next
+        elsif k == L::NUM && t[last] == L::WORD && group % 100 == 0 && t[j + 1].between?(1, 99) &&
+              t[j + 2] & L::WORDY != 0
+          group += t[j + 1]
+        else
+          break
+        end
+        last = j
+        j += S
+      end
+      [total + group, last]
+    end
 
     def number_atom(loose)
       t = @t
@@ -58,6 +103,7 @@ module Acute
         return shift_tail(q) if q
       elsif nk == L::WORD
         return clock_words(v) if minutes_to?(i)
+        return shift_tail(q) if MULTIPLIERS[t[i + S + 1]] && (q = quantity)
         if t[i + S + 1] == :ad && flags & L::WORDY == 0 && v >= 1 # D44: "14 a.d." is the year 14
           @i += 2 * S
           return Date.new(v, nil, nil, nil, false)
