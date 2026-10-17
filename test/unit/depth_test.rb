@@ -347,4 +347,10 @@ class DepthTest < Minitest::Test
     assert_reads "15 past seven o'clock", "2026-10-18 07:15:00 -04:00", ["2026-10-17 19:15:00 -04:00"] # as "15 past seven"
     assert_reads "a quarter to six o'clock", "2026-10-17 17:45:00 -04:00", ["2026-10-18 05:45:00 -04:00"]
   end
+
+  def test_d44_an_edge_of_past_week_is_an_edge_of_last_week
+    assert_reads "end of past week", "2026-10-09 00:00:00 -04:00"
+    assert_reads "at the beginning of past week", "2026-10-04 00:00:00 -04:00"
+    assert_reads "end of the past year", "2025-12-31 00:00:00 -05:00"
+  end
 end

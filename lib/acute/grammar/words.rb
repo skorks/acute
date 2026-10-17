@@ -250,7 +250,10 @@ module Acute
       @i += S if @t[@i] == L::DASH && (@t[@i + S] == L::NUM || @t[@i + S] == L::DECADE) # "mid-1990s"
       return failure(:incomplete) if @i >= @n
       node = @t[@i] == L::UNIT ? this_unit : atom(true)
-      Failure === node ? node : Fuzzy.new(pos, node)
+      return node if Failure === node
+      # D44: "end of past week" is the end of last week; a rolling week's edges are now and a week ago
+      node = Rel.new(:last, node.node) if Rel === node && node.word == :past && Unit === node.node && !node.node.count
+      Fuzzy.new(pos, node)
     end
   end
 end
