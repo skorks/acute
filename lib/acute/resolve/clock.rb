@@ -43,11 +43,14 @@ module Acute
       # A clock's grain and length in seconds
       SECOND = [:second, 1].freeze
       MINUTE = [:minute, 60].freeze
+      HOUR = [:hour, 3600].freeze
+
+      def self.grain(c) = c.seconds ? (c.seconds == :hour ? HOUR : SECOND) : MINUTE
 
       # D23: the next occurrence of each candidate (the previous one in past context); D36: now counts
       def self.bare(c, ctx)
         cands = candidates(c, ctx, false)
-        grain, len = c.seconds ? SECOND : MINUTE
+        grain, len = grain(c)
         now_secs = ctx.now_secs
         out = []
         i = 0

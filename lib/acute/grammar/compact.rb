@@ -3,7 +3,7 @@ module Acute
   class Grammar
     private
 
-    # D44: "20261123", "20030925T104941", "19980915T09:05:32": a compact ISO date, then the time after its T
+    # D44: "20261123", "20030925T104941", "20030925T10", "19980915T09:05:32": a compact ISO date, then the time after its T
     def compact_date(v, at)
       m = v / 100 % 100
       d = v % 100
@@ -17,6 +17,11 @@ module Acute
       else
         n = @t[@i + 1]
         digits = @t[@i + 2] & L::DIGITS
+        if digits == 2
+          return failure(:invalid_date, @i) if n > 23
+          @i += S
+          return Within.new(Clock.new(n, 0, 0, nil, nil, true, :hour), date)
+        end
         return failure(:invalid_date, @i) unless digits == 6 || digits == 4
         n *= 100 if digits == 4
         c = written(n, digits == 6 ? L::SECONDS : 0)
@@ -105,6 +110,13 @@ module Acute
       end
       date = Date.new(y, m, d, nil, false)
       @i += S if @t[@i] == L::WORD && @t[@i + 1] == :t && @t[@i + S] == L::CLOCK
+      # D44: "2003-09-25T10", "1978-12-22T23Z": two digits alone after the date are its hour, at the hour's grain
+      if @t[@i] == L::NUM && @t[@i + 2] & L::DIGITS == 2 && ((k = @t[@i + S]).nil? || k == L::ZONE) &&
+         @t[@i + 3] - @t[@i - 1] <= 1
+        return failure(:invalid_date, @i) if @t[@i + 1] > 23
+        @i += S
+        return Within.new(Clock.new(@t[@i - S + 1], 0, 0, nil, nil, true, :hour), date)
+      end
       return date unless @t[@i] == L::CLOCK
       c = written(@t[@i + 1], @t[@i + 2])
       return c if Failure === c

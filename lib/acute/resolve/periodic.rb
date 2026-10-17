@@ -218,7 +218,7 @@ module Acute
       # D4, D6 for a clock inside a day; D35, D40 inside a part of the day
       def self.clock(c, outer, s, ctx)
         cands = Clock.candidates(c, ctx, true)
-        grain, len = c.seconds ? Clock::SECOND : Clock::MINUTE
+        grain, len = Clock.grain(c)
         day = s.b - s.b % DAY
         part = part_name(outer)
         # D6: midnight "at the start of" a day is its first moment, "at the end of" its last

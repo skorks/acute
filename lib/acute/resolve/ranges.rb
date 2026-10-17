@@ -91,7 +91,7 @@ module Acute
       # The first reading of node from t on
       def self.after(node, ctx, t)
         if G::Clock === node
-          grain, len = node.seconds ? Clock::SECOND : Clock::MINUTE
+          grain, len = Clock.grain(node)
           return Span.new(x = clock_after(node, ctx, t), x + len, grain, nil)
         end
         if (cyc = Periodic.cycle(node))

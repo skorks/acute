@@ -353,4 +353,13 @@ class DepthTest < Minitest::Test
     assert_reads "at the beginning of past week", "2026-10-04 00:00:00 -04:00"
     assert_reads "end of the past year", "2025-12-31 00:00:00 -05:00"
   end
+
+  def test_d44_a_time_has_the_grain_of_the_finest_unit_written
+    assert_equal :second, parse("2011-06-17T07:00:00Z").grain
+    r = parse("2003-09-25T10")
+    assert_equal ["2003-09-25 10:00:00 -04:00", "2003-09-25 11:00:00 -04:00", :hour], [wall(r.begin), wall(r.end), r.grain]
+    assert_equal [:hour, []], [parse("20030925T10").grain, parse("20030925T10").alternatives]
+    assert_reads "1978-12-22T23Z", "1978-12-22 18:00:00 -05:00"
+    assert_raises(Acute::ParseError) { parse("2003-09-25T24") }
+  end
 end
