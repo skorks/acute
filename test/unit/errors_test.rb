@@ -44,6 +44,7 @@ class ErrorsTest < Minitest::Test
     assert_equal :incomplete, error("").code
     assert_equal :incomplete, error("tomorrow at").code
     assert_equal :incomplete, error("in 3").code
+    assert_equal :incomplete, error("22/0y4").code # a fraction over zero is no count of units
     e = error("4pm 5")
     assert_equal [:conflict, 4...5], [e.code, e.position]
     assert_equal :conflict, error("today tomorrow").code
