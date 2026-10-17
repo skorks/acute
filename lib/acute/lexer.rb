@@ -179,6 +179,12 @@ module Acute
           if i < n && c == 58
             # the minutes, and below the seconds: two digits, each byte less 48
             unless nd <= 2 && i + 2 < n && CLASS[a = s.getbyte(i + 1)] == DIGIT && CLASS[b = s.getbyte(i + 2)] == DIGIT
+              if nd == 4 && i + 6 < n && s.getbyte(i + 3) == 58 && s.getbyte(i + 6) == 58
+                # "06/Nov/2023:06:36:02", a log's timestamp: the year, then its time
+                t.push(NUM, v, flags, st, i)
+                i += 1
+                next
+              end
               return Failure.new(:invalid_date, st, i + 3 < n ? i + 3 : n) unless unknown
               i = malformed(s, st, i, n, unknown)
               next

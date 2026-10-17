@@ -148,6 +148,14 @@ class DepthTest < Minitest::Test
     assert_span "June 3-15", "2027-06-03 00:00", "2027-06-16 00:00"
   end
 
+  def test_d44_a_slash_joins_a_written_month_as_a_dash_does
+    assert_reads "25/Sep/2003", "2003-09-25 00:00:00 -04:00"
+    assert_reads "2003/Sep/25", "2003-09-25 00:00:00 -04:00"
+    assert_reads "Sep/25/2003", "2003-09-25 00:00:00 -04:00"
+    assert_span "2024/August", "2024-08-01 00:00", "2024-09-01 00:00"
+    assert_equal "2023-11-06 04:36:02", parse("06/Nov/2023:06:36:02 +0200").begin.utc.strftime("%F %T")
+  end
+
   def test_d44_a_hyphen_after_a_month_or_weekday_is_a_range
     assert_span "jun-aug", "2027-06-01 00:00", "2027-09-01 00:00"
     assert_span "mon-fri", "2026-10-19 00:00", "2026-10-24 00:00"

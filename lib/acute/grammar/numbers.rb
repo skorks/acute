@@ -12,6 +12,7 @@ module Acute
       nk = @t[i + S]
       if nk == L::SLASH || nk == L::DOT
         return dotted_clock(i) if nk == L::DOT && dotted_clock?(i)
+        return dashed_month(v, digits) if @t[i + 2 * S] == L::MONTH && joined?(i + S) # "25/Sep/2003"
         # "1/2 hour", "2.5 hours"; not "22/0 y"
         if @t[i + 3 * S] == L::UNIT && @t[i + 2 * S] == L::NUM && (q = quantity)
           return shift_tail(q)
@@ -140,8 +141,8 @@ module Acute
       dated(@t[i + 1], day)
     end
 
-    # D44: a dash with no space either side joins the parts of one written date: "20-Apr", "30-Mar-11",
-    # "2003-Sep-25", "99-Jan-08". A first number past 31 is the year.
+    # D44: a dash or slash with no space either side joins the parts of one written date: "20-Apr",
+    # "30-Mar-11", "2003-Sep-25", "99-Jan-08", "25/Sep/2003". A first number past 31 is the year.
     def dashed_month(v, digits)
       m = @t[@i + 2 * S + 1]
       @i += 3 * S
@@ -166,10 +167,10 @@ module Acute
       Date.new(@t[@i - S + 1], m, day, nil, digits == 2)
     end
 
-    # A dash at token index i with no space either side
-    def joined?(i) = @t[i] == L::DASH && i >= S && @t[i - 1] == @t[i + 3] && @t[i + 4] == @t[i + S + 3]
+    # A dash, or a slash, at token index i with no space either side
+    def joined?(i) = (@t[i] == L::DASH || @t[i] == L::SLASH) && i >= S && @t[i - 1] == @t[i + 3] && @t[i + 4] == @t[i + S + 3]
 
-    # "oct", "oct 23", "oct 23rd, 2026", "may 2010", "Oct-2", "Sep-25-2003", "Sep-2012"
+    # "oct", "oct 23", "oct 23rd, 2026", "may 2010", "Oct-2", "Sep-25-2003", "Sep-2012", "Sep/25/2003"
     def month_atom
       m = @t[@i + 1]
       @i += S
