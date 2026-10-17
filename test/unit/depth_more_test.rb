@@ -250,4 +250,25 @@ class DepthMoreTest < Minitest::Test
     assert_raises(Acute::ParseError) { parse("first half") }
     assert_raises(Acute::ParseError) { parse("H3 2026") }
   end
+
+  def test_d44_numbers_with_spaces_between_are_a_date_with_its_year_first_or_last
+    assert_equal "2014-12-28 00:00:00 -05:00", wall(parse("2014 12 28").begin)
+    assert_equal "1974-10-31 00:00:00 -05:00", wall(parse("10 31 1974").begin)
+    assert_equal "2027-10-12 00:00:00 -04:00", wall(parse("10 12 2027").begin)
+    assert_equal "2027-12-10 00:00:00 +00:00", wall(parse("10 12 2027", zone: "Europe/London").begin)
+    assert_raises(Acute::ParseError) { parse("five six 2027") }
+  end
+
+  def test_d44_dots_with_spaces_after_a_day_or_month_still_join_a_date
+    assert_equal "2014-12-11 00:00:00 -05:00", wall(parse("11. 12. 2014").begin)
+    assert_equal "2022-09-30 00:00:00 -04:00", wall(parse("30 . 09 . 22").begin)
+    assert_equal "1978-12-22 00:00:00 -05:00", wall(parse("Dec 22. 1978").begin)
+  end
+
+  def test_d44_a_dotted_clock_beside_a_written_date
+    assert_equal "2020-02-29 13:12:00 -05:00", wall(parse("29.02.2020 13.12").begin)
+    r = parse("2017-06-30 8.20")
+    assert_equal ["2017-06-30 08:20:00 -04:00", []], [wall(r.begin), r.alternatives]
+    assert_equal "2017-06-30 08:20:00 -04:00", wall(parse("8.20 2017-06-30").begin)
+  end
 end

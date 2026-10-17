@@ -88,6 +88,7 @@ module Acute
         end
       elsif nk == L::NUM
         return w if flags & L::WORDY != 0 && (w = said(v, i))
+        return spaced_date(v, digits) if spaced_date?(i, digits)
       end
       if nk == L::UNIT || nk == L::SLASH
         # D44: "20 minutes past 3pm", "ten minutes to three"

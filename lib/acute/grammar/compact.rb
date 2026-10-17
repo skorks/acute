@@ -1,6 +1,8 @@
 module Acute
-  # Written forms with no words in them: ISO and compact ISO dates, ISO weeks, bare digits as clocks, dotted clocks
+  # Written forms with no words in them: ISO and compact ISO dates, ISO weeks, bare digits as clocks, dotted clocks, spaced dates
   class Grammar
+    SEPARATOR = { L::DASH => true, L::SLASH => true, L::DOT => true }.freeze
+
     private
 
     # D44: "20261123", "20030925T104941", "20030925T10", "19980915T09:05:32": a compact ISO date, then the time after its T
@@ -71,13 +73,33 @@ module Acute
     end
 
     # D44: "9.30pm", "12.55 pm", "01.03.12 a.m.", "at 12.30": numbers joined by dots before am or pm, or two
-    # after "at", are a clock
+    # after "at" or beside a written date ("29.02.2020 13.12", "8.20 2017-06-30"), are a clock
     def dotted_clock?(i)
       j = i + 2 * S
       return false unless @t[i + 2] & L::DIGITS <= 2 && @t[j] == L::NUM && @t[j + 2] & L::DIGITS == 2
-      return @t[j + S] != L::DOT && @t[j + 1] <= 59 if i >= S && @t[i - S] == L::AT
+      if (i >= S && @t[i - S] == L::AT) || (i >= 2 * S && @t[i - S] == L::NUM && SEPARATOR[@t[i - 2 * S]]) ||
+         (@t[j + S] == L::NUM && SEPARATOR[@t[j + 2 * S]])
+        return @t[j + S] != L::DOT && @t[i + 1] <= 23 && @t[j + 1] <= 59
+      end
       j += 2 * S if @t[j + S] == L::DOT && @t[j + 2 * S] == L::NUM && @t[j + 2 * S + 2] & L::DIGITS == 2
       @t[j + S] == L::MER
+    end
+
+    # D44: "2014 12 28", "10 31 1974": digits and spaces only, a year first or last, read as a slashed date (D37)
+    def spaced_date?(i, digits)
+      return false unless @t[i + 2 * S] == L::NUM && (digits == 4 || digits <= 2)
+      b = @t[i + S + 2]
+      c = @t[i + 2 * S + 2]
+      return false if (b | c | @t[i + 2]) & L::WORDY != 0 || b & L::DIGITS > 2
+      digits == 4 ? c & L::DIGITS <= 2 : c & L::DIGITS == 4
+    end
+
+    def spaced_date(v, digits)
+      t = @t
+      i = @i
+      @i += 3 * S
+      return Date.new(v, t[i + S + 1], t[i + 2 * S + 1], nil, false) if digits == 4
+      Date.new(t[i + 2 * S + 1], v, t[i + S + 1], :slash, false)
     end
 
     def dotted_clock(i)
@@ -119,8 +141,9 @@ module Acute
         @i += S
         return Within.new(Clock.new(@t[@i - S + 1], 0, 0, nil, nil, true, :hour), date)
       end
-      return date unless @t[@i] == L::CLOCK
-      c = written(@t[@i + 1], @t[@i + 2])
+      dotted = @t[@i] == L::NUM && @t[@i + S] == L::DOT && dotted_clock?(@i)
+      return date unless dotted || @t[@i] == L::CLOCK
+      c = dotted ? dotted_clock(@i) : written(@t[@i + 1], @t[@i + 2])
       return c if Failure === c
       c.h24 = true unless c.meridiem || c.named # D4, D29: after an ISO date the time is 24-hour
       Within.new(c, date)

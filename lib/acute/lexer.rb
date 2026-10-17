@@ -239,7 +239,8 @@ module Acute
         else
           case c
           when 46
-            t.push(DOT, 0, 0, i, i + 1) if i > 0 && i + 1 < n && CLASS[s.getbyte(i - 1)] == DIGIT && CLASS[s.getbyte(i + 1)] == DIGIT
+            t.push(DOT, 0, 0, i, i + 1) if (i > 0 && i + 1 < n && CLASS[s.getbyte(i - 1)] == DIGIT && CLASS[s.getbyte(i + 1)] == DIGIT) ||
+                                           spaced_dot?(s, i, n, t)
             i += 1
           when 45
             # A hyphen inside a word ("twenty-four", "mid-october") is a space; after a month or weekday it
@@ -328,6 +329,14 @@ module Acute
       i += 1 if i + 1 < n && s.getbyte(i) == 39
       return unless i < n && s.getbyte(i) | 32 == 115
       i + 1 >= n || !ALPHA[s.getbyte(i + 1)] ? i + 1 : nil
+    end
+
+    # D44: "26. 10.21", "30 . 09 . 22": a dot after a day or month number, with a space either side at most
+    def self.spaced_dot?(s, i, n, t)
+      return false unless t[-5] == NUM && t[-3] & DIGITS <= 2 && i - t[-1] <= 1 && t[-10] != MONTH
+      j = i + 1
+      j += 1 if j < n && s.getbyte(j) == 32
+      j < n && CLASS[s.getbyte(j)] == DIGIT
     end
 
     def self.zone_in_brackets?(s, i, n)
