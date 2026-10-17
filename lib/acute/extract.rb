@@ -29,6 +29,7 @@ module Acute
     L = Lexer
     S = Lexer::STRIDE
     PUNCT = [44, 46, 59, 33, 63].freeze
+    GLUE = { L::DASH => true, L::SLASH => true, L::DOT => true }.freeze
 
     def self.call(text, make_context)
       unknown = []
@@ -83,9 +84,14 @@ module Acute
       text.byteslice(from, to - from).each_byte.any? { |c| PUNCT.include?(c) && c != 44 }
     end
 
-    # "on" and "at" introduce a mention without being part of it
+    # "on" and "at" introduce a mention without being part of it. None starts inside a written number, as
+    # "12-1234" in "123-12-1234" or "1 in the morning" in "37.1 in the morning".
     def self.starts_mention?(tokens, i)
       k = tokens[i * S]
+      if i >= 2 && GLUE[tokens[(i - 1) * S]] && tokens[(i - 2) * S] == L::NUM &&
+         tokens[(i - 2) * S + 4] == tokens[(i - 1) * S + 3] && tokens[(i - 1) * S + 4] == tokens[i * S + 3]
+        return false
+      end
       k != L::AT && !(k == L::WORD && (tokens[i * S + 1] == :on || tokens[i * S + 1] == :and || tokens[i * S + 1] == :to))
     end
 

@@ -21,6 +21,11 @@ class ExtractTest < Minitest::Test
     assert_equal "lunch with bob", x.remainder
   end
 
+  def test_no_mention_starts_inside_a_written_number
+    assert_equal [], mentions("The ssn is 123-12-1234")
+    assert_equal [[:time, "in the morning", 24...38]], mentions("My temperature was 37.1 in the morning")
+  end
+
   def test_remainder_drops_the_word_that_introduced_a_mention
     assert_equal "Pay rent", extract("Pay rent tomorrow 9am").remainder
     assert_equal "Call me; dinner.", extract("Call me tomorrow; dinner at 7pm.").remainder
