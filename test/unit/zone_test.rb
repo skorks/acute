@@ -115,5 +115,7 @@ class ZoneTest < Minitest::Test
     assert_equal ["2026-11-01 01:00:00 -04:00", "2026-11-01 01:30:00 -05:00"], [wall(r.begin), wall(r.end)]
     r = parse("2026-11-01T01:00:00-04:00 – 2026-11-01T01:30:00-05:00")
     assert_equal 5400, r.end - r.begin
+    r = parse("Nov 1, 2026, 1:50am EDT – Nov 1, 2026, 1:10am EST")
+    assert_equal 1200, r.end - r.begin
   end
 end
