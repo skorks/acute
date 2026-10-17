@@ -12,6 +12,8 @@ module Acute
       nk = @t[i + S]
       if nk == L::SLASH || nk == L::DOT
         return dotted_clock(i) if nk == L::DOT && dotted_clock?(i)
+        # "1/2 hour", "2.5 hours"
+        return shift_tail(quantity) if @t[i + 3 * S] == L::UNIT && @t[i + 2 * S] == L::NUM
         return numeric_date(nk == L::SLASH ? :slash : :dot) if @t[i + 2 * S] == L::NUM
       elsif nk == L::DASH
         return dashed_month(v, digits) if @t[i + 2 * S] == L::MONTH && joined?(i + S)

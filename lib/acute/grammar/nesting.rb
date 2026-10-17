@@ -35,12 +35,24 @@ module Acute
 
     # a inside node, the coarser; same: the two are the same size, which conflicts but for a weekday and a date
     def nest(node, a, same, start)
+      if (Shift === node || Shift === a) && (r = shifted(node, a))
+        return r
+      end
       if same && !(Weekday === a && Date === node && node.day) && !(Date === a && a.day && Weekday === node)
         return failure(:conflict, start)
       end
       return failure(:conflict, start) if Unit === a || Unit === node
       # D37: a weekday with a date only picks among the date's readings
       Weekday === node && Date === a ? Within.new(node, a) : Within.new(a, node)
+    end
+
+    # D44: a shift from now beside a day moves a day that is already fixed ("3 years ago tomorrow"); one that
+    # recurs is within it, which resolve reads as the one in the period around the shifted instant
+    def shifted(x, y)
+      s, d = Shift === x ? [x, y] : [y, x]
+      return if s.anchor || Shift === d || UNIT_SIZE[s.unit] < 2 || size(d) < 2
+      return Shift.new(s.count, s.unit, d) if DayRef === d || Rel === d || (Date === d && d.year) || UNIT_SIZE[s.unit] == 2
+      Within.new(d, s)
     end
 
     # "23 oct" + "2026", or "10/23" + "2026", is one date

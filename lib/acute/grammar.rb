@@ -187,6 +187,7 @@ module Acute
       zone = nil
       numeric = false
       at = false
+      signed = false
       while @i < @n
         k = @t[@i]
         v = @t[@i + 1]
@@ -206,6 +207,9 @@ module Acute
             @i += 2 * S
           end
           next
+        elsif (k == L::PLUS || k == L::DASH) && @i + S < @n && signed?(last)
+          signed = true
+          break
         elsif (k == L::PLUS || (k == L::DASH && ((machine?(last) && @t[@i + 4] == @t[@i + S + 3]) || dash_offset?(last)))) && @i + S < @n &&
               (off = offset(@i + S))
           zone = k == L::PLUS ? off : -off
@@ -235,6 +239,7 @@ module Acute
         dates += 1 if Date === a
         at = false
       end
+      return signed_shifts(nil) if signed && last.nil?
       return failure(:incomplete) if at || last.nil?
       node = last
       if a2 && !atoms && dates < 2
@@ -246,7 +251,8 @@ module Acute
         node = combine(atoms, starts)
       end
       return node if Failure === node
-      zone ? Zoned.new(node, zone, numeric) : node
+      node = Zoned.new(node, zone, numeric) if zone
+      signed ? signed_shifts(node) : node
     end
 
     def machine?(a)
@@ -289,4 +295,5 @@ require_relative "grammar/nesting"
 require_relative "grammar/words"
 require_relative "grammar/numbers"
 require_relative "grammar/compact"
+require_relative "grammar/shifts"
 require_relative "grammar/duration"

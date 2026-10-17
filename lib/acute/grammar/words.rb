@@ -75,7 +75,7 @@ module Acute
         @i += S
         if (q = quantity)
           return q if Failure === q
-          return Shift.new(q.count, q.unit, nil)
+          return shifts(1, q, more_units, nil)
         end
         @i += S if @t[@i + 1] == :the
         return failure(:incomplete) if @i >= @n
@@ -96,7 +96,7 @@ module Acute
         y = @t[i + S + 1]
         Fiscal.new(@t[i + S + 2] & L::DIGITS == 2 ? 2000 + y : y)
       when :half
-        clock_words(30)
+        (q = quantity) ? shift_tail(q) : clock_words(30)
       else failure(:conflict)
       end
     end
@@ -111,7 +111,13 @@ module Acute
         if @t[i + S] == L::SLASH && @t[i + 2 * S] == L::NUM && @t[i + 2 * S + 1] > 0
           count = Rational(count, @t[i + 2 * S + 1])
           i += 2 * S
+        elsif @t[i + S] == L::DOT && @t[i + 2 * S] == L::NUM && @t[i + 3 * S] == L::UNIT # "2.5 hours"
+          count += Rational(@t[i + 2 * S + 1], 10**(@t[i + 2 * S + 2] & L::DIGITS))
+          i += 2 * S
         end
+      elsif @t[i + 1] == :half && @t[i + S] == L::ART # "half an hour"
+        count = Rational(1, 2)
+        i += S
       elsif @t[i] == L::DECADE && @t[i + 2] == 2 # "30s": seconds, not the thirties
         @i = i + S
         return Unit.new(:second, @t[i + 1])
@@ -128,25 +134,6 @@ module Acute
       k = @t[i]
       return @t[i + 1] if k == L::UNIT
       :second if k == L::ORD && @t[i + 1] == 2 && @t[i + 2] & L::WORDY != 0
-    end
-
-    # After a quantity: "ago", "from now", "from tomorrow", "after next tuesday", or nothing
-    def shift_tail(q)
-      case @t[@i + 1]
-      when :ago
-        @i += S
-        Shift.new(-q.count, q.unit, nil)
-      when :hence, :later
-        @i += S
-        Shift.new(q.count, q.unit, nil)
-      when :from, :after, :before
-        sign = @t[@i + 1] == :before ? -1 : 1
-        @i += S
-        anchor = item(true)
-        return anchor if Failure === anchor
-        Shift.new(sign * q.count, q.unit, Now === anchor ? nil : anchor)
-      else q
-      end
     end
 
     def article_atom

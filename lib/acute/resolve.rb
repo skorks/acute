@@ -74,6 +74,9 @@ module Acute
       if (cyc = Periodic.cycle(node.outer))
         return Periodic.bare(node, ctx, cyc)
       end
+      if G::Shift === node.outer && !node.outer.anchor && (r = shifted(node, ctx))
+        return r
+      end
       outers = spans(node.outer, ctx)
       return Periodic.inside(node.inner, node.outer, outers[0], ctx) if outers.size == 1
       out = []
@@ -81,6 +84,17 @@ module Acute
         Periodic.inside(node.inner, node.outer, s, ctx).each { |x| out << x unless out.any? { |o| o.b == x.b && o.e == x.e } }
       end
       out
+    end
+
+    # D44: a recurring day beside a shift from now is the one in the week, month or year (its own cycle, or
+    # the shift's unit when that is coarser) that holds the shifted instant: "thanksgiving in 9 months"
+    def self.shifted(node, ctx)
+      cyc = Periodic.cycle(node.inner)
+      return if !cyc || cyc == :day
+      unit = node.outer.unit
+      unit = cyc if G::UNIT_SIZE[cyc] > G::UNIT_SIZE[unit]
+      t = Shift.spans(node.outer, ctx)[0].b
+      Periodic.inside(node.inner, nil, Period.span(unit, ctx, Period.index(unit, ctx, t)), ctx)
     end
 
     # D18: an offset in the text wins over the zone, and fixes the instant; D29: a numeric one makes the time
