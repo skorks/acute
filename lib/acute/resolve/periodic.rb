@@ -25,8 +25,7 @@ module Acute
 
       # The occurrences in cycle i, the main one first; empty when there is none ("feb 29" in 2027)
       def self.at(node, ctx, i, cyc = cycle(node))
-        memo = ctx.occurrences(node)
-        memo[i] ||= inside(node, nil, Period.span(cyc, ctx, i), ctx)
+        inside(node, nil, Period.span(cyc, ctx, i), ctx)
       end
 
       # D11, D23: the current one if it isn't over, else the next; in past context the latest that has begun

@@ -84,14 +84,6 @@ module Acute
 
     def past? = @past
 
-    # The occurrences of one periodic node already found, by cycle index: "next friday" looks at the same
-    # weeks several times
-    def occurrences(node)
-      return @occurrences if @occurrences_of.equal?(node)
-      @occurrences_of = node
-      @occurrences = {}
-    end
-
     def note(assumption)
       if @notes
         @notes << assumption unless @notes.include?(assumption)
