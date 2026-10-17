@@ -27,6 +27,8 @@ module Acute
     HEMISPHERES = { north: false, south: true }.freeze
 
     attr_reader :now, :now_local, :zone, :today, :now_secs, :notes, :fiscal_year_start
+    # past: true in past context; :back while resolve looks back for the most recent one, which adds no
+    # alternatives of its own (D44)
     attr_accessor :dst, :past, :machine
 
     def initialize(now, zone, context, locale = nil, week_start = nil, hemisphere = nil, fiscal_year_start = nil)

@@ -78,7 +78,7 @@ module Acute
       def self.open(node, ctx)
         now = ctx.now_local
         past = ctx.past
-        ctx.past = node.dir == :since
+        ctx.past = node.dir == :since && :back
         list = Resolve.spans(node.node, ctx)
         ctx.past = past
         list = current(node.node, ctx) || list if node.dir == :after && G::Holiday === node.node

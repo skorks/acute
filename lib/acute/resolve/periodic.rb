@@ -34,19 +34,50 @@ module Acute
         i = Period.index(cyc, ctx, now)
         # The cycles either side of now's are looked at only when an occurrence there can reach into it
         near = contained?(node) ? 0 : 1
-        return last(node, ctx, i + near, cyc) { |s| s.b <= now } if ctx.past?
+        that_day = on_that_day(node, ctx, i, cyc)
+        return that_day if that_day
+        if ctx.past?
+          list = last(node, ctx, i + near, cyc) { |s| s.b <= now }
+          # D44: in past context, a period under way is the current one, then the one before
+          if ctx.past == true && list.size > 0 && list[0].e > now
+            b = list[0].b
+            list += last(node, ctx, Period.index(cyc, ctx, b) - 1, cyc) { |s| s.b < b }.take(1)
+          end
+          return list
+        end
         list = first(node, ctx, i - near, cyc) { |s| s.e > now }
         # D40, D41: "tonight" said at exactly 00:00 is the rest of the night under way, then the coming one
         if now % DAY == 0 && G::Part === node && node.name == :tonight && list.size > 0 && list[0].b < now
           return [Span.new(now, list[0].e, list[0].grain, nil), *at(node, ctx, i, cyc)]
         end
-        # D40: a day said on that day is today, then the next one
-        if list.size > 0 && list[0].grain == :day && list[0].b <= now
-          ctx.note(SAME_DAY)
-          after = first(node, ctx, i, cyc) { |s| s.b > now }
-          list += after.take(1)
-        end
         list
+      end
+
+      # D40, D44: a weekday or a day of the month said on that day, with or without a time: today's, then the
+      # next one (in past context the one before); today's comes second once it is over
+      def self.on_that_day(node, ctx, i, cyc)
+        return if ctx.past == :back || !(day = day_of(node, cyc))
+        # (today + 4) % 7: today's weekday
+        return unless G::Weekday === day ? (ctx.today + 4) % 7 == day.wday : Calendar.civil_from_days(ctx.today) % 100 == day.day
+        ctx.note(SAME_DAY)
+        cur = at(node, ctx, i, cyc)
+        if ctx.past?
+          other = last(node, ctx, i - 1, cyc) { true }.take(1)
+          cur[0].b <= ctx.now_local ? cur + other : other + cur
+        else
+          other = first(node, ctx, i + 1, cyc) { true }
+          other = other.take(1) if cur.size == 1
+          cur[0].e > ctx.now_local ? cur + other : other + cur
+        end
+      end
+
+      # The weekday or day of the month a phrase falls on, under a time or part of day
+      def self.day_of(node, cyc)
+        case node
+        when G::Weekday then cyc == :week ? node : nil
+        when G::Date then cyc == :month && node.day ? node : nil
+        when G::Within then cycle(node.inner) == :day || G::Range === node.inner ? day_of(node.outer, cyc) : nil
+        end
       end
 
       # The first occurrence from cycle i on whose main reading passes the block

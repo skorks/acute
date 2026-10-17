@@ -34,7 +34,7 @@ module Acute
     # year is searched for.
     def self.mismatch(node, date, ctx)
       unless ctx.past?
-        ctx.past = true
+        ctx.past = :back
         list = spans(node, ctx)
         ctx.past = false
         return list unless list.empty?

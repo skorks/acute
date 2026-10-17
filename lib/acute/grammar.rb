@@ -135,11 +135,13 @@ module Acute
       range(from, to)
     end
 
-    # The range's trailing atoms ("between 9:30 and 11:00 on thursday") belong to both ends
+    # The range's trailing atoms ("between 9:30 and 11:00 on thursday") belong to both ends, and so do its
+    # leading ones ("monday 8-9am")
     def range(from, to)
       if Within === to && Clock === from && Clock === to.inner
         return Within.new(Range.new(from, to.inner), to.outer)
       end
+      return Within.new(Range.new(from.inner, to), from.outer) if Within === from && Clock === from.inner && Clock === to
       Range.new(from, to)
     end
 

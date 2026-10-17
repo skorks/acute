@@ -119,7 +119,7 @@ module Acute
       def self.clock(word, c, ctx)
         return Clock.bare(c, ctx) if word == :next || word == :this
         past = ctx.past
-        ctx.past = true
+        ctx.past = :back
         out = Clock.bare(c, ctx)
         ctx.past = past
         out
