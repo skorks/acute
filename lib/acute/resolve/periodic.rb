@@ -233,8 +233,15 @@ module Acute
                 b = d * DAY
                 return b >= s.b && b + DAY <= s.e ? [Span.new(b, b + DAY, :day, nil)] : []
               when G::Weekend
-                sat = Named.nth_weekday(Period.day(s.b), 6, n > 0 ? n : 1)
-                Named.weekends(Period.span(:week, ctx, Period.index(:week, ctx, sat * DAY)), ctx)
+                if n > 0
+                  sat = Named.nth_weekday(Period.day(s.b), 6, n)
+                else
+                  sat = s.e / DAY - 1
+                  sat -= (sat - 2) % 7 # (sat + 4 - 6) % 7: days back to a Saturday
+                end
+                # D44: the weekend whose Saturday is in the period, though it ends after it
+                return [] unless sat * DAY >= s.b && sat * DAY < s.e
+                return Named.weekends(Period.span(:week, ctx, Period.index(:week, ctx, sat * DAY)), ctx)
               else
                 unit = x.unit
                 unit = :day if unit == :business_day

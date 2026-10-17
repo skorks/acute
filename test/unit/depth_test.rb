@@ -221,5 +221,23 @@ class DepthTest < Minitest::Test
     assert_reads "this q3", "2027-07-01 00:00:00 -04:00", ["2026-07-01 00:00:00 -04:00"]
     assert_reads "next q4", "2027-10-01 00:00:00 -04:00" # Q4 under way: the one after
   end
+
+  def test_d44_this_past_is_past
+    assert_reads "this past saturday", "2026-10-10 00:00:00 -04:00" # said on a Saturday: today's is not over
+    assert_reads "this past friday", "2026-10-16 00:00:00 -04:00"
+  end
+
+  def test_last_of_a_month_with_in
+    assert_reads "the last friday in june", "2027-06-25 00:00:00 -04:00"
+    assert_equal "2026-10-31 00:00:00 -04:00", wall(parse("last weekend of october").begin) # running into November
+    assert_equal "2027-10-30 00:00:00 -04:00", wall(parse("last weekend in october 2027").begin)
+  end
+
+  def test_a_unit_after_or_before_a_day
+    assert_reads "the day after tomorrow", "2026-10-19 00:00:00 -04:00"
+    assert_reads "day before yesterday", "2026-10-15 00:00:00 -04:00"
+    assert_reads "the day after next 6pm", "2026-10-19 18:00:00 -04:00"
+    assert_reads "the week after next", "2026-10-25 00:00:00 -04:00"
+  end
 end
 

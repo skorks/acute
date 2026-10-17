@@ -44,6 +44,16 @@ module Acute
       elsif k == L::UNIT
         return clock_words(15) if v == :quarter && @t[i + S] == L::REL || @t[i + S + 1] == :to
         return iso_week if v == :week && week_number?(i + S)
+        if (w = t[i + S + 1]) == :after || w == :before # "the day after tomorrow"
+          @i += S
+          # "the week after next": the one after next week, when "next" has nothing of its own
+          if w == :after && t[i + 2 * S + 1] == :next && t[i + 2 * S] == L::REL &&
+             (!(k = t[i + 3 * S]) || k == L::CLOCK || k == L::NUM || k == L::AT)
+            @i += 2 * S
+            return Shift.new(1, v, Rel.new(:next, Unit.new(v, nil)))
+          end
+          return shift_tail(Unit.new(v, 1))
+        end
         failure(:incomplete)
       elsif k == L::DECADE then decade_atom
       else failure(:conflict)
@@ -242,8 +252,8 @@ module Acute
       w = @t[@i + 1]
       start = @i
       @i += S
-      if w == :this && @t[@i] == L::REL && @t[@i + 1] == :next # D40: "this coming week"
-        w = :coming
+      if w == :this && @t[@i] == L::REL && (@t[@i + 1] == :next || @t[@i + 1] == :past) # D40: "this coming week"
+        w = @t[@i + 1] == :next ? :coming : :past # D44: "this past sunday" is "past sunday"
         @i += S
       end
       k = @t[@i]
@@ -256,7 +266,8 @@ module Acute
       if k == L::WDAY || k == L::UNIT || k == L::WEEKEND
         node = k == L::WDAY ? Weekday.new(v) : k == L::UNIT ? Unit.new(v, nil) : WEEKEND
         @i += S
-        return of(Nth.new(-1, node)) if w == :last && @t[@i + 1] == :of
+        # "last friday of june"; "last sunday in march" when a month follows
+        return of(Nth.new(-1, node)) if w == :last && (@t[@i + 1] == :of || (@t[@i + 1] == :in && @t[@i + S] == L::MONTH))
         Rel.new(w, node)
       elsif k == L::NUM && unit_at(@i + S)
         q = quantity
