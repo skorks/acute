@@ -222,6 +222,13 @@ class DepthTest < Minitest::Test
     assert_reads "next q4", "2027-10-01 00:00:00 -04:00" # Q4 under way: the one after
   end
 
+  def test_d44_an_ordinal_quarter_is_a_q
+    assert_reads "next first quarter", "2027-01-01 00:00:00 -05:00"
+    assert_reads "last 2nd quarter", "2026-04-01 00:00:00 -04:00"
+    assert_reads "2005 second quarter", "2005-04-01 00:00:00 -05:00"
+    assert_reads "current quarter", "2026-10-01 00:00:00 -04:00"
+  end
+
   def test_d44_this_past_is_past
     assert_reads "this past saturday", "2026-10-10 00:00:00 -04:00" # said on a Saturday: today's is not over
     assert_reads "this past friday", "2026-10-16 00:00:00 -04:00"

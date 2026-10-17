@@ -242,8 +242,8 @@ module Acute
       elsif k == L::SEASON || k == L::HOLIDAY || k == L::PART
         @i += S
         Rel.new(w, k == L::SEASON ? Season.new(v) : k == L::HOLIDAY ? Holiday.new(v) : Part.new(v))
-      elsif k == L::WORD && v == :q # D32: "next q1"
-        q = word_atom(v)
+      elsif (k == L::WORD && v == :q) || (k == L::ORD && @t[@i + S + 1] == :quarter) # D32: "next q1", "last 2nd quarter"
+        q = atom(false)
         Failure === q ? q : Rel.new(w, q)
       elsif (k == L::NUM && (@t[@i + S] == L::MER || @t[@i + S] == L::NAMED)) || k == L::CLOCK || k == L::NAMED
         c = k == L::NAMED ? (@i += S) && named(v) : k == L::CLOCK ? written(v, @t[@i + 2]) : number(v, @t[@i + 2], true)

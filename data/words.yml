@@ -125,6 +125,7 @@ unit:
 relative:       # "past" is also the clock word in "twenty past four"
   next: next
   this: this
+  current: this
   last: last
   past: past
   coming: next

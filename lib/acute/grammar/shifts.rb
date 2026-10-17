@@ -126,7 +126,7 @@ module Acute
     def unit_at(i)
       k = @t[i]
       return @t[i + 1] if k == L::UNIT
-      :second if k == L::ORD && @t[i + 1] == 2 && @t[i + 2] & L::WORDY != 0
+      :second if k == L::ORD && @t[i + 1] == 2 && @t[i + 2] & L::WORDY != 0 && @t[i + S] != L::UNIT # not "2005 second quarter"
     end
   end
 end

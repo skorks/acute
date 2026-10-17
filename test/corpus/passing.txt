@@ -834,6 +834,7 @@ chronic-issues-318-1
 chronic-issues-32-1
 chronic-issues-32-2
 chronic-issues-32-3
+chronic-issues-32-4
 chronic-issues-32-5
 chronic-issues-320-1
 chronic-issues-320-2
@@ -1182,8 +1183,14 @@ chronic-master-test-parsing-rb-1231-1
 chronic-master-test-parsing-rb-1231-2
 chronic-master-test-parsing-rb-1231-3
 chronic-master-test-parsing-rb-1235-1
+chronic-master-test-parsing-rb-1235-2
+chronic-master-test-parsing-rb-1235-3
 chronic-master-test-parsing-rb-1239-1
+chronic-master-test-parsing-rb-1239-2
+chronic-master-test-parsing-rb-1239-3
 chronic-master-test-parsing-rb-1243-1
+chronic-master-test-parsing-rb-1243-2
+chronic-master-test-parsing-rb-1243-3
 chronic-master-test-parsing-rb-1253-1
 chronic-master-test-parsing-rb-1253-2
 chronic-master-test-parsing-rb-1253-3
@@ -1194,6 +1201,7 @@ chronic-master-test-parsing-rb-1261-1
 chronic-master-test-parsing-rb-1261-2
 chronic-master-test-parsing-rb-1261-3
 chronic-master-test-parsing-rb-1265-1
+chronic-master-test-parsing-rb-1265-2
 chronic-master-test-parsing-rb-1265-3
 chronic-master-test-parsing-rb-1269-1
 chronic-master-test-parsing-rb-1269-2
@@ -1208,8 +1216,14 @@ chronic-master-test-parsing-rb-1281-1
 chronic-master-test-parsing-rb-1281-2
 chronic-master-test-parsing-rb-1281-3
 chronic-master-test-parsing-rb-1285-1
+chronic-master-test-parsing-rb-1285-2
+chronic-master-test-parsing-rb-1285-3
 chronic-master-test-parsing-rb-1289-1
+chronic-master-test-parsing-rb-1289-2
+chronic-master-test-parsing-rb-1289-3
 chronic-master-test-parsing-rb-1293-1
+chronic-master-test-parsing-rb-1293-2
+chronic-master-test-parsing-rb-1293-3
 chronic-master-test-parsing-rb-1303-1
 chronic-master-test-parsing-rb-1303-2
 chronic-master-test-parsing-rb-1303-3
@@ -1235,8 +1249,14 @@ chronic-master-test-parsing-rb-1331-1
 chronic-master-test-parsing-rb-1331-2
 chronic-master-test-parsing-rb-1331-3
 chronic-master-test-parsing-rb-1335-1
+chronic-master-test-parsing-rb-1335-2
+chronic-master-test-parsing-rb-1335-3
 chronic-master-test-parsing-rb-1339-1
+chronic-master-test-parsing-rb-1339-2
+chronic-master-test-parsing-rb-1339-3
 chronic-master-test-parsing-rb-1343-1
+chronic-master-test-parsing-rb-1343-2
+chronic-master-test-parsing-rb-1343-3
 chronic-master-test-parsing-rb-1353-1
 chronic-master-test-parsing-rb-1353-2
 chronic-master-test-parsing-rb-1353-3
@@ -1262,8 +1282,14 @@ chronic-master-test-parsing-rb-1381-1
 chronic-master-test-parsing-rb-1381-2
 chronic-master-test-parsing-rb-1381-3
 chronic-master-test-parsing-rb-1385-1
+chronic-master-test-parsing-rb-1385-2
+chronic-master-test-parsing-rb-1385-3
 chronic-master-test-parsing-rb-1389-1
+chronic-master-test-parsing-rb-1389-2
+chronic-master-test-parsing-rb-1389-3
 chronic-master-test-parsing-rb-1393-1
+chronic-master-test-parsing-rb-1393-2
+chronic-master-test-parsing-rb-1393-3
 chronic-master-test-parsing-rb-178-1
 chronic-master-test-parsing-rb-25-1
 chronic-master-test-parsing-rb-29-1
@@ -2631,6 +2657,7 @@ duckling-0123
 duckling-0125
 duckling-0126
 duckling-0127
+duckling-0128
 duckling-0129
 duckling-0130
 duckling-0131
@@ -2643,6 +2670,7 @@ duckling-0137
 duckling-0138
 duckling-0140
 duckling-0141
+duckling-0142
 duckling-0144
 duckling-0145
 duckling-0147
@@ -2653,6 +2681,7 @@ duckling-0158
 duckling-0159
 duckling-0160
 duckling-0161
+duckling-0162
 duckling-0163
 duckling-0164
 duckling-0165
@@ -2795,6 +2824,7 @@ duckling-0369
 duckling-0370
 duckling-0371
 duckling-0379
+duckling-0380
 duckling-0381
 duckling-0382
 duckling-0383
@@ -3104,7 +3134,9 @@ duckling-1078
 duckling-1080
 duckling-1082
 duckling-1083
+duckling-1084
 duckling-1085
+duckling-1086
 duckling-1087
 duckling-1088
 duckling-1089
@@ -3135,7 +3167,9 @@ duckling-1120
 duckling-1121
 duckling-1122
 duckling-1123
+duckling-1124
 duckling-1125
+duckling-1126
 duckling-1127
 duckling-1128
 duckling-1129
@@ -11450,6 +11484,8 @@ natty-0094
 natty-0095
 natty-0096
 natty-0097
+natty-0098
+natty-0099
 natty-0100
 natty-0101
 natty-0102
@@ -12046,6 +12082,7 @@ recognizers-0098
 recognizers-0100
 recognizers-0101
 recognizers-0102
+recognizers-0103
 recognizers-0104
 recognizers-0105
 recognizers-0106
@@ -12490,6 +12527,7 @@ recognizers-0641
 recognizers-0642
 recognizers-0643
 recognizers-0644
+recognizers-0645
 recognizers-0646
 recognizers-0647
 recognizers-0648
@@ -13579,6 +13617,7 @@ sutime-0048
 sutime-0050
 sutime-0051
 sutime-0052
+sutime-0054
 sutime-0055
 sutime-0057
 sutime-0058
