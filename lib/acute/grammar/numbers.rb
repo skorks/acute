@@ -189,15 +189,23 @@ module Acute
       dated(m, day)
     end
 
-    # The date with its optional year after it: four digits, "of 2026", or "'26" (D23)
+    # The date with its optional year after it: four digits, "of 2026", "'26", or after a day two digits that
+    # are not a clock ("3 jan 10", "may 27 79") (D23)
     def dated(m, day)
       @i += S if @t[@i + 1] == :of && @t[@i + S] == L::NUM
       f = @t[@i + 2]
-      if @t[@i] == L::NUM && ((f & L::DIGITS == 4 && f & L::ZERO == 0) || f & L::SHORT != 0)
+      if @t[@i] == L::NUM && ((f & L::DIGITS == 4 && f & L::ZERO == 0) || f & L::SHORT != 0 || (day && short_year?(f)))
         @i += S
-        return Date.new(@t[@i - S + 1], m, day, nil, f & L::SHORT != 0)
+        return Date.new(@t[@i - S + 1], m, day, nil, f & L::DIGITS != 4)
       end
       Date.new(nil, m, day, nil, false)
+    end
+
+    def short_year?(f)
+      return false unless f & L::DIGITS == 2
+      k = @t[@i + S]
+      k != L::MER && k != L::UNIT && k != L::NAMED && k != L::ART && k != L::DASH &&
+        !(k == L::WORD && ((w = @t[@i + S + 1]) == :oclock || RANGE[w] || w == :and))
     end
 
     def named(hour) = Clock.new(hour, 0, 0, nil, hour == 12 ? :noon : :midnight, false, false)

@@ -49,6 +49,14 @@ module Acute
             d = w + (day.wday - w - 4) % 7
             i += ctx.past? ? (d > ctx.today ? -1 : 0) : (d < ctx.today ? 1 : 0)
           end
+        elsif cyc == :year && near == 0
+          # The same for a month already gone this year
+          d = node
+          d = d.outer while G::Within === d
+          if G::Date === d && (m = d.month)
+            cur = Period.ymd(now) / 100 % 100
+            i += ctx.past? ? (m > cur ? -1 : 0) : (m < cur ? 1 : 0)
+          end
         end
         if ctx.past?
           list = last(node, ctx, i + near, cyc) { |s| s.b <= now }

@@ -158,4 +158,18 @@ class DepthTest < Minitest::Test
   def test_d10_a_range_of_numeric_dates_reads_both_ends_in_one_order
     assert_span "from 5/1-5/7, 2020", "2020-05-01 00:00", "2020-05-08 00:00", ["2020-01-05 00:00"]
   end
+
+  def test_d23_two_digits_after_a_day_and_month_are_its_year
+    assert_reads "3 jan 10", "2010-01-03 00:00:00 -05:00"
+    assert_reads "may 27 79", "1979-05-27 00:00:00 -04:00"
+    assert_reads "may 1st 01", "2001-05-01 00:00:00 -04:00"
+    assert_reads "January first 12", "2012-01-01 00:00:00 -05:00"
+    assert_reads "may 27 10am", "2027-05-27 10:00:00 -04:00"
+    assert_span "may 27 10-11am", "2027-05-27 10:00", "2027-05-27 11:00"
+  end
+
+  def test_d42_a_month_already_gone_this_year_does_not_decide_a_missing_nth_weekday
+    assert_reads "5th thursday in july", "2027-07-29 00:00:00 -04:00"
+    assert_nil Acute.parse("5th tuesday in july", now: "2026-10-17T14:00", zone: NY)
+  end
 end
