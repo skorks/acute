@@ -376,4 +376,15 @@ class DepthTest < Minitest::Test
     r = parse("Fri, Jul 18", now: "2013-02-12T04:30")
     assert_equal ["2013-07-18 00:00:00 -04:00", true], [wall(r.begin), codes(r).include?(:weekday_mismatch)]
   end
+
+  def test_d44_a_calendar_shift_from_a_longer_anchor_is_one_unit_from_its_start
+    r = parse("1 day before next month")
+    assert_equal ["2026-10-31 00:00:00 -04:00", :day, 86_400], [wall(r.begin), r.grain, r.end - r.begin]
+    r = parse("four days before fall 2027")
+    assert_equal ["2027-08-28 00:00:00 -04:00", :day], [wall(r.begin), r.grain]
+    r = parse("a month from today", now: "2011-02-28T00:00")
+    assert_equal ["2011-03-28 00:00:00 -04:00", :day, 86_400], [wall(r.begin), r.grain, r.end - r.begin]
+    r = parse("a year after next month")
+    assert_equal ["2027-11-01 00:00:00 -04:00", :month], [wall(r.begin), r.grain]
+  end
 end
