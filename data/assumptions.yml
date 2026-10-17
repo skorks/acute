@@ -82,3 +82,6 @@ zone_inferred:
 weekday_mismatch:
   rule: D37
   message: "the weekday given doesn't fall on that date, so the date is used"
+also_duration:
+  rule: D45
+  message: "the text also reads as a length of time, which Acute.duration gives; read takes the time"

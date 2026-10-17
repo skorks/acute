@@ -78,8 +78,7 @@ module Corpus
     return ["chronic_option", nil] if opts.keys.intersect?(CHRONIC_ONLY)
 
     tz = TZS[c["tz"]]
-    kwargs = opts.to_h { |k, v| [k.to_sym, k == "context" ? v.to_sym : v] }
-    r = Acute.parse(c["text"], now: Time.at(epoch(c["now"], tz)), zone: c["tz"], **kwargs)
+    r = Acute.parse(c["text"], **context(c))
     got = r && ([r] + r.alternatives).map { |x| [x.begin&.to_i, x.end&.to_i] }
     return [r ? "garbage" : "pass", got] if exp["nil"]
     return ["nil", got] unless r
@@ -89,6 +88,17 @@ module Corpus
     [got[0] == want[0] ? "alt_differs" : "wrong", got]
   rescue StandardError, SystemStackError => e
     ["raises", "#{e.class}: #{e.message[0, 80]}"]
+  end
+
+  def context(c)
+    kwargs = (c["options"] || {}).to_h { |k, v| [k.to_sym, k == "context" ? v.to_sym : v] }
+    { now: Time.at(epoch(c["now"], TZS[c["tz"]])), zone: c["tz"], **kwargs }
+  end
+
+  # Acute.read gives a passing case the kind it expects: a Duration for a duration, a Result for a time
+  def read_kind?(c)
+    return Acute::Duration === Acute.read(c["text"]) if c["expect"].key?("duration")
+    Acute::Result === Acute.read(c["text"], **context(c))
   end
 
   # A duration is compared by its ISO 8601 form
@@ -135,16 +145,19 @@ module Corpus
     regressions = results.select { |c, s, _| s != "pass" && ratchet.include?(c["id"]) }
     gained = passing - ratchet
     regressions.each { |c, s, got| puts "REGRESSION #{s}: #{show(c, got)}" }
+    misread = results.select { |c, s, _| s == "pass" && !c["expect"]["nil"] && !read_kind?(c) }
+    misread.each { |c, _, _| puts "MISREAD: #{c["id"]} | #{c["text"]}" }
+    puts "read: #{misread.size} passing cases of the wrong kind"
     puts "ratchet: #{ratchet.count { |id| ids[id] }} recorded, #{passing.size} passing, #{gained.size} new, #{regressions.size} regressed"
     results.select { |_, s, _| s == list }.each { |c, _, got| puts show(c, got) } if list
 
     if record
-      abort "not recording: fix the regressions first" unless regressions.empty?
+      abort "not recording: fix the regressions first" unless regressions.empty? && misread.empty?
       abort "not recording: --grep/--file/--rule run only part of the corpus" if grep || file || rule
       File.write(RATCHET, passing.join("\n") + "\n")
       puts "recorded #{passing.size} passing ids in test/corpus/passing.txt"
     end
-    regressions.empty?
+    regressions.empty? && misread.empty?
   end
 end
 
