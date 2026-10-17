@@ -135,6 +135,8 @@ module Acute
           b = s.ub || (b && zone.local_to_utc(b, ctx))
           dst = ctx.dst
           e = s.ue || (e && zone.local_to_utc(e, ctx))
+          # a start the clocks skipped moved forward by the gap, past the end: it keeps its length
+          e = b + (s.e - s.b) if b && e && e <= b
           point &&= zone.local_to_utc(point, ctx)
         end
         next if !out.empty? && out.any? { |o| o.begin == b && o.end == e }

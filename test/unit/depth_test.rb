@@ -362,4 +362,11 @@ class DepthTest < Minitest::Test
     assert_reads "1978-12-22T23Z", "1978-12-22 18:00:00 -05:00"
     assert_raises(Acute::ParseError) { parse("2003-09-25T24") }
   end
+
+  def test_d44_a_span_whose_start_the_clocks_skipped_keeps_its_length
+    r = parse("2008-03-30 02:59:59", zone: "Europe/Amsterdam")
+    assert_equal ["2008-03-30 03:59:59 +02:00", 1], [wall(r.begin), r.end - r.begin]
+    r = parse("next saturday", now: "1993-08-14T17:17", zone: "Pacific/Kwajalein") # the 21st never happened there
+    assert_equal ["1993-08-22 00:00:00 +12:00", 86_400], [wall(r.begin), r.end - r.begin]
+  end
 end
