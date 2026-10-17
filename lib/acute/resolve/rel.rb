@@ -12,6 +12,7 @@ module Acute
       def self.spans(node, ctx)
         x = node.node
         word = node.word
+        return Period.fiscal(x, ctx, word == :this ? 0 : word == :next || word == :coming ? 1 : -1) if G::Fiscal === x
         return periodic(word, x, ctx) unless G::Unit === x || G::Clock === x
         return unit(word, x.unit, ctx) if G::Unit === x && !x.count
         word = :next if word == :coming

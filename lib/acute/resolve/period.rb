@@ -110,11 +110,17 @@ module Acute
         [count.to_i, unit]
       end
 
-      # D17, D38: only with fiscal_year_start:, and FY27 is the year ending in 2027
-      def self.fiscal(node, ctx)
+      # D17, D38: only with fiscal_year_start:, and FY27 is the year ending in 2027; "next fiscal year" is the
+      # one after the fiscal year holding today
+      def self.fiscal(node, ctx, shift = nil)
         start = ctx.fiscal_year_start
         return [] unless start
-        y = start == 1 ? node.year : node.year - 1
+        if shift
+          ym = ymd(ctx.now_local) / 100
+          y = ym / 100 + shift - (ym % 100 < start ? 1 : 0)
+        else
+          y = start == 1 ? node.year : node.year - 1
+        end
         Span.new(civil(y, start, 1), civil(y + 1, start, 1), :year, nil).then { [_1] }
       end
     end

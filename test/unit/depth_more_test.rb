@@ -233,4 +233,11 @@ class DepthMoreTest < Minitest::Test
     assert_raises(Acute::ParseError) { parse("~3pm") }
     assert_equal [], Acute.extract("Tel: +86 2010-2015-86", now: "2026-10-17T14:00", zone: NY).mentions
   end
+
+  def test_d17_this_next_and_last_fiscal_year_count_from_the_one_holding_today
+    assert_equal ["2026-10-01 00:00:00 -04:00", "2027-10-01 00:00:00 -04:00"], span("this fiscal year", fiscal_year_start: 10)
+    assert_equal ["2027-07-01 00:00:00 -04:00", "2028-07-01 00:00:00 -04:00"], span("next financial year", fiscal_year_start: 7)
+    assert_equal ["2024-11-01 00:00:00 -04:00", "2025-11-01 00:00:00 -04:00"], span("last fiscal year", fiscal_year_start: 11)
+    assert_raises(Acute::ParseError) { parse("this fiscal year") }
+  end
 end
