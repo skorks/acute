@@ -74,7 +74,23 @@ class DurationTest < Minitest::Test
     assert_equal "1h 30m", d.to_s
     assert_equal "1 hour 30 minutes", d.to_s(:long)
     assert_equal "1 year 2 months", Acute.duration("1 year 2 months").to_s(:long)
-    assert_equal({ kind: "duration", parts: { hours: 1, minutes: 30 }, iso8601: "PT1H30M" }, d.to_h)
+    assert_equal({ kind: "duration", parts: { hours: 1, minutes: 30 }, iso8601: "PT1H30M", seconds: 5400 }, d.to_h)
+    assert_equal "1 business day", Acute.duration("1 business day").to_s
+    assert_equal "2 business days", Acute.duration("2 business days").to_s
+  end
+
+  def test_json
+    assert_equal({ "kind" => "duration", "parts" => { "months" => 1 }, "iso8601" => "P1M", "seconds" => nil },
+                 JSON.parse(Acute.duration("1 month").to_json))
+    d = Acute.duration("123.45 sec")
+    assert_equal({ "kind" => "duration", "parts" => { "seconds" => 123.45 }, "iso8601" => "PT123.45S", "seconds" => 123.45 },
+                 d.as_json)
+    assert_equal({ "business_days" => 5 }, Acute.duration("5 business days").as_json["parts"])
+  end
+
+  def test_four_digit_seconds
+    assert_equal({ seconds: 5400 }, Acute.duration("5400s").parts)
+    assert_equal({ seconds: 30 }, Acute.duration("30s").parts)
   end
 
   def test_equal_by_parts

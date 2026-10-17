@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/skorks/acute/schema/result.json",
+  "title": "Acute::Result",
+  "description": "A parsed time or span. Times are ISO 8601 with the zone's offset; end is exclusive and null when open.",
+  "type": "object",
+  "required": ["kind", "text", "time", "begin", "end", "grain", "zone", "assumptions", "alternatives"],
+  "additionalProperties": false,
+  "properties": {
+    "kind": { "const": "time" },
+    "text": { "type": "string" },
+    "time": { "type": "string", "format": "date-time" },
+    "begin": { "type": ["string", "null"], "format": "date-time" },
+    "end": { "type": ["string", "null"], "format": "date-time" },
+    "grain": { "$ref": "#/$defs/grain" },
+    "zone": { "type": "string", "description": "An IANA zone name, or a fixed offset such as \"+10:00\"" },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "rule", "message"],
+        "additionalProperties": false,
+        "properties": {
+          "code": { "type": "string" },
+          "rule": { "type": ["string", "null"], "description": "A D-number in acute's decisions" },
+          "message": { "type": "string" }
+        }
+      }
+    },
+    "alternatives": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["time", "begin", "end", "grain"],
+        "additionalProperties": false,
+        "properties": {
+          "time": { "type": "string", "format": "date-time" },
+          "begin": { "type": ["string", "null"], "format": "date-time" },
+          "end": { "type": ["string", "null"], "format": "date-time" },
+          "grain": { "$ref": "#/$defs/grain" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "grain": {
+      "enum": ["second", "minute", "hour", "day", "weekend", "week", "month", "quarter", "season",
+               "year", "decade", "century"]
+    }
+  }
+}

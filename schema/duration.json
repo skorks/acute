@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/skorks/acute/schema/duration.json",
+  "title": "Acute::Duration",
+  "description": "A length of time as the parts said. seconds is null when a part (years, months, business days) has no fixed length; iso8601 is null for business days.",
+  "type": "object",
+  "required": ["kind", "parts", "iso8601", "seconds"],
+  "additionalProperties": false,
+  "properties": {
+    "kind": { "const": "duration" },
+    "parts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "years": { "type": "number" },
+        "months": { "type": "number" },
+        "weeks": { "type": "number" },
+        "business_days": { "type": "number" },
+        "days": { "type": "number" },
+        "hours": { "type": "number" },
+        "minutes": { "type": "number" },
+        "seconds": { "type": "number" }
+      }
+    },
+    "iso8601": { "type": ["string", "null"] },
+    "seconds": { "type": ["number", "null"] }
+  }
+}

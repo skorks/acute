@@ -64,6 +64,11 @@ class ResultTest < Minitest::Test
     }
     assert_equal expected, r.to_h
     assert_equal JSON.parse(JSON.generate(expected)), JSON.parse(r.to_json)
+    assert_equal JSON.parse(JSON.generate(expected)), r.as_json
+  end
+
+  def test_an_open_end_is_null_in_json
+    assert_nil JSON.parse(parse("after 3pm").to_json)["end"]
   end
 
   def test_inspect

@@ -70,6 +70,9 @@ module Acute
 
     def to_json(*args) = to_h.to_json(*args)
 
+    # String keys, as JSON.parse would give
+    def as_json(*) = JSON.parse(to_json)
+
     # en-US: "Sun, Oct 18, 2026, 9am EDT", or "Sun, Oct 18, 2026, all day"
     def to_s
       local = local(@point)

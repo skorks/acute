@@ -54,6 +54,10 @@ module Acute
           return Unit.new(unit, f[1])
         end
       end
+      if @t[i] == L::DECADE # "5400s": in a length, seconds, whatever the digits
+        @i = i + S
+        return Unit.new(:second, @t[i + 1])
+      end
       return quantity unless @t[i] == L::NUM
       if @t[i + S + 1] == :and && (f = fraction(i + 2 * S))
         j = f[0]

@@ -1,3 +1,5 @@
+require "json"
+
 module Acute
   # A length of time as the parts said, so "1 month" stays a month rather than a guess at its seconds
   class Duration
@@ -61,17 +63,30 @@ module Acute
     end
 
     def to_s(style = :short)
-      return @parts.map { |k, n| "#{num(n)}#{SHORT[k]}" }.join(" ") if style == :short
+      if style == :short
+        return @parts.map { |k, n| k == :business_days && n == 1 ? "1 business day" : "#{num(n)}#{SHORT[k]}" }.join(" ")
+      end
       @parts.map { |k, n| "#{num(n)} #{LONG[k]}#{"s" unless n == 1}" }.join(" ")
     end
 
-    def to_h = { kind: "duration", parts: @parts, iso8601: iso8601 }
+    # seconds is nil when a part has no fixed length; a fraction of a second is a Float
+    def to_h
+      fixed = (@parts.keys - FIXED.keys).empty?
+      { kind: "duration", parts: @parts.transform_values { json_num(_1) }, iso8601: iso8601,
+        seconds: fixed ? json_num(seconds) : nil }
+    end
+
+    def to_json(*args) = to_h.to_json(*args)
+
+    def as_json(*) = JSON.parse(to_json)
 
     def ==(other) = Duration === other && other.parts == @parts
 
     def inspect = "#<Acute::Duration #{to_s}>"
 
     private
+
+    def json_num(n) = Rational === n ? n.to_f : n
 
     def whole(n) = Rational === n && n.denominator == 1 ? n.to_i : n
 
