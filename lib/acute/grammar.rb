@@ -179,7 +179,7 @@ module Acute
           @i += S
           at = true
           next
-        elsif k == L::WORD && (v == :the || v == :on)
+        elsif k == L::WORD && (v == :the || v == :on || (v == :ad && Date === last)) # D44: "1973 A.D."
           @i += S
           next
         elsif k == L::WORD && v == :around

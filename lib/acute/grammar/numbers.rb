@@ -58,6 +58,10 @@ module Acute
         return shift_tail(q) if q
       elsif nk == L::WORD
         return clock_words(v) if minutes_to?(i)
+        if t[i + S + 1] == :ad && flags & L::WORDY == 0 && v >= 1 # D44: "14 a.d." is the year 14
+          @i += 2 * S
+          return Date.new(v, nil, nil, nil, false)
+        end
         return w if flags & L::WORDY != 0 && (w = said(v, i))
         # D44: "15 of february", "20 of next month": a number of a month is its day, as an ordinal is; not
         # "5 to 6 of April 22", where the month has its own
@@ -215,6 +219,10 @@ module Acute
     def dated(m, day)
       @i += S if @t[@i + 1] == :of && @t[@i + S] == L::NUM
       f = @t[@i + 2]
+      if @t[@i] == L::NUM && @t[@i + S + 1] == :ad && @t[@i + S] == L::WORD && f & L::WORDY == 0 # D44: "10 August 88 AD"
+        @i += 2 * S
+        return Date.new(@t[@i - 2 * S + 1], m, day, nil, false)
+      end
       if @t[@i] == L::NUM && ((f & L::DIGITS == 4 && f & L::ZERO == 0) || f & L::SHORT != 0 || (day && short_year?(f)))
         @i += S
         return Date.new(@t[@i - S + 1], m, day, nil, f & L::DIGITS != 4)

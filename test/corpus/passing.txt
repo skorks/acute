@@ -1696,6 +1696,7 @@ chrono-node-0103
 chrono-node-0104
 chrono-node-0105
 chrono-node-0106
+chrono-node-0107
 chrono-node-0108
 chrono-node-0109
 chrono-node-0110
@@ -1741,6 +1742,7 @@ chrono-node-0153
 chrono-node-0155
 chrono-node-0156
 chrono-node-0157
+chrono-node-0161
 chrono-node-0163
 chrono-node-0164
 chrono-node-0165
@@ -2077,6 +2079,8 @@ chrono-node-0566
 chrono-node-0567
 chrono-node-0569
 chrono-node-0571
+chrono-node-0573
+chrono-node-0574
 chrono-node-0576
 chrono-node-0577
 chrono-node-0578
@@ -2538,6 +2542,7 @@ dateutil-0028
 dateutil-0029
 dateutil-0030
 dateutil-0031
+dateutil-0032
 dateutil-0033
 dateutil-0034
 dateutil-0035
@@ -2579,6 +2584,7 @@ dateutil-0074
 dateutil-0075
 dateutil-0076
 dateutil-0077
+dateutil-0078
 dateutil-0079
 dateutil-0080
 dateutil-0081
@@ -2644,6 +2650,7 @@ dateutil-0143
 dateutil-0144
 dateutil-0145
 dateutil-0146
+dateutil-0147
 dateutil-0148
 dateutil-0149
 dateutil-0150
@@ -2849,6 +2856,9 @@ duckling-0162
 duckling-0163
 duckling-0164
 duckling-0165
+duckling-0166
+duckling-0167
+duckling-0168
 duckling-0169
 duckling-0172
 duckling-0173

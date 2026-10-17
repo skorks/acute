@@ -271,4 +271,12 @@ class DepthMoreTest < Minitest::Test
     assert_equal ["2017-06-30 08:20:00 -04:00", []], [wall(r.begin), r.alternatives]
     assert_equal "2017-06-30 08:20:00 -04:00", wall(parse("8.20 2017-06-30").begin)
   end
+
+  def test_d44_a_year_marked_ad_or_ce_is_that_year
+    assert_equal "0088-08-10", parse("10 August 88 CE").begin.strftime("%F")
+    assert_equal "0014-01-01", parse("in 14 a.d.").begin.strftime("%F")
+    assert_equal "2014-01-01 00:00:00 -05:00", wall(parse("in 2014 AD").begin)
+    assert_equal "1973-01-02 14:15:00 -05:00", wall(parse("2:15 PM on January 2nd 1973 A.D.").begin)
+    assert_raises(Acute::ParseError) { parse("AD") }
+  end
 end

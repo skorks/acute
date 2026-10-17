@@ -321,6 +321,8 @@ word:           # function words; the grammar gives them their meaning
   fy: fy
   ad: ad
   a.d: ad
+  ce: ad
+  c.e: ad
   starting: starting
   onwards: orlater
   onward: orlater
