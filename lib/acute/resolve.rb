@@ -118,6 +118,7 @@ module Acute
     # machine-written
     def self.zoned(node, ctx)
       off = node.offset
+      return named_zone(node, Zone.for(off.name), ctx) if Symbol === off
       return ambiguous_zone(node, off, ctx) unless Integer === off
       ctx.note(FIXED_OFFSET)
       ctx.machine = node.numeric
@@ -132,6 +133,18 @@ module Acute
         else
           Span.new(ub && ctx.local(ub), ue && ctx.local(ue), s.grain, s.point && ctx.local(s.point - off), ub, ue)
         end
+      end
+    end
+
+    # D44: under an IANA name in the text the wall times are that zone's, with its own clock changes
+    def self.named_zone(node, zone, ctx)
+      ctx.note(FIXED_OFFSET)
+      inner = ctx.in_zone(zone) { spans(node.node, ctx) }
+      inner.map do |s|
+        ub = s.ub || (s.b && zone.local_to_utc(s.b, ctx))
+        ue = s.ue || (s.e && zone.local_to_utc(s.e, ctx))
+        point = s.point && zone.local_to_utc(s.point, ctx)
+        Span.new(ub && ctx.local(ub), ue && ctx.local(ue), s.grain, point && ctx.local(point), ub, ue)
       end
     end
 

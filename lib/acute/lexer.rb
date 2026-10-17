@@ -23,7 +23,7 @@ module Acute
     SEASON = 13
     HOLIDAY = 14
     WEEKEND = 15
-    ZONE = 16   # value: UTC offset in seconds
+    ZONE = 16   # value: UTC offset in seconds, or an IANA name as a Symbol
     FUZZ = 17   # value: :early, :mid, :late, :start or :end
     ART = 18    # "a", "an"
     WORD = 19   # value: a Symbol for a function word (:in, :ago, :of...)
@@ -132,8 +132,9 @@ module Acute
           t.push(DASH, 0, 0, i, i + 3) if w == DASH
           i += c < 224 ? 2 : 3
         elsif cl == LETTER
-          # the "T" between an ISO date and its time
-          if c | 32 == 116 && i > 0 && i + 1 < n && CLASS[s.getbyte(i - 1)] == DIGIT && CLASS[s.getbyte(i + 1)] == DIGIT
+          # the "T" between an ISO date and its time, or before a time alone: "T13:23:42"
+          if c | 32 == 116 && i + 1 < n && CLASS[s.getbyte(i + 1)] == DIGIT &&
+             (i > 0 && CLASS[p = s.getbyte(i - 1)] == DIGIT || ((i == 0 || CLASS[p] == SPACE) && i + 3 < n && s.getbyte(i + 3) == 58))
             i += 1
             next
           end
@@ -147,6 +148,10 @@ module Acute
             end
             k = k * 32 + x
             i += 1
+          end
+          if i < n && s.getbyte(i) == 47 && (zone = iana(s, st, i, n))
+            t.push(ZONE, zone, 0, st, i = st + zone.size)
+            next
           end
           word = WORDS[k]
           if word && word[4] && (match = phrase(s, i, n, word[4]))
@@ -337,6 +342,13 @@ module Acute
       j = i + 1
       j += 1 if j < n && s.getbyte(j) == 32
       j < n && CLASS[s.getbyte(j)] == DIGIT
+    end
+
+    # D44: "America/New_York", "europe/amsterdam": an IANA name, as tzinfo spells it
+    def self.iana(s, st, i, n)
+      i += 1 while i < n && (ALPHA[c = s.getbyte(i)] || c == 47 || c == 95 || c == 45)
+      name = s.byteslice(st, i - st)
+      Zone::NAMES[name.downcase] if name.ascii_only?
     end
 
     def self.zone_in_brackets?(s, i, n)

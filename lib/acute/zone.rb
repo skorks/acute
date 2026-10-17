@@ -6,6 +6,8 @@ module Acute
   class Zone
     FROM = Time.utc(1800).freeze # before any zone's first transition (1844), so local mean time is kept
     TO = Time.utc(2200).freeze
+    # IANA names with an area, by their lower case, for the lexer
+    NAMES = Ractor.make_shareable(TZInfo::Timezone.all_identifiers.select { _1.include?("/") }.to_h { [_1.downcase, _1.to_sym] })
     FIXED = /\A([+-])(\d\d):(\d\d)\z/
     # Lookups start from a bucket of 2**22 seconds (about 48 days), so they skip the binary search
     BUCKET_SHIFT = 22

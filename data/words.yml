@@ -233,7 +233,7 @@ weekend:
   weekends: 0
   wkend: 0
 
-zone:           # value: the UTC offset in seconds (D18, D40: abbreviations are fixed offsets)
+zone:           # value: the UTC offset in seconds (D18, D40: abbreviations are fixed offsets), or an IANA name
                 # D38: an ambiguous one lists its offsets in order; a leading country is where the first alone holds
   utc: 0
   gmt: 0
@@ -253,6 +253,29 @@ zone:           # value: the UTC offset in seconds (D18, D40: abbreviations are 
   aest: 36000
   aedt: 39600
   jst: 32400
+  msk: 10800
+  hst: -36000
+  akst: -32400
+  akdt: -28800
+  eet: 7200
+  eest: 10800
+  nzst: 43200
+  nzdt: 46800
+  acst: 34200
+  acdt: 37800
+  awst: 28800
+  sgt: 28800
+  hkt: 28800
+  kst: 32400
+  # D44: a US zone named without standard or daylight follows its clock changes
+  et: America/New_York
+  eastern: America/New_York
+  ct: America/Chicago
+  central: America/Chicago
+  mt: America/Denver
+  mountain: America/Denver
+  pt: America/Los_Angeles
+  pacific: America/Los_Angeles
 
 fuzzy:          # D2
   early: early
@@ -331,6 +354,12 @@ word:           # function words; the grammar gives them their meaning
 # Several words read as one token, longest first. Spaces in a key stand for any run of spaces or hyphens.
 phrases:
   o clock: [word, oclock]
+  eastern time: [zone, America/New_York]
+  central time: [zone, America/Chicago]
+  mountain time: [zone, America/Denver]
+  pacific time: [zone, America/Los_Angeles]
+  alaska time: [zone, America/Anchorage]
+  hawaii time: [zone, Pacific/Honolulu]
   week end: [weekend, 0]
   lunch time: [part, lunch]
   christmas eve: [holiday, christmas_eve]

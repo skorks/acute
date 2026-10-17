@@ -84,4 +84,29 @@ class ZoneTest < Minitest::Test
     assert_raises(ArgumentError) { Acute::Zone.for("Mars/Olympus") }
     assert_raises(ArgumentError) { Acute::Zone.for(5) }
   end
+
+  def test_d44_an_iana_name_in_the_text_keeps_its_clock_changes
+    assert_equal "2006-05-12 16:59:59 +00:00", wall(parse("2006-05-12 12:59:59 America/New_York", zone: "UTC").begin)
+    assert_equal "2026-10-17 19:00:03 -04:00", wall(parse("01:00:03.12345 europe/amsterdam").begin)
+    assert_equal "2026-10-17 15:23:42 -04:00", wall(parse("T13:23:42 America/Denver").begin)
+    assert_equal "2026-10-17 16:00:00 -04:00", wall(parse("3pm America/Indiana/Knox").begin)
+    assert_raises(Acute::ParseError) { parse("3pm Europe/Atlantis") }
+  end
+
+  def test_d44_a_us_zone_without_standard_or_daylight_follows_the_clock_change
+    assert_equal "2022-03-13 04:00:00 +00:00", wall(parse("2022-03-12 23:00 ET", zone: "UTC").begin)
+    assert_equal "2022-03-14 03:00:00 +00:00", wall(parse("2022-03-13 23:00 ET", zone: "UTC").begin)
+    assert_equal "2026-10-18 01:00:00 -04:00", wall(parse("10pm pacific time").begin)
+    assert_equal "2026-10-17 16:00:00 -04:00", wall(parse("3pm central").begin)
+  end
+
+  def test_d44_a_zone_in_the_text_also_reckons_the_day
+    r = parse("tomorrow, 10pm pacific", now: "2012-05-19T00:00")
+    assert_equal "2012-05-20 01:00:00 -04:00", wall(r.begin)
+  end
+
+  def test_more_fixed_abbreviations
+    assert_equal "2010-02-17 23:14:12 +00:00", wall(parse("2:14:12 MSK", now: "2010-02-17T10:00", zone: "UTC").begin)
+    assert_equal "2026-10-17 18:00:00 -04:00", wall(parse("noon HST").begin)
+  end
 end
