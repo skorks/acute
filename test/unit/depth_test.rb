@@ -214,5 +214,12 @@ class DepthTest < Minitest::Test
     assert_reads "one in the morning", "2026-10-18 01:00:00 -04:00", now: at10
     assert_reads "12 at night", "2026-10-18 00:00:00 -04:00", now: at10
   end
+
+  def test_d32_next_this_and_last_with_a_quarter
+    assert_reads "next q1", "2027-01-01 00:00:00 -05:00"
+    assert_reads "last Q2", "2026-04-01 00:00:00 -04:00"
+    assert_reads "this q3", "2027-07-01 00:00:00 -04:00", ["2026-07-01 00:00:00 -04:00"]
+    assert_reads "next q4", "2027-10-01 00:00:00 -04:00" # Q4 under way: the one after
+  end
 end
 
