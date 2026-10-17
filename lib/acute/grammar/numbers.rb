@@ -65,10 +65,8 @@ module Acute
           end
         end
         if t[i + S + 1] == :oclock
-          @i += S
-          c = number(v, flags, true)
-          @i += S unless Failure === c
-          return c
+          @i += S # read from the o'clock, so a meridiem after it is the clock's: "11 o'clock pm"
+          return number(v, flags, true)
         end
       elsif nk == L::REL
         # D44: "2 upcoming weeks", "10 previous weeks" are "next 2 weeks", "previous 10 weeks"

@@ -67,4 +67,11 @@ class DepthMoreTest < Minitest::Test
     assert_raises(Acute::ParseError) { parse("9 am (tomorrow)") }
     assert_raises(Acute::ParseError) { parse("9 am (bst") }
   end
+
+  def test_what_follows_oclock_is_kept
+    assert_equal "2026-10-18 23:00:00 -04:00", wall(parse("11 o'clock pm tomorrow").begin)
+    assert_equal "2026-10-17 23:00:00 -04:00", wall(parse("11 o'clock tonight").begin)
+    r = parse("11 o'clock lunchtime")
+    assert_equal ["2026-10-18 11:00:00 -04:00", []], [wall(r.begin), alt_walls(r)]
+  end
 end
