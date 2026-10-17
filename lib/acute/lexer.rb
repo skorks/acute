@@ -213,8 +213,12 @@ module Acute
             t.push(DOT, 0, 0, i, i + 1) if i > 0 && i + 1 < n && CLASS[s.getbyte(i - 1)] == DIGIT && CLASS[s.getbyte(i + 1)] == DIGIT
             i += 1
           when 45
-            # A hyphen inside a word ("twenty-four", "mid-october") is a space
-            t.push(DASH, 0, 0, i, i + 1) unless i > 0 && i + 1 < n && ALPHA[s.getbyte(i - 1)] && ALPHA[s.getbyte(i + 1)]
+            # A hyphen inside a word ("twenty-four", "mid-october") is a space; after a month or weekday it
+            # is a range ("jun-aug", "mon-fri")
+            if !(i > 0 && i + 1 < n && ALPHA[s.getbyte(i - 1)] && ALPHA[s.getbyte(i + 1)]) ||
+               ((k = t[-5]) == MONTH || k == WDAY) && t[-1] == i
+              t.push(DASH, 0, 0, i, i + 1)
+            end
             i += 1
           when 47
             t.push(SLASH, 0, 0, i, i + 1)

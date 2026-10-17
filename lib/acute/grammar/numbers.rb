@@ -13,7 +13,14 @@ module Acute
       if nk == L::SLASH || nk == L::DOT
         return numeric_date(nk == L::SLASH ? :slash : :dot) if @t[i + 2 * S] == L::NUM
       elsif nk == L::DASH
+        return dashed_month(v, digits) if @t[i + 2 * S] == L::MONTH && joined?(i + S)
         if @t[i + 2 * S] == L::NUM
+          # "5-2020": a month and its year
+          f = t[i + 2 * S + 2]
+          if digits <= 2 && v >= 1 && v <= 12 && f & L::DIGITS == 4 && f & L::ZERO == 0 && joined?(i + S)
+            @i += 3 * S
+            return Date.new(t[i + 2 * S + 1], v, nil, nil, false)
+          end
           return iso_date if digits == 4
           w = t[i + 2 * S + 1]
           return numeric_date(:dash) if @t[i + 3 * S] == L::DASH || (w > 12 && w <= 31 && v <= 12) || v > 12 && v <= 31 && w <= 12
@@ -128,10 +135,50 @@ module Acute
       dated(@t[i + 1], day)
     end
 
-    # "oct", "oct 23", "oct 23rd, 2026", "may 2010"
+    # D44: a dash with no space either side joins the parts of one written date: "20-Apr", "30-Mar-11",
+    # "2003-Sep-25", "99-Jan-08". A first number past 31 is the year.
+    def dashed_month(v, digits)
+      m = @t[@i + 2 * S + 1]
+      @i += 3 * S
+      if digits == 4 || v > 31
+        day = nil
+        if joined?(@i) && @t[@i + S] == L::NUM && @t[@i + S + 2] & L::DIGITS <= 2 && @t[@i + S + 1].between?(1, 31)
+          day = @t[@i + S + 1]
+          @i += 2 * S
+        end
+        return Date.new(v, m, day, nil, digits == 2)
+      end
+      return failure(:invalid_date, @i - 3 * S) if v < 1
+      dashed_year(m, v) || dated(m, v)
+    end
+
+    # The "-1999" or "-99" that ends a dashed date
+    def dashed_year(m, day)
+      return unless joined?(@i) && @t[@i + S] == L::NUM
+      digits = @t[@i + S + 2] & L::DIGITS
+      return unless digits == 2 || digits == 4
+      @i += 2 * S
+      Date.new(@t[@i - S + 1], m, day, nil, digits == 2)
+    end
+
+    # A dash at token index i with no space either side
+    def joined?(i) = @t[i] == L::DASH && i >= S && @t[i - 1] == @t[i + 3] && @t[i + 4] == @t[i + S + 3]
+
+    # "oct", "oct 23", "oct 23rd, 2026", "may 2010", "Oct-2", "Sep-25-2003", "Sep-2012"
     def month_atom
       m = @t[@i + 1]
       @i += S
+      if joined?(@i) && @t[@i + S] == L::NUM
+        f = @t[@i + S + 2]
+        v = @t[@i + S + 1]
+        if f & L::DIGITS == 4 && f & L::ZERO == 0
+          @i += 2 * S
+          return Date.new(v, m, nil, nil, false)
+        elsif f & L::DIGITS <= 2 && v >= 1 && v <= 31
+          @i += 2 * S
+          return dashed_year(m, v) || dated(m, v)
+        end
+      end
       day = nil
       k = @t[@i]
       if (k == L::NUM || k == L::ORD) && @t[@i + 2] & (L::DIGITS | L::SHORT) <= 2 && @t[@i + 1] >= 1 && @t[@i + 1] <= 31 &&

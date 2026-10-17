@@ -133,4 +133,29 @@ class DepthTest < Minitest::Test
     assert_span "monday to friday", "2026-10-19 00:00", "2026-10-24 00:00"
     assert_includes codes(parse("from september to november")), :range_under_way
   end
+
+  def test_d44_a_dash_with_no_space_either_side_joins_one_written_date
+    assert_reads "20-Apr", "2027-04-20 00:00:00 -04:00"
+    assert_reads "Apr-20", "2027-04-20 00:00:00 -04:00"
+    assert_reads "30-Mar-11", "2011-03-30 00:00:00 -04:00"
+    assert_reads "Sep-25-2003", "2003-09-25 00:00:00 -04:00"
+    assert_reads "2003-Sep-25", "2003-09-25 00:00:00 -04:00"
+    assert_reads "99-Jan-08", "1999-01-08 00:00:00 -05:00"
+    assert_reads "Jan-08-99", "1999-01-08 00:00:00 -05:00"
+    assert_span "Sep-2012", "2012-09-01 00:00", "2012-10-01 00:00"
+    assert_span "2024-Aug", "2024-08-01 00:00", "2024-09-01 00:00"
+    assert_span "5-2020", "2020-05-01 00:00", "2020-06-01 00:00"
+    assert_span "June 3-15", "2027-06-03 00:00", "2027-06-16 00:00"
+  end
+
+  def test_d44_a_hyphen_after_a_month_or_weekday_is_a_range
+    assert_span "jun-aug", "2027-06-01 00:00", "2027-09-01 00:00"
+    assert_span "mon-fri", "2026-10-19 00:00", "2026-10-24 00:00"
+    assert_span "Jan-Feb 2017", "2017-01-01 00:00", "2017-03-01 00:00"
+    assert_reads "mid-october", "2026-10-11 00:00:00 -04:00"
+  end
+
+  def test_d10_a_range_of_numeric_dates_reads_both_ends_in_one_order
+    assert_span "from 5/1-5/7, 2020", "2020-05-01 00:00", "2020-05-08 00:00", ["2020-01-05 00:00"]
+  end
 end

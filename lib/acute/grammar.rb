@@ -150,9 +150,9 @@ module Acute
         return Range.new(Within.new(Date.new(nil, nil, d, nil, false), to.outer),
                          Within.new(Date.new(nil, nil, e, nil, false), to.outer))
       end
-      if Date === from && Date === to && from.month && to.month && !from.year && to.year && !from.sep && !to.sep
-        later = from.month > to.month || (from.month == to.month && (from.day || 0) > (to.day || 0))
-        from = Date.new(later ? to.year - 1 : to.year, from.month, from.day, nil, to.short)
+      if Date === from && Date === to && from.month && to.month && !from.year && to.year && from.sep == to.sep
+        later = !from.sep && (from.month > to.month || (from.month == to.month && (from.day || 0) > (to.day || 0)))
+        from = Date.new(later ? to.year - 1 : to.year, from.month, from.day, from.sep, to.short)
       end
       if Within === to && Clock === from && Clock === to.inner
         return Within.new(Range.new(from, to.inner), to.outer)

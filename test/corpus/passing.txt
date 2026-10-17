@@ -321,6 +321,7 @@ chronic-forks-384-test-test-parsing-rb-998-1
 chronic-forks-388-test-test-parsing-rb-1074-1
 chronic-forks-42-test-test-parsing-rb-763-1
 chronic-forks-429-test-test-parsing-rb-15-1
+chronic-forks-433-test-test-coverage-rb-154-1
 chronic-forks-79d8a69-1
 chronic-forks-79d8a69-2
 chronic-forks-b2218e8-1
@@ -471,6 +472,8 @@ chronic-issues-122-2
 chronic-issues-122-3
 chronic-issues-124-1
 chronic-issues-124-2
+chronic-issues-126-1
+chronic-issues-126-2
 chronic-issues-127-1
 chronic-issues-127-2
 chronic-issues-127-3
@@ -509,12 +512,16 @@ chronic-issues-147-4
 chronic-issues-147-5
 chronic-issues-147-6
 chronic-issues-148-2
+chronic-issues-149-1
+chronic-issues-149-2
 chronic-issues-151-1
 chronic-issues-151-2
 chronic-issues-151-3
 chronic-issues-151-4
 chronic-issues-151-5
 chronic-issues-151-6
+chronic-issues-152-1
+chronic-issues-152-2
 chronic-issues-153-1
 chronic-issues-153-2
 chronic-issues-153-3
@@ -1047,6 +1054,7 @@ chronic-issues-76-1
 chronic-issues-76-2
 chronic-issues-76-3
 chronic-issues-76-4
+chronic-issues-77-1
 chronic-issues-78-1
 chronic-issues-78-2
 chronic-issues-78-3
@@ -1089,6 +1097,7 @@ chronic-issues-97-2
 chronic-issues-97-3
 chronic-issues-97-4
 chronic-issues-97-5
+chronic-issues-99-1
 chronic-master-test-parsing-rb-1071-1
 chronic-master-test-parsing-rb-1170-1
 chronic-master-test-parsing-rb-1174-1
@@ -1250,6 +1259,7 @@ chronic-tests-test-parsing-rb-1200-1
 chronic-tests-test-parsing-rb-125-1
 chronic-tests-test-parsing-rb-130-1
 chronic-tests-test-parsing-rb-133-1
+chronic-tests-test-parsing-rb-136-1
 chronic-tests-test-parsing-rb-142-1
 chronic-tests-test-parsing-rb-147-1
 chronic-tests-test-parsing-rb-15-1
@@ -1332,6 +1342,8 @@ chronic-tests-test-parsing-rb-492-1
 chronic-tests-test-parsing-rb-498-1
 chronic-tests-test-parsing-rb-502-1
 chronic-tests-test-parsing-rb-505-1
+chronic-tests-test-parsing-rb-510-1
+chronic-tests-test-parsing-rb-513-1
 chronic-tests-test-parsing-rb-52-1
 chronic-tests-test-parsing-rb-520-1
 chronic-tests-test-parsing-rb-523-1
@@ -1342,6 +1354,7 @@ chronic-tests-test-parsing-rb-538-1
 chronic-tests-test-parsing-rb-541-1
 chronic-tests-test-parsing-rb-544-1
 chronic-tests-test-parsing-rb-549-1
+chronic-tests-test-parsing-rb-55-1
 chronic-tests-test-parsing-rb-552-1
 chronic-tests-test-parsing-rb-561-1
 chronic-tests-test-parsing-rb-567-1
@@ -1502,6 +1515,7 @@ chrono-node-0066
 chrono-node-0067
 chrono-node-0068
 chrono-node-0069
+chrono-node-0070
 chrono-node-0071
 chrono-node-0072
 chrono-node-0074
@@ -1527,14 +1541,20 @@ chrono-node-0098
 chrono-node-0099
 chrono-node-0100
 chrono-node-0101
+chrono-node-0102
 chrono-node-0103
 chrono-node-0104
+chrono-node-0105
 chrono-node-0108
 chrono-node-0110
 chrono-node-0111
 chrono-node-0112
 chrono-node-0114
 chrono-node-0115
+chrono-node-0116
+chrono-node-0117
+chrono-node-0120
+chrono-node-0122
 chrono-node-0124
 chrono-node-0125
 chrono-node-0126
@@ -1567,6 +1587,8 @@ chrono-node-0166
 chrono-node-0167
 chrono-node-0168
 chrono-node-0170
+chrono-node-0171
+chrono-node-0174
 chrono-node-0177
 chrono-node-0178
 chrono-node-0179
@@ -1959,6 +1981,7 @@ dateparser-0097
 dateparser-0098
 dateparser-0099
 dateparser-0100
+dateparser-0102
 dateparser-0103
 dateparser-0104
 dateparser-0105
@@ -2202,6 +2225,7 @@ dateutil-0063
 dateutil-0064
 dateutil-0065
 dateutil-0066
+dateutil-0067
 dateutil-0068
 dateutil-0069
 dateutil-0074
@@ -2219,6 +2243,12 @@ dateutil-0092
 dateutil-0093
 dateutil-0094
 dateutil-0095
+dateutil-0096
+dateutil-0097
+dateutil-0098
+dateutil-0099
+dateutil-0100
+dateutil-0101
 dateutil-0102
 dateutil-0103
 dateutil-0104
@@ -2308,6 +2338,7 @@ duckling-0006
 duckling-0007
 duckling-0008
 duckling-0009
+duckling-0011
 duckling-0012
 duckling-0013
 duckling-0016
@@ -2822,6 +2853,8 @@ generated-absolute-formats-0015
 generated-absolute-formats-0016
 generated-absolute-formats-0017
 generated-absolute-formats-0018
+generated-absolute-formats-0019
+generated-absolute-formats-0020
 generated-absolute-formats-0021
 generated-absolute-formats-0022
 generated-absolute-formats-0023
@@ -5847,6 +5880,7 @@ generated-conventions-part-of-day-0536
 generated-conventions-part-of-day-0537
 generated-conventions-ranges-0001
 generated-conventions-ranges-0002
+generated-conventions-ranges-0003
 generated-conventions-ranges-0004
 generated-conventions-ranges-0005
 generated-conventions-ranges-0006
@@ -5864,14 +5898,17 @@ generated-conventions-ranges-0019
 generated-conventions-ranges-0020
 generated-conventions-ranges-0021
 generated-conventions-ranges-0022
+generated-conventions-ranges-0025
 generated-conventions-ranges-0026
 generated-conventions-ranges-0027
+generated-conventions-ranges-0028
 generated-conventions-ranges-0029
 generated-conventions-ranges-0030
 generated-conventions-ranges-0031
 generated-conventions-ranges-0032
 generated-conventions-ranges-0034
 generated-conventions-ranges-0035
+generated-conventions-ranges-0036
 generated-conventions-ranges-0037
 generated-conventions-ranges-0038
 generated-conventions-ranges-0039
@@ -5890,6 +5927,7 @@ generated-conventions-ranges-0052
 generated-conventions-ranges-0053
 generated-conventions-ranges-0054
 generated-conventions-ranges-0057
+generated-conventions-ranges-0058
 generated-conventions-ranges-0059
 generated-conventions-ranges-0060
 generated-conventions-ranges-0061
@@ -5905,6 +5943,7 @@ generated-conventions-ranges-0072
 generated-conventions-ranges-0073
 generated-conventions-ranges-0074
 generated-conventions-ranges-0075
+generated-conventions-ranges-0076
 generated-conventions-ranges-0077
 generated-conventions-ranges-0080
 generated-conventions-ranges-0081
@@ -5923,16 +5962,19 @@ generated-conventions-ranges-0094
 generated-conventions-ranges-0095
 generated-conventions-ranges-0096
 generated-conventions-ranges-0097
+generated-conventions-ranges-0098
 generated-conventions-ranges-0099
 generated-conventions-ranges-0100
 generated-conventions-ranges-0103
 generated-conventions-ranges-0104
 generated-conventions-ranges-0106
 generated-conventions-ranges-0107
+generated-conventions-ranges-0108
 generated-conventions-ranges-0109
 generated-conventions-ranges-0110
 generated-conventions-ranges-0111
 generated-conventions-ranges-0112
+generated-conventions-ranges-0113
 generated-conventions-ranges-0114
 generated-conventions-ranges-0115
 generated-conventions-ranges-0116
@@ -10455,6 +10497,9 @@ natty-0006
 natty-0007
 natty-0008
 natty-0009
+natty-0010
+natty-0011
+natty-0012
 natty-0013
 natty-0014
 natty-0015
@@ -10524,6 +10569,7 @@ natty-0107
 natty-0108
 natty-0109
 natty-0110
+natty-0111
 natty-0112
 natty-0113
 natty-0120
@@ -10596,6 +10642,7 @@ natty-0205
 natty-0206
 natty-0207
 natty-0208
+natty-0210
 natty-0223
 natty-0224
 natty-0225
@@ -10860,6 +10907,7 @@ natty-0537
 natty-0538
 natty-0539
 natty-0540
+natty-0541
 natty-0542
 natty-0543
 natty-0553
@@ -10959,6 +11007,7 @@ natty-0656
 natty-0657
 natty-0658
 recognizers-0001
+recognizers-0002
 recognizers-0003
 recognizers-0005
 recognizers-0006
@@ -10974,6 +11023,7 @@ recognizers-0015
 recognizers-0016
 recognizers-0018
 recognizers-0020
+recognizers-0021
 recognizers-0022
 recognizers-0023
 recognizers-0024
@@ -11096,6 +11146,7 @@ recognizers-0171
 recognizers-0175
 recognizers-0176
 recognizers-0179
+recognizers-0180
 recognizers-0181
 recognizers-0182
 recognizers-0183
@@ -11360,10 +11411,20 @@ recognizers-0551
 recognizers-0552
 recognizers-0553
 recognizers-0554
+recognizers-0555
+recognizers-0556
+recognizers-0557
+recognizers-0558
+recognizers-0559
+recognizers-0560
 recognizers-0561
 recognizers-0562
 recognizers-0563
 recognizers-0564
+recognizers-0565
+recognizers-0566
+recognizers-0567
+recognizers-0568
 recognizers-0570
 recognizers-0571
 recognizers-0572
@@ -11474,6 +11535,7 @@ recognizers-0702
 recognizers-0703
 recognizers-0705
 recognizers-0706
+recognizers-0707
 recognizers-0708
 recognizers-0709
 recognizers-0710
@@ -11484,6 +11546,7 @@ recognizers-0715
 recognizers-0716
 recognizers-0717
 recognizers-0718
+recognizers-0720
 recognizers-0722
 recognizers-0723
 recognizers-0724
@@ -13149,6 +13212,7 @@ timelib-0047
 timelib-0048
 timelib-0049
 timelib-0050
+timelib-0051
 timelib-0052
 timelib-0053
 timelib-0054
@@ -13211,8 +13275,10 @@ timelib-0116
 timelib-0117
 timelib-0118
 timelib-0119
+timelib-0120
 timelib-0121
 timelib-0123
+timelib-0124
 timelib-0125
 timelib-0127
 timelib-0128
@@ -13293,6 +13359,12 @@ timelib-0223
 timelib-0224
 timelib-0225
 timelib-0226
+timelib-0227
+timelib-0228
+timelib-0229
+timelib-0230
+timelib-0231
+timelib-0232
 timelib-0234
 timelib-0235
 timelib-0236

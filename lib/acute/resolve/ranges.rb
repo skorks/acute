@@ -9,6 +9,7 @@ module Acute
         from = node.from
         to = node.to
         return clocks(meridiem(from, to), to, ctx) if G::Clock === from && G::Clock === to
+        return numeric(node, ctx) if G::Date === from && G::Date === to && from.sep && from.sep == to.sep
         f = Resolve.spans(from, ctx)[0]
         return [] unless f
         t = after(to, ctx, f.b)
@@ -35,6 +36,19 @@ module Acute
           list << coming
         end
         ctx.note(UNDER_WAY)
+      end
+
+      # D10: both ends of "5/1-5/7" are read in the same order, the locale's first
+      def self.numeric(node, ctx)
+        out = []
+        [false, true].each do |swap|
+          f = Dates.order(node.from, ctx, swap)
+          t = Dates.order(node.to, ctx, swap)
+          next unless f && t
+          spans(G::Range.new(f, t), ctx).each { |x| out << x unless out.any? { |o| o.b == x.b && o.e == x.e } }
+        end
+        ctx.note(Dates::ORDER) if out.size > 1
+        out
       end
 
       def self.inside(node, outer, s, ctx)

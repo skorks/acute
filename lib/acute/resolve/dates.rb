@@ -50,16 +50,18 @@ module Acute
       # D10, D37: the locale's order first (dots are always day first), then the other order when it is also
       # a date. The result is plain dates, month and day in place.
       def self.orders(d, ctx)
-        y = d.year && d.short ? two_digit_year(d.year, ctx) : d.year
-        first = d.sep == :dot || ctx.locale.day_first ? [d.day, d.month] : [d.month, d.day]
         out = []
-        [first, first.reverse].each do |m, day|
-          next unless m.between?(1, 12) && day.between?(1, y ? Calendar.days_in_month(y, m) : LONGEST[m])
-          x = G::Date.new(y, m, day, nil, false)
-          out << x unless out.include?(x)
-        end
+        [false, true].each { |swap| (x = order(d, ctx, swap)) && !out.include?(x) && out << x }
         ctx.note(ORDER) if out.size > 1
         out
+      end
+
+      # The date in the locale's order, or with swap in the other, or nil when that is no date
+      def self.order(d, ctx, swap)
+        y = d.year && d.short ? two_digit_year(d.year, ctx) : d.year
+        m, day = (d.sep == :dot || ctx.locale.day_first) == swap ? [d.month, d.day] : [d.day, d.month]
+        return unless m.between?(1, 12) && day.between?(1, y ? Calendar.days_in_month(y, m) : LONGEST[m])
+        G::Date.new(y, m, day, nil, false)
       end
 
       # D23: chronic's window, from 50 years before now to 49 after
