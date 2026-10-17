@@ -26,4 +26,16 @@ class DepthMoreTest < Minitest::Test
   def test_d44_looking_back_a_passed_this_month_is_the_one_passed
     assert_equal ["2026-08-01 00:00:00 -04:00", "2026-10-17 14:00:00 -04:00"], span("since this August")
   end
+
+  def test_d44_starting_x_is_open_from_its_start
+    assert_equal ["2027-01-07 00:00:00 -05:00", nil], span("starting January 7th")
+    assert_equal ["2027-01-07 00:00:00 -05:00", nil], span("beginning on January 7th")
+    assert_equal ["2026-10-18 00:00:00 -04:00", nil], span("starting from next week")
+    assert_equal "2027-01-01 00:00:00 -05:00", wall(parse("beginning of January").begin)
+  end
+
+  def test_d44_a_count_of_units_starting_x_runs_that_long_from_its_start
+    assert_equal ["2026-10-19 00:00:00 -04:00", "2026-10-22 00:00:00 -04:00"], span("3 days starting from next Monday")
+    assert_equal ["2027-02-04 00:00:00 -05:00", "2027-02-11 00:00:00 -05:00"], span("the week commencing february 4")
+  end
 end

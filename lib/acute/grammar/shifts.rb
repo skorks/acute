@@ -26,8 +26,20 @@ module Acute
         anchor = item(true)
         return anchor if Failure === anchor
         shifts(w == :before ? -1 : 1, q, more, Now === anchor ? nil : anchor)
-      else q
+      else
+        return q unless !more && starting?(@i)
+        @i += S
+        @i += S if @t[@i + 1] == :from
+        start = item(true)
+        Failure === start ? start : Lasting.new(q, start)
       end
+    end
+
+    # D44: "starting", "commencing", or "beginning" with no "of" after it: from the start of what follows. Not
+    # "start from october", a verb before its own "from".
+    def starting?(i)
+      return true if @t[i] == L::WORD && @t[i + 1] == :starting
+      @t[i] == L::FUZZ && @t[i + 1] == :start && (w = @t[i + S + 1]) != :of && w != :from
     end
 
     # D44: "3 fridays from now", "2nd monday before may 25", "two weekends ago": i is the day after the count

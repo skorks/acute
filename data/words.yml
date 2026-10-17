@@ -292,6 +292,8 @@ word:           # function words; the grammar gives them their meaning
   fy: fy
   ad: ad
   a.d: ad
+  starting: starting
+  commencing: starting
 
 # Several words read as one token, longest first. Spaces in a key stand for any run of spaces or hyphens.
 phrases:

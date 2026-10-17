@@ -126,9 +126,16 @@ module Acute
           when :since then Span.new(s.b, now, s.grain, nil, s.ub, ctx.now)
           when :until then clock?(s) ? Span.new(now, s.b, s.grain, nil, ctx.now, s.ub) : Span.new(now, s.e, s.grain, nil, ctx.now, s.ue)
           when :before then Span.new(nil, s.b, s.grain, nil, nil, s.ub)
+          when :from then Span.new(s.b, nil, s.grain, nil, s.ub)
           else clock?(s) ? Span.new(s.b, nil, s.grain, nil, s.ub) : Span.new(s.e, nil, s.grain, nil, s.ue)
           end
         end
+      end
+
+      # D44: "3 days starting next monday", "the week beginning february 4": that many units from its start
+      def self.lasting(node, ctx)
+        n, u = Period.whole(node.unit.count, node.unit.unit)
+        Resolve.spans(node.start, ctx).map { |s| Span.new(s.b, Period.add(s.b, n, u), s.grain, nil) }
       end
 
       # D40: "after christmas" said on Dec 27 is this year's, whose after still holds now. Only holidays: "after

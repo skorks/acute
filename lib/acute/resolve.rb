@@ -66,6 +66,7 @@ module Acute
       when :counted then Shift.counted(node, ctx)
       when :range then Ranges.spans(node, ctx)
       when :open then Ranges.open(node, ctx)
+      when :lasting then Ranges.lasting(node, ctx)
       when :fuzzy then Fuzzy.spans(node, ctx)
       when :fiscal then Period.fiscal(node, ctx)
       when :years then Dates.years(node, ctx)

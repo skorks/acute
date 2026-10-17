@@ -6,7 +6,7 @@ module Acute
   # D-rules: a bare "4" stays hour 4 with no am/pm, and "10/11" stays two numbers and a slash; resolve
   # decides what they mean.
   #
-  #   phrase := (after|before|since|until|by) body | around body | body
+  #   phrase := (after|before|since|until|by|starting) body | around body | body
   #   body   := between item and item | from item to item | item [(to|through|until|-) item]
   #             | atom+ (between item and | from item to) item
   #   item   := atom+ [zone]        each atom is one constituent: a date, a weekday, a clock, a shift...
@@ -40,7 +40,8 @@ module Acute
     Nth = Struct.new(:n, :node)                 # the nth (n = -1: the last) node inside its outer period
     Within = Struct.new(:inner, :outer)
     Range = Struct.new(:from, :to)
-    Open = Struct.new(:dir, :node)              # :after, :before, :since, :until
+    Open = Struct.new(:dir, :node)              # :after, :before, :since, :until, :from
+    Lasting = Struct.new(:unit, :start)         # a counted Unit from the start's start: "3 days starting monday"
     Approx = Struct.new(:node)
     Fuzzy = Struct.new(:pos, :node)             # :early, :mid, :late, :start, :end
     Zoned = Struct.new(:node, :offset, :numeric)
@@ -51,7 +52,8 @@ module Acute
     KIND = { Clock => :clock, DayRef => :day_ref, Date => :date, Weekday => :weekday, Part => :part, Season => :season,
              Holiday => :holiday, Weekend => :weekend, Fiscal => :fiscal, Unit => :unit, Rel => :rel, Shift => :shift,
              Nth => :nth, Within => :within, Range => :range, Open => :open, Approx => :approx, Fuzzy => :fuzzy,
-             Zoned => :zoned, Now => :now, Years => :years, IsoWeek => :iso_week, Counted => :counted }.freeze
+             Zoned => :zoned, Now => :now, Years => :years, IsoWeek => :iso_week, Counted => :counted,
+             Lasting => :lasting }.freeze
 
     L = Lexer
     S = Lexer::STRIDE
@@ -99,8 +101,10 @@ module Acute
 
     def top
       w = @t[@i + 1]
-      if (dir = OPEN[w]) && @i + S < @n
+      if ((dir = OPEN[w]) || starting?(@i)) && @i + S < @n
+        dir ||= :from
         @i += S
+        @i += S if dir == :from && @t[@i + 1] == :from # "starting from 1/1/2016"
         node = body
         return node if Failure === node
         # "after 3 hours" is a shift, not an open end

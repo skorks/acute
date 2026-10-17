@@ -12322,6 +12322,14 @@ recognizers-0183
 recognizers-0184
 recognizers-0185
 recognizers-0186
+recognizers-0187
+recognizers-0188
+recognizers-0189
+recognizers-0190
+recognizers-0191
+recognizers-0192
+recognizers-0193
+recognizers-0194
 recognizers-0196
 recognizers-0197
 recognizers-0198
@@ -12775,6 +12783,9 @@ recognizers-0687
 recognizers-0688
 recognizers-0689
 recognizers-0690
+recognizers-0691
+recognizers-0692
+recognizers-0693
 recognizers-0694
 recognizers-0695
 recognizers-0696
@@ -13106,6 +13117,7 @@ recognizers-1053
 recognizers-1055
 recognizers-1056
 recognizers-1057
+recognizers-1060
 recognizers-1065
 recognizers-1069
 recognizers-1073
@@ -13141,6 +13153,10 @@ recognizers-1110
 recognizers-1111
 recognizers-1112
 recognizers-1113
+recognizers-1116
+recognizers-1117
+recognizers-1118
+recognizers-1119
 recognizers-1121
 recognizers-1122
 recognizers-1123
@@ -13169,7 +13185,9 @@ recognizers-1145
 recognizers-1146
 recognizers-1147
 recognizers-1148
+recognizers-1149
 recognizers-1150
+recognizers-1151
 recognizers-1153
 recognizers-1154
 recognizers-1155

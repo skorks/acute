@@ -58,6 +58,7 @@ module Acute
           end
           return shift_tail(Unit.new(v, 1))
         end
+        return shift_tail(Unit.new(v, 1)) if starting?(i + S) && (@i += S) # "the week starting february 4"
         failure(:incomplete)
       elsif k == L::DECADE then decade_atom
       else failure(:conflict)
