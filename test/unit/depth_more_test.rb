@@ -68,6 +68,20 @@ class DepthMoreTest < Minitest::Test
     assert_raises(Acute::ParseError) { parse("9 am (bst") }
   end
 
+  def test_d44_a_weekday_that_fits_both_orders_picks_the_locales
+    r = parse("Friday 7/6", now: "2018-07-06T12:00:00", zone: "UTC")
+    assert_equal ["2018-07-06 00:00:00 +00:00", []], [wall(r.begin), alt_walls(r)]
+    refute_includes r.assumptions.map(&:code), :numeric_date_order
+    assert_equal "2018-06-07 00:00:00 +00:00", wall(parse("Thursday 7/6", now: "2018-07-06T12:00:00", zone: "UTC").begin)
+  end
+
+  def test_d6_a_range_ending_at_midnight_today_ends_at_its_end_then_its_start
+    r = parse("noon yesterday through midnight today")
+    assert_equal ["2026-10-16 12:00:00 -04:00", "2026-10-18 00:00:00 -04:00"], [wall(r.begin), wall(r.end)]
+    assert_equal ["2026-10-16 12:00:00 -04:00"], alt_walls(r)
+    assert_equal "2026-10-17 00:00:00 -04:00", wall(r.alternatives[0].end)
+  end
+
   def test_what_follows_oclock_is_kept
     assert_equal "2026-10-18 23:00:00 -04:00", wall(parse("11 o'clock pm tomorrow").begin)
     assert_equal "2026-10-17 23:00:00 -04:00", wall(parse("11 o'clock tonight").begin)

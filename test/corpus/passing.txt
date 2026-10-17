@@ -1166,6 +1166,9 @@ chronic-master-test-parsing-rb-1071-1
 chronic-master-test-parsing-rb-1170-1
 chronic-master-test-parsing-rb-1174-1
 chronic-master-test-parsing-rb-1178-1
+chronic-master-test-parsing-rb-1184-1
+chronic-master-test-parsing-rb-1188-1
+chronic-master-test-parsing-rb-1192-1
 chronic-master-test-parsing-rb-1203-1
 chronic-master-test-parsing-rb-1203-2
 chronic-master-test-parsing-rb-1203-3
@@ -12112,9 +12115,13 @@ natty-0585
 natty-0586
 natty-0587
 natty-0588
+natty-0589
+natty-0590
+natty-0591
 natty-0592
 natty-0593
 natty-0594
+natty-0595
 natty-0596
 natty-0597
 natty-0598
@@ -12637,6 +12644,7 @@ recognizers-0506
 recognizers-0507
 recognizers-0508
 recognizers-0511
+recognizers-0512
 recognizers-0513
 recognizers-0514
 recognizers-0515
@@ -13849,6 +13857,7 @@ rust-parsers-0562
 rust-parsers-0563
 rust-parsers-0564
 rust-parsers-0565
+rust-parsers-0566
 rust-parsers-0567
 rust-parsers-0568
 rust-parsers-0569
@@ -13938,6 +13947,7 @@ sutime-0097
 sutime-0098
 sutime-0099
 sutime-0100
+sutime-0101
 sutime-0102
 sutime-0103
 sutime-0104
@@ -14610,6 +14620,7 @@ sutime-0799
 sutime-0800
 sutime-0801
 sutime-0802
+sutime-0803
 sutime-0804
 sutime-0805
 sutime-0806

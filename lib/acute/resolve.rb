@@ -94,6 +94,11 @@ module Acute
       outers.each do |s|
         Periodic.inside(node.inner, node.outer, s, ctx).each { |x| out << x unless out.any? { |o| o.b == x.b && o.e == x.e } }
       end
+      # D37, D44: a weekday that fits both orders of a numeric date picks the locale's ("Friday 7/6")
+      if out.size > 1 && G::Weekday === node.inner && G::Date === node.outer && node.outer.sep
+        ctx.unnote(Dates::ORDER)
+        return out.take(1)
+      end
       out
     end
 

@@ -12,8 +12,9 @@ module Acute
         return numeric(node, ctx) if G::Date === from && G::Date === to && from.sep && from.sep == to.sep
         f = Resolve.spans(from, ctx)[0]
         return [] unless f
-        t = after(to, ctx, f.b)
-        list = (x = t && finish(f, t)) ? [x] : []
+        # A fixed end gives a range per reading: "through midnight today" to today's end, then its start (D6)
+        ends = G::Clock === to || Periodic.cycle(to) ? [after(to, ctx, f.b)] : Resolve.spans(to, ctx)
+        list = ends.filter_map { _1 && finish(f, _1) }
         under_way(from, to, f, list, ctx) if !ctx.past? && Periodic.cycle(from) == :year
         list
       end
