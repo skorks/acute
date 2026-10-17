@@ -240,4 +240,14 @@ class DepthMoreTest < Minitest::Test
     assert_equal ["2024-11-01 00:00:00 -04:00", "2025-11-01 00:00:00 -04:00"], span("last fiscal year", fiscal_year_start: 11)
     assert_raises(Acute::ParseError) { parse("this fiscal year") }
   end
+
+  def test_d44_halves_of_a_year_and_its_first_months
+    assert_equal ["2027-01-01 00:00:00 -05:00", "2027-07-01 00:00:00 -04:00"], span("the first half of next year")
+    assert_equal ["2026-07-01 00:00:00 -04:00", "2027-01-01 00:00:00 -05:00"], span("second half of 2026")
+    assert_equal ["2027-01-01 00:00:00 -05:00", "2027-07-01 00:00:00 -04:00"], span("H1 2027")
+    assert_equal ["2026-07-01 00:00:00 -04:00", "2027-01-01 00:00:00 -05:00"], span("h2 2026")
+    assert_equal ["1997-01-01 00:00:00 -05:00", "1997-10-01 00:00:00 -04:00"], span("the first 9 months of 1997")
+    assert_raises(Acute::ParseError) { parse("first half") }
+    assert_raises(Acute::ParseError) { parse("H3 2026") }
+  end
 end
