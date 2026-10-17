@@ -143,6 +143,8 @@ module Acute
       fe = @i
       @i += S
       ts = @i
+      to = day_and_year(from, ts)
+      return to if to
       to = item(true)
       return to if Failure === to
       range(from, to, fs, fe, ts)

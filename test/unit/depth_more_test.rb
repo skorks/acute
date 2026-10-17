@@ -172,4 +172,35 @@ class DepthMoreTest < Minitest::Test
     assert_equal "2026-11-07 14:00:00 -05:00", wall(parse("in three weeks' time").begin)
     assert_raises(Acute::ParseError) { parse("this time") }
   end
+
+  def test_unicode_spaces_and_dashes_are_spaces_and_dashes
+    assert_equal "2026-10-17 20:00:00 -04:00", wall(parse("8\u202fpm").begin)
+    assert_equal "2026-10-17 20:43:00 -04:00", wall(parse("8:43\u00a0pm").begin)
+    assert_equal ["2026-10-20 00:00:00 -04:00", "2026-10-23 00:00:00 -04:00"], span("tue \u2013 thu")
+  end
+
+  def test_d44_a_days_range_in_one_month_takes_the_year_at_its_end
+    assert_equal ["2021-06-12 00:00:00 -04:00", "2021-06-15 00:00:00 -04:00"], span("June 12-14, 2021")
+    assert_equal ["2012-08-10 00:00:00 -04:00", "2012-08-23 00:00:00 -04:00"], span("August 10 to 22 2012")
+    assert_equal ["2012-08-10 00:00:00 -04:00", "2012-08-23 00:00:00 -04:00"], span("10 - 22 August 2012")
+    assert_equal ["2021-06-12 00:00:00 -04:00", "2021-06-15 00:00:00 -04:00"], span("12-14 June 2021")
+    assert_equal ["2010-05-08 00:00:00 -04:00", "2010-05-12 00:00:00 -04:00"], span("eighth to eleventh May 2010")
+    assert_raises(Acute::ParseError) { parse("first to second") }
+  end
+
+  def test_two_letter_weekdays
+    assert_equal "1969-05-06 00:00:00 -04:00", wall(parse("Tu, May 6, 1969").begin)
+    assert_equal "2005-12-30 00:00:00 -05:00", wall(parse("Fr December 30th 2005").begin)
+  end
+
+  def test_the_year_and_written_years
+    assert_equal ["2000-01-01 00:00:00 -05:00", :year], [wall(parse("the year 2000").begin), parse("the year 2000").grain]
+    assert_equal "1989-10-01 00:00:00 -04:00", wall(parse("1st oct in the year '89").begin)
+    assert_equal "1995-01-01 00:00:00 -05:00", wall(parse("nineteen ninety five").begin)
+    assert_equal "2010-01-01 00:00:00 -05:00", wall(parse("the year twenty ten").begin)
+    assert_equal "1995-06-01 00:00:00 -04:00", wall(parse("summer of nineteen ninety five").begin)
+    assert_equal "1776-01-01 00:00:00 -04:56", wall(parse("seventeen seventy six").begin)
+    assert_equal "2026-10-18 10:30:00 -04:00", wall(parse("ten thirty").begin)
+    assert_raises(Acute::ParseError) { parse("fourteen thirty") }
+  end
 end

@@ -29,7 +29,10 @@ module Acute
           end
           return iso_date if digits == 4
           w = t[i + 2 * S + 1]
-          return numeric_date(:dash) if @t[i + 3 * S] == L::DASH || (w > 12 && w <= 31 && v <= 12) || v > 12 && v <= 31 && w <= 12
+          # D44: not before a month's name, where they are its days ("12-14 June")
+          if @t[i + 3 * S] == L::DASH || (@t[i + 3 * S] != L::MONTH && ((w > 12 && w <= 31 && v <= 12) || v > 12 && v <= 31 && w <= 12))
+            return numeric_date(:dash)
+          end
         elsif digits == 4 && @t[i + 2 * S] == L::UNIT && joined?(i + S) && (y = week_year(v, i + S))
           return y
         end
@@ -92,6 +95,13 @@ module Acute
             @i += S
           end
           return c
+        end
+        # D44: "nineteen ninety five", "twenty ten": a year written as two numbers; "fourteen thirty" may be a
+        # clock, so from 13 to 23 the second must be past any minute
+        if flags & L::WORDY != 0 && t[i + S + 2] & L::WORDY != 0 && v.between?(13, 29) && (w = t[i + S + 1]).between?(10, 99) &&
+           (v.between?(18, 20) || v > 23 || w > 59)
+          @i += 2 * S
+          return Date.new(v * 100 + t[i + S + 1], nil, nil, nil, false)
         end
       end
       if nk == L::UNIT || nk == L::SLASH

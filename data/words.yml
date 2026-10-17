@@ -35,6 +35,7 @@ weekday:        # value: 0 = Sunday
   tuesday: 2
   tue: 2
   tues: 2
+  tu: 2
   wednesday: 3
   wed: 3
   midweek: 3      # D2
@@ -44,6 +45,8 @@ weekday:        # value: 0 = Sunday
   thurs: 4
   friday: 5
   fri: 5
+  fr: 5
+  frid: 5
   saturday: 6
   sat: 6
   sundays: 0
@@ -438,7 +441,7 @@ phrases:
   couple of: [word, couple]
 
 # Words that are also plain English. In extraction they need a neighbour that confirms the date reading.
-english: [may, march, following, sat, sun, second, fall, a, mon, wed, start, end, last, past, this, next, d, m, s, h, w, y, lunch,
+english: [may, march, following, sat, sun, tu, fr, second, fall, a, mon, wed, start, end, last, past, this, next, d, m, s, h, w, y, lunch,
           boy]
 
 # D44: plurals, which only count ("3 fridays from now"); alone they recur, which is not a time. Plural units

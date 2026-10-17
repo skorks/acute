@@ -107,6 +107,10 @@ module Acute
       else 0
       end
     end.freeze
+    # Unicode spaces and dashes by their UTF-8 bytes as one Integer: no-break, thin and ideographic spaces;
+    # hyphens, en and em dashes and the minus sign
+    WIDE = [0xC2A0, *0xE28080..0xE2808A, 0xE280AF, 0xE2819F, 0xE38080].to_h { [_1, SPACE] }
+                                                                     .merge([*0xE28090..0xE28095, 0xE28892].to_h { [_1, DASH] }).freeze
     # Whether a byte is an ASCII letter, a lookup rather than a call
     ALPHA = Array.new(256) { |c| (c >= 97 && c <= 122) || (c >= 65 && c <= 90) }.freeze
     # An ordinal's suffix ("3rd"), its two bytes lower-cased and packed
@@ -123,6 +127,10 @@ module Acute
         cl = CLASS[c]
         if cl == SPACE
           i += 1
+        elsif c >= 194 && (w = wide(s, i, c))
+          # "8\u202Fpm" as macOS writes it, "tue – thu"
+          t.push(DASH, 0, 0, i, i + 3) if w == DASH
+          i += c < 224 ? 2 : 3
         elsif cl == LETTER
           # the "T" between an ISO date and its time
           if c | 32 == 116 && i > 0 && i + 1 < n && CLASS[s.getbyte(i - 1)] == DIGIT && CLASS[s.getbyte(i + 1)] == DIGIT
@@ -299,6 +307,11 @@ module Acute
         return [j, entry] if ok && (j >= n || !ALPHA[s.getbyte(j)])
       end
       nil
+    end
+
+    def self.wide(s, i, c)
+      b = s.getbyte(i + 1).to_i
+      WIDE[c < 224 ? c << 8 | b : c << 16 | b << 8 | s.getbyte(i + 2).to_i]
     end
 
     # Where a decade's "s" or "'s" ends, or nil

@@ -51,6 +51,11 @@ module Acute
       elsif k == L::UNIT
         return clock_words(15) if v == :quarter && @t[i + S] == L::REL || @t[i + S + 1] == :to
         return iso_week if v == :week && week_number?(i + S)
+        # "the year 1980", "in the year '89", "the year twenty ten"
+        if v == :year && t[i + S] == L::NUM && ((f = t[i + S + 2]) & L::DIGITS == 4 || f & L::SHORT != 0 || (f & L::WORDY != 0 && t[i + 2 * S] == L::NUM))
+          @i += S
+          return number_atom(true)
+        end
         if (w = t[i + S + 1]) == :after || w == :before # "the day after tomorrow"
           @i += S
           # "the week after next", "the month after the next": the one after next week, when "next" has
@@ -158,8 +163,10 @@ module Acute
         return dated(@t[@i - S + 1], n)
       end
       return failure(:invalid_date, @i - S) if n < 1 || n > 31
-      # "first" alone is not a date; "the first", "first of next month" and "from ninth till ..." are
-      if @t[@i - S + 2] & L::WORDY != 0 && @t[@i + 1] != :of && !(@i >= 2 * S && @t[@i - 2 * S] == L::WORD && BEFORE_DAY[@t[@i - 2 * S + 1]])
+      # "first" alone is not a date; "the first", "first of next month", "from ninth till ..." and "eighth to
+      # eleventh may" are
+      if @t[@i - S + 2] & L::WORDY != 0 && @t[@i + 1] != :of && !(@i >= 2 * S && @t[@i - 2 * S] == L::WORD && BEFORE_DAY[@t[@i - 2 * S + 1]]) &&
+         !(@t[@i + S] == L::ORD && (@t[@i] == L::DASH || (@t[@i] == L::WORD && RANGE[@t[@i + 1]])))
         return failure(:incomplete, @i - S)
       end
       of(Date.new(nil, nil, n, nil, false))
@@ -179,32 +186,6 @@ module Acute
       outer = unit ? this_unit : atom(true)
       return outer if Failure === outer
       Within.new(node, outer)
-    end
-
-    # D13: "week 42", "W42", "W42-3", "W423", "week 53 of 2026"
-    def iso_week
-      w = @t[@i + S + 1]
-      day = nil
-      if @t[@i + S + 2] & L::DIGITS == 3
-        day = w % 10
-        w /= 10
-      end
-      @i += 2 * S
-      if !day && joined?(@i) && @t[@i + S] == L::NUM && @t[@i + S + 2] & L::DIGITS == 1 && @t[@i + S + 1].between?(1, 7)
-        day = @t[@i + S + 1]
-        @i += 2 * S
-      end
-      of(IsoWeek.new(w, day))
-    end
-
-    def week_number?(i)
-      return false unless @t[i] == L::NUM
-      v = @t[i + 1]
-      # "W481": week 48, day 1, with no space after the W
-      return @t[i - 1] == @t[i + 3] && (v / 10).between?(1, 53) && (v % 10).between?(1, 7) if @t[i + 2] & L::DIGITS == 3
-      return false unless @t[i + 2] & L::DIGITS <= 2 && v.between?(1, 53)
-      k = @t[i + S]
-      k != L::UNIT && k != L::MER && k != L::SLASH && k != L::DOT && k != L::MONTH
     end
 
     # "the month" in "the first monday of the month": the current one

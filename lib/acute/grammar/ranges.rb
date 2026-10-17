@@ -38,6 +38,16 @@ module Acute
       Range.new(from, to)
     end
 
+    # D44: "june 12-14, 2021", "august 10 to 22 2012": a bare day and a year end a range begun with a month's
+    # day, and the year is both ends'
+    def day_and_year(from, ts)
+      return unless Date === from && from.month && from.day && !from.year && !from.sep
+      return unless @t[ts + S] == L::NUM && @t[ts + S + 2] & L::DIGITS == 4 && (d = bare_day(ts, ts + S))
+      year = @t[ts + S + 1]
+      @i = ts + 2 * S
+      Range.new(Date.new(year, from.month, from.day, nil, false), Date.new(year, from.month, d, nil, false))
+    end
+
     # The day a range end written as one number or ordinal names ("15", "the 15th"), or nil
     def bare_day(s, e)
       s += S if @t[s + 1] == :the
