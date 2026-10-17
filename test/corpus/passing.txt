@@ -1484,6 +1484,7 @@ chronic-tests-test-parsing-rb-945-1
 chronic-tests-test-parsing-rb-95-1
 chronic-tests-test-parsing-rb-960-1
 chronic-tests-test-parsing-rb-976-1
+chronic-tests-test-parsing-rb-979-1
 chronic-tests-test-parsing-rb-98-1
 chrono-node-0001
 chrono-node-0003
@@ -2178,12 +2179,17 @@ datetime-bench-0003
 datetime-bench-0004
 datetime-bench-0005
 datetime-bench-0006
+datetime-bench-0007
+datetime-bench-0008
+datetime-bench-0009
+datetime-bench-0010
 datetime-bench-0011
 datetime-bench-0012
 datetime-bench-0013
 datetime-bench-0014
 datetime-bench-0015
 datetime-bench-0016
+datetime-bench-0017
 datetime-bench-0018
 datetime-bench-0019
 datetime-bench-0020
@@ -2723,6 +2729,7 @@ duckling-0618
 duckling-0619
 duckling-0620
 duckling-0621
+duckling-0622
 duckling-0623
 duckling-0624
 duckling-0628
@@ -3940,6 +3947,7 @@ generated-conventions-fuzzy-0048
 generated-conventions-fuzzy-0049
 generated-conventions-fuzzy-0050
 generated-conventions-fuzzy-0051
+generated-conventions-fuzzy-0052
 generated-conventions-fuzzy-0053
 generated-conventions-fuzzy-0054
 generated-conventions-fuzzy-0055
@@ -4020,6 +4028,7 @@ generated-conventions-fuzzy-0134
 generated-conventions-fuzzy-0135
 generated-conventions-fuzzy-0136
 generated-conventions-fuzzy-0137
+generated-conventions-fuzzy-0138
 generated-conventions-fuzzy-0139
 generated-conventions-fuzzy-0140
 generated-conventions-fuzzy-0141
@@ -4051,6 +4060,7 @@ generated-conventions-fuzzy-0166
 generated-conventions-fuzzy-0167
 generated-conventions-fuzzy-0168
 generated-conventions-fuzzy-0169
+generated-conventions-fuzzy-0170
 generated-conventions-fuzzy-0171
 generated-conventions-fuzzy-0175
 generated-conventions-fuzzy-0176
@@ -4091,6 +4101,7 @@ generated-conventions-fuzzy-0210
 generated-conventions-fuzzy-0211
 generated-conventions-fuzzy-0212
 generated-conventions-fuzzy-0213
+generated-conventions-fuzzy-0214
 generated-conventions-fuzzy-0219
 generated-conventions-fuzzy-0220
 generated-conventions-fuzzy-0221
@@ -4098,6 +4109,7 @@ generated-conventions-fuzzy-0222
 generated-conventions-fuzzy-0223
 generated-conventions-fuzzy-0224
 generated-conventions-fuzzy-0225
+generated-conventions-fuzzy-0226
 generated-conventions-fuzzy-0227
 generated-conventions-fuzzy-0228
 generated-conventions-fuzzy-0229
@@ -10623,6 +10635,7 @@ natty-0140
 natty-0141
 natty-0142
 natty-0143
+natty-0144
 natty-0147
 natty-0148
 natty-0149
@@ -11304,7 +11317,11 @@ recognizers-0362
 recognizers-0363
 recognizers-0365
 recognizers-0369
+recognizers-0370
+recognizers-0371
 recognizers-0372
+recognizers-0373
+recognizers-0374
 recognizers-0375
 recognizers-0377
 recognizers-0378
@@ -11656,6 +11673,7 @@ recognizers-0818
 recognizers-0819
 recognizers-0820
 recognizers-0821
+recognizers-0823
 recognizers-0824
 recognizers-0825
 recognizers-0826
@@ -11803,6 +11821,7 @@ recognizers-1005
 recognizers-1006
 recognizers-1009
 recognizers-1010
+recognizers-1011
 recognizers-1014
 recognizers-1015
 recognizers-1016
@@ -11833,6 +11852,7 @@ recognizers-1042
 recognizers-1043
 recognizers-1044
 recognizers-1045
+recognizers-1048
 recognizers-1049
 recognizers-1050
 recognizers-1051
@@ -11877,6 +11897,7 @@ recognizers-1125
 recognizers-1126
 recognizers-1127
 recognizers-1128
+recognizers-1129
 recognizers-1130
 recognizers-1131
 recognizers-1132
@@ -11985,8 +12006,10 @@ recognizers-1260
 recognizers-1261
 recognizers-1262
 recognizers-1263
+recognizers-1264
 recognizers-1265
 recognizers-1266
+recognizers-1267
 recognizers-1268
 recognizers-1269
 rust-parsers-0001
@@ -12442,6 +12465,15 @@ rust-parsers-0500
 rust-parsers-0501
 rust-parsers-0502
 rust-parsers-0503
+rust-parsers-0504
+rust-parsers-0505
+rust-parsers-0506
+rust-parsers-0507
+rust-parsers-0508
+rust-parsers-0509
+rust-parsers-0510
+rust-parsers-0511
+rust-parsers-0512
 rust-parsers-0513
 rust-parsers-0514
 rust-parsers-0515

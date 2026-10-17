@@ -78,6 +78,7 @@ module Acute
     WORDS = Tables::WORDS.to_h { |word, (kind, value)| [pack(word), [*entry(word, kind, value), nil]] }
     phrases.each { |k, list| WORDS[k] = [*(WORDS[k] || [nil, nil, 0, false]).first(4), list.freeze] }
     WORDS.each_value(&:freeze).freeze
+    MID = pack("mid")
 
     # Each byte's class, so the main loop tests one value a byte; the punctuation it keeps is its own byte
     SPACE = 1
@@ -150,6 +151,9 @@ module Acute
             end
           elsif k == 28 && i < n && CLASS[s.getbyte(i)] == DIGIT
             # an apostrophe for the century left out: "'90s", "'00"
+          elsif i - st > 3 && i - st < 13 && k >> 5 * (i - st - 3) == MID && (rest = WORDS[k & (1 << 5 * (i - st - 3)) - 1]) && rest[0]
+            # "midweek", "midmorning": "mid" and a word
+            t.push(FUZZ, :mid, 0, st, st + 3, rest[0], rest[1], rest[2], st + 3, i)
           else
             return Failure.new(:unknown_word, st, i) unless unknown
             unknown << st << i

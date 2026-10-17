@@ -245,6 +245,8 @@ module Acute
         grain, len = c.seconds ? Clock::SECOND : Clock::MINUTE
         day = s.b - s.b % DAY
         part = part_name(outer)
+        # D6: midnight "at the start of" a day is its first moment, "at the end of" its last
+        cands = [outer.pos == :start ? 0 : 86_400] if c.named == :midnight && G::Fuzzy === outer && (outer.pos == :start || outer.pos == :end)
         unless part
           return [Span.new(day + cands[0], day + cands[0] + len, grain, nil)] if cands.size == 1
           return cands.map { |secs| Span.new(day + secs, day + secs + len, grain, nil) }

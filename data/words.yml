@@ -37,6 +37,7 @@ weekday:        # value: 0 = Sunday
   tues: 2
   wednesday: 3
   wed: 3
+  midweek: 3      # D2
   thursday: 4
   thu: 4
   thur: 4
@@ -231,6 +232,7 @@ zone:           # value: the UTC offset in seconds (D18, D40: abbreviations are 
 fuzzy:          # D2
   early: early
   mid: mid
+  middle: mid
   late: late
   beginning: start
   start: start

@@ -260,6 +260,11 @@ module Acute
     def fuzzy_atom
       pos = @t[@i + 1]
       @i += S
+      # "mid day", "mid-night": midday and midnight
+      if pos == :mid && ((day = @t[@i + 1] == :day) || @t[@i + 1] == :night) && (@t[@i] == L::UNIT || @t[@i] == L::PART)
+        @i += S
+        return named(day ? 12 : 0)
+      end
       @i += S if @t[@i + 1] == :of
       @i += S if @t[@i + 1] == :the
       @i += S if @t[@i] == L::DASH && (@t[@i + S] == L::NUM || @t[@i + S] == L::DECADE) # "mid-1990s"

@@ -172,4 +172,29 @@ class DepthTest < Minitest::Test
     assert_reads "5th thursday in july", "2027-07-29 00:00:00 -04:00"
     assert_nil Acute.parse("5th tuesday in july", now: "2026-10-17T14:00", zone: NY)
   end
+
+  def test_d44_mid_day_and_mid_night_are_midday_and_midnight
+    assert_reads "mid day", "2026-10-18 12:00:00 -04:00"
+    assert_reads "mid-night", "2026-10-18 00:00:00 -04:00"
+  end
+
+  def test_d44_mid_joined_to_a_word_and_middle_are_mid
+    assert_span "midmorning", "2026-10-18 08:00", "2026-10-18 10:00"
+    assert_span "the middle of next month", "2026-11-11 00:00", "2026-11-21 00:00"
+    assert_span "midweek", "2026-10-21 00:00", "2026-10-22 00:00"
+    assert_nil Acute.parse("midxyz", now: "2026-10-17T14:00", zone: NY)
+  end
+
+  def test_d44_midnight_at_the_start_or_end_of_a_day
+    assert_reads "midnight at the start of october 20", "2026-10-20 00:00:00 -04:00"
+    assert_reads "midnight at the end of october 20", "2026-10-21 00:00:00 -04:00"
+  end
+
+  def test_d44_a_shift_in_hours_or_less_from_an_anchor_counts_absolute_time_at_the_units_grain
+    r = parse("two seconds before october 20 at 1pm")
+    assert_equal ["2026-10-20 12:59:58 -04:00", "2026-10-20 12:59:59 -04:00", :second], [wall(r.begin), wall(r.end), r.grain]
+    assert_equal :minute, parse("3 hours after october 20 at 1pm").grain
+    assert_reads "2 hours after March 8, 2026 at 1:30 AM", "2026-03-08 04:30:00 -04:00"
+    assert_reads "2 hours after November 1, 2026 at 1:30 AM", "2026-11-01 02:30:00 -05:00"
+  end
 end
