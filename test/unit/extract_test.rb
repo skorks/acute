@@ -19,6 +19,7 @@ class ExtractTest < Minitest::Test
                  x.mentions.map { [_1.kind, _1.text, _1.offset] }
     assert_equal({ hours: 2 }, x.mentions[1].value.parts)
     assert_equal "lunch with bob", x.remainder
+    assert_equal [[:time, "a week starting tomorrow", 12...36]], mentions("set ooo for a week starting tomorrow")
   end
 
   def test_no_mention_starts_inside_a_written_number

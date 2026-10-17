@@ -290,6 +290,10 @@ word:           # function words; the grammar gives them their meaning
   roughly: around
   o'clock: oclock
   half: half
+  for: for
+  more: more
+  extra: more
+  additional: more
   t: t
   q: q
   fy: fy

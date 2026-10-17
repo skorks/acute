@@ -84,15 +84,17 @@ module Acute
       text.byteslice(from, to - from).each_byte.any? { |c| PUNCT.include?(c) && c != 44 }
     end
 
-    # "on" and "at" introduce a mention without being part of it. None starts inside a written number, as
-    # "12-1234" in "123-12-1234" or "1 in the morning" in "37.1 in the morning".
+    START_WORDS = { on: true, and: true, to: true, for: true }.freeze
+
+    # "on", "at" and "for" introduce a mention without being part of it (E2 gives a duration its "for"). None
+    # starts inside a written number, as "12-1234" in "123-12-1234" or "1 in the morning" in "37.1 in the morning".
     def self.starts_mention?(tokens, i)
       k = tokens[i * S]
       if i >= 2 && GLUE[tokens[(i - 1) * S]] && tokens[(i - 2) * S] == L::NUM &&
          tokens[(i - 2) * S + 4] == tokens[(i - 1) * S + 3] && tokens[(i - 1) * S + 4] == tokens[i * S + 3]
         return false
       end
-      k != L::AT && !(k == L::WORD && (tokens[i * S + 1] == :on || tokens[i * S + 1] == :and || tokens[i * S + 1] == :to))
+      k != L::AT && !(k == L::WORD && START_WORDS[tokens[i * S + 1]])
     end
 
     def self.mention(text, slice, tree, units, make_context)

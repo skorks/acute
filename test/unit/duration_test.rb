@@ -12,6 +12,40 @@ class DurationTest < Minitest::Test
     assert_equal({ business_days: 5 }, Acute.duration("5 business days").parts)
   end
 
+  def test_spoken_fractions
+    assert_equal "P2Y6M", Acute.duration("two and a half years").iso8601
+    assert_equal "PT5M30S", Acute.duration("5 and an half minutes").iso8601
+    assert_equal "PT1H45M", Acute.duration("one and three quarters of an hour").iso8601
+    assert_equal "PT1H15M", Acute.duration("an hour and a quarter").iso8601
+    assert_equal "PT1H30M", Acute.duration("one hour and half").iso8601
+    assert_equal "PT12H", Acute.duration("half day").iso8601
+  end
+
+  def test_a_bare_number_after_hours_or_minutes_is_the_next_unit
+    assert_equal "PT1H30M", Acute.duration("1 hour thirty").iso8601
+    assert_equal "PT2H10M", Acute.duration("2 hour and 10").iso8601
+    assert_equal "PT2M30S", Acute.duration("2 minutes 30").iso8601
+    assert_nil Acute.duration("2 days 5")
+  end
+
+  def test_decimals_split_into_smaller_units
+    assert_equal({ hours: 1, minutes: 30 }, Acute.duration("1.5 hours").parts)
+    assert_equal "P3Y6M", Acute.duration("3.5years").iso8601
+    assert_equal "PT10M45S", Acute.duration("10.75 minutes").iso8601
+    d = Acute.duration("123.45 sec")
+    assert_equal ["PT123.45S", "123.45s"], [d.iso8601, d.to_s]
+    assert_equal Rational(2469, 20), d.seconds
+  end
+
+  def test_for_more_and_joined_forms
+    assert_equal "P5D", Acute.duration("for 5 days").iso8601
+    assert_equal "PT2M", Acute.duration("2 extra minutes").iso8601
+    assert_equal "PT3M", Acute.duration("3-min").iso8601
+    assert_nil Acute.duration("3 - min")
+    assert_nil Acute.duration("for months")
+    assert_nil Acute.duration("for")
+  end
+
   def test_a_time_is_not_a_duration
     assert_nil Acute.duration("next friday")
     assert_nil Acute.duration("tomorrow")

@@ -141,7 +141,7 @@ module Acute
         if @t[i + S] == L::SLASH && @t[i + 2 * S] == L::NUM && @t[i + 2 * S + 1] > 0
           count = Rational(count, @t[i + 2 * S + 1])
           i += 2 * S
-        elsif @t[i + S] == L::DOT && @t[i + 2 * S] == L::NUM && @t[i + 3 * S] == L::UNIT # "2.5 hours"
+        elsif @t[i + S] == L::DOT && @t[i + 2 * S] == L::NUM && unit_at(i + 3 * S) # "2.5 hours", "3.5 second"
           count += Rational(@t[i + 2 * S + 1], 10**(@t[i + 2 * S + 2] & L::DIGITS))
           i += 2 * S
         end

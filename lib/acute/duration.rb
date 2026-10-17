@@ -15,12 +15,20 @@ module Acute
 
     attr_reader :parts
 
+    # A fraction goes to the next smaller unit: "1.5 hours" is 1h 30m, "3.5 years" 3y 6mo; past seconds it stays
     def self.from_units(units)
       parts = Hash.new(0)
       units.each do |u|
-        count, unit = Resolve::Period.whole(u.count, u.unit)
-        part, k = UNIT_PART.fetch(unit)
-        parts[part] += count * k
+        count = u.count
+        unit = u.unit
+        loop do
+          part, k = UNIT_PART.fetch(unit)
+          n = (smaller = Resolve::Period::SMALLER[unit]) ? count.floor : count
+          parts[part] += n * k
+          break if (count -= n).zero?
+          unit, m = smaller
+          count *= m
+        end
       end
       new(**parts)
     end
@@ -28,7 +36,7 @@ module Acute
     def initialize(**parts)
       unknown = parts.keys - ORDER
       raise ArgumentError, "unknown duration parts: #{unknown.join(", ")}" if unknown.any?
-      @parts = ORDER.filter_map { |k| [k, parts[k]] if parts[k] && parts[k] != 0 }.to_h.freeze
+      @parts = ORDER.filter_map { |k| [k, whole(parts[k])] if parts[k] && parts[k] != 0 }.to_h.freeze
     end
 
     def kind = :duration
@@ -47,14 +55,14 @@ module Acute
       return "P#{@parts[:weeks]}W" if @parts.keys == [:weeks]
       p = @parts
       days = p.fetch(:days, 0) + p.fetch(:weeks, 0) * 7
-      date = [[p[:years], "Y"], [p[:months], "M"], [days.nonzero?, "D"]].filter_map { |n, l| "#{n}#{l}" if n }.join
-      time = [[p[:hours], "H"], [p[:minutes], "M"], [p[:seconds], "S"]].filter_map { |n, l| "#{n}#{l}" if n }.join
+      date = [[p[:years], "Y"], [p[:months], "M"], [days.nonzero?, "D"]].filter_map { |n, l| "#{num(n)}#{l}" if n }.join
+      time = [[p[:hours], "H"], [p[:minutes], "M"], [p[:seconds], "S"]].filter_map { |n, l| "#{num(n)}#{l}" if n }.join
       "P#{date}#{"T#{time}" unless time.empty?}"
     end
 
     def to_s(style = :short)
-      return @parts.map { |k, n| "#{n}#{SHORT[k]}" }.join(" ") if style == :short
-      @parts.map { |k, n| "#{n} #{LONG[k]}#{"s" unless n == 1}" }.join(" ")
+      return @parts.map { |k, n| "#{num(n)}#{SHORT[k]}" }.join(" ") if style == :short
+      @parts.map { |k, n| "#{num(n)} #{LONG[k]}#{"s" unless n == 1}" }.join(" ")
     end
 
     def to_h = { kind: "duration", parts: @parts, iso8601: iso8601 }
@@ -62,5 +70,12 @@ module Acute
     def ==(other) = Duration === other && other.parts == @parts
 
     def inspect = "#<Acute::Duration #{to_s}>"
+
+    private
+
+    def whole(n) = Rational === n && n.denominator == 1 ? n.to_i : n
+
+    # "123.45s": a fraction of a second as a decimal
+    def num(n) = Rational === n ? n.to_f.to_s : n.to_s
   end
 end

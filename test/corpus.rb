@@ -72,7 +72,8 @@ module Corpus
 
   def run_case(c)
     exp = c["expect"]
-    return ["other_kind", nil] if exp["duration"] || exp["rrule"] || exp["extract"]
+    return duration_case(c) if exp.key?("duration")
+    return ["other_kind", nil] if exp["rrule"] || exp["extract"]
     opts = c["options"] || {}
     return ["chronic_option", nil] if opts.keys.intersect?(CHRONIC_ONLY)
 
@@ -90,7 +91,16 @@ module Corpus
     ["raises", "#{e.class}: #{e.message[0, 80]}"]
   end
 
+  # A duration is compared by its ISO 8601 form
+  def duration_case(c)
+    got = Acute.duration(c["text"])&.iso8601
+    [got == c["expect"]["duration"] ? "pass" : got ? "wrong" : "nil", got]
+  rescue StandardError, SystemStackError => e
+    ["raises", "#{e.class}: #{e.message[0, 80]}"]
+  end
+
   def show(c, got)
+    return "#{c["id"]} | #{c["text"]} | #{c["expect"]["duration"]} | #{got.inspect}" if c["expect"].key?("duration")
     tz = TZS[c["tz"]]
     at = ->(t) { t ? tz.to_local(Time.at(t)).strftime("%F %T") : "open" }
     fmt = ->(pairs) { pairs.map { |b, e| b && e ? "#{at.(b)}+#{e - b}s" : "#{at.(b)}..#{at.(e)}" }.join(" ; ") }
