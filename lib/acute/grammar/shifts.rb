@@ -35,6 +35,30 @@ module Acute
       (k == L::WDAY || k == L::WEEKEND || k == L::HOLIDAY) && @t[i + S] == L::WORD && SHIFT_TAIL[@t[i + S + 1]]
     end
 
+    # D44: "the sunday after next wed", "the monday before christmas" are the first one after or before the
+    # day named; "friday after next", "March after the next", "tuesday before last" the one after next friday
+    def around(node)
+      return node unless @t[@i] == L::WORD && ((w = @t[@i + 1]) == :after || w == :before)
+      j = @i + S
+      j += S if @t[j] == L::WORD && @t[j + 1] == :the
+      k = @t[j]
+      if k == L::REL && (r = @t[j + 1]) == (w == :after ? :next : :last) && nothing_own?(j + S)
+        @i = j + S
+        return Counted.new(w == :after ? 1 : -1, node, Rel.new(r, node))
+      end
+      return node unless k == L::REL || k == L::WDAY || k == L::DAY || k == L::HOLIDAY || k == L::MONTH
+      @i += S
+      anchor = item(true)
+      return anchor if Failure === anchor
+      Counted.new(w == :after ? 1 : -1, node, anchor)
+    end
+
+    # "next" in "the week after next" has nothing of its own when what follows is a time or nothing
+    def nothing_own?(j)
+      k = @t[j]
+      !k || k == L::CLOCK || k == L::NUM || k == L::AT || k == L::PART || (k == L::WORD && @t[j + 1] == :in)
+    end
+
     def counted(n)
       k = @t[@i]
       v = @t[@i + 1]

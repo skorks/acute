@@ -284,4 +284,20 @@ class DepthTest < Minitest::Test
     assert_equal :incomplete, assert_raises(Acute::ParseError) { parse("134 this afternoon") }.code
     assert_equal :invalid_date, assert_raises(Acute::ParseError) { parse("at 975") }.code
   end
+
+  def test_d44_after_next_is_the_one_after_next_x
+    assert_reads "friday after next", "2026-10-30 00:00:00 -04:00"
+    assert_reads "friday after next", "2026-10-23 00:00:00 -04:00", ["2026-10-30 00:00:00 -04:00"], now: "2026-10-13T14:00" # D20
+    assert_reads "tuesday before last", "2026-10-06 00:00:00 -04:00"
+    assert_reads "march after next", "2028-03-01 00:00:00 -05:00"
+    assert_reads "the weekend after next", "2026-10-31 00:00:00 -04:00"
+    assert_reads "the month after the next", "2026-12-01 00:00:00 -05:00"
+    assert_reads "wed of the week after next in the evening", "2026-10-28 17:00:00 -04:00"
+  end
+
+  def test_d44_a_day_after_or_before_another_is_the_first_one_past_it
+    assert_reads "the sunday after next wed", "2026-10-25 00:00:00 -04:00"
+    assert_reads "the monday before christmas", "2026-12-21 00:00:00 -05:00"
+    assert_raises(Acute::ParseError) { parse("monday after 5pm") }
+  end
 end

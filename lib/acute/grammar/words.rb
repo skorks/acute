@@ -17,8 +17,8 @@ module Acute
       elsif k == L::WDAY
         return failure(:incomplete) if t[i + 2] & L::PLURAL != 0
         @i += S
-        of(Weekday.new(v))
-      elsif k == L::MONTH then month_atom
+        around(of(Weekday.new(v)))
+      elsif k == L::MONTH then around(month_atom)
       elsif k == L::REL then rel_atom
       elsif k == L::NAMED
         @i += S
@@ -33,13 +33,13 @@ module Acute
       elsif k == L::HOLIDAY
         return failure(:incomplete) if t[i + 2] & L::PLURAL != 0
         @i += S
-        of(Holiday.new(v))
+        around(of(Holiday.new(v)))
       elsif k == L::WORD then word_atom(v)
       elsif k == L::ART then article_atom
       elsif k == L::FUZZ then fuzzy_atom
       elsif k == L::WEEKEND
         @i += S
-        WEEKEND
+        around(WEEKEND)
       elsif k == L::SEASON
         @i += S
         Season.new(v)
@@ -48,10 +48,12 @@ module Acute
         return iso_week if v == :week && week_number?(i + S)
         if (w = t[i + S + 1]) == :after || w == :before # "the day after tomorrow"
           @i += S
-          # "the week after next": the one after next week, when "next" has nothing of its own
-          if w == :after && t[i + 2 * S + 1] == :next && t[i + 2 * S] == L::REL &&
-             (!(k = t[i + 3 * S]) || k == L::CLOCK || k == L::NUM || k == L::AT)
-            @i += 2 * S
+          # "the week after next", "the month after the next": the one after next week, when "next" has
+          # nothing of its own
+          j = i + 2 * S
+          j += S if t[j] == L::WORD && t[j + 1] == :the
+          if w == :after && t[j + 1] == :next && t[j] == L::REL && nothing_own?(j + S)
+            @i = j + S
             return Shift.new(1, v, Rel.new(:next, Unit.new(v, nil)))
           end
           return shift_tail(Unit.new(v, 1))
@@ -170,11 +172,12 @@ module Acute
       @i += S
       @i += S if @t[@i] == L::WORD && @t[@i + 1] == :the
       # D42: "the first monday of the month" repeats monthly, so it is the coming one: next month's once passed
-      if @t[@i] == L::UNIT && @t[@i + 1] == :month && (Date === node || (Nth === node && !(Unit === node.node && UNIT_SIZE[node.node.unit] >= 5)))
+      unit = @t[@i] == L::UNIT && !(@t[@i + S] == L::WORD && @t[@i + S + 1] == :after) # not "the week after next"
+      if unit && @t[@i + 1] == :month && (Date === node || (Nth === node && !(Unit === node.node && UNIT_SIZE[node.node.unit] >= 5)))
         @i += S
         return node
       end
-      outer = @t[@i] == L::UNIT ? this_unit : atom(true)
+      outer = unit ? this_unit : atom(true)
       return outer if Failure === outer
       Within.new(node, outer)
     end

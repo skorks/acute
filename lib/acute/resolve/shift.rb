@@ -33,18 +33,18 @@ module Acute
       end
 
       # D44: "3 fridays from now" is the third Friday after now, not counting today's; "2 weekends ago" the
-      # second whose end has passed. One a cycle, so the nth is n - 1 cycles on from the first.
+      # second whose end has passed. One a cycle, so the nth is n - 1 cycles on from the first. From an anchor
+      # with alternatives, each gives one ("friday after next").
       def self.counted(node, ctx)
-        x = node.node
         n = node.n
+        return nth_from(node.node, n, ctx.now_local + (n > 0 ? 1 : 0), ctx) unless node.anchor
+        a = Resolve.spans(node.anchor, ctx)
+        return nth_from(node.node, n, n > 0 ? a[0].e : a[0].b, ctx) if a.size <= 1 && !a.empty?
+        a.flat_map { |s| nth_from(node.node, n, n > 0 ? s.e : s.b, ctx).first(1) }.uniq
+      end
+
+      def self.nth_from(x, n, t, ctx)
         cyc = Periodic.cycle(x)
-        if node.anchor
-          a = Resolve.spans(node.anchor, ctx)
-          return [] if a.empty?
-          t = n > 0 ? a[0].e : a[0].b
-        else
-          t = ctx.now_local + (n > 0 ? 1 : 0)
-        end
         i = Period.index(cyc, ctx, t)
         first = n > 0 ? Periodic.first(x, ctx, i, cyc) { |s| s.b >= t } : Periodic.last(x, ctx, i, cyc) { |s| s.e <= t }
         return first if first.empty? || n.abs == 1

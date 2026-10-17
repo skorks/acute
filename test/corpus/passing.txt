@@ -627,6 +627,7 @@ chronic-issues-201-1
 chronic-issues-201-2
 chronic-issues-201-3
 chronic-issues-201-4
+chronic-issues-203-1
 chronic-issues-204-1
 chronic-issues-205-1
 chronic-issues-21-1
@@ -2678,7 +2679,9 @@ duckling-0118
 duckling-0119
 duckling-0120
 duckling-0121
+duckling-0122
 duckling-0123
+duckling-0124
 duckling-0125
 duckling-0126
 duckling-0127
@@ -2717,6 +2720,7 @@ duckling-0172
 duckling-0173
 duckling-0174
 duckling-0175
+duckling-0176
 duckling-0177
 duckling-0178
 duckling-0179
@@ -11534,8 +11538,13 @@ natty-0076
 natty-0077
 natty-0078
 natty-0079
+natty-0080
+natty-0081
+natty-0082
+natty-0083
 natty-0084
 natty-0085
+natty-0086
 natty-0087
 natty-0089
 natty-0090
@@ -11615,6 +11624,7 @@ natty-0180
 natty-0181
 natty-0182
 natty-0183
+natty-0184
 natty-0185
 natty-0186
 natty-0187
@@ -12003,6 +12013,8 @@ natty-0604
 natty-0605
 natty-0606
 natty-0607
+natty-0608
+natty-0609
 natty-0610
 natty-0611
 natty-0612
@@ -12194,6 +12206,7 @@ recognizers-0150
 recognizers-0151
 recognizers-0152
 recognizers-0156
+recognizers-0157
 recognizers-0160
 recognizers-0161
 recognizers-0162
