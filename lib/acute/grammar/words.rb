@@ -224,12 +224,16 @@ module Acute
       Within.new(node, outer)
     end
 
-    # D13: "week 42", "W42", "W42-3", "week 53 of 2026"
+    # D13: "week 42", "W42", "W42-3", "W423", "week 53 of 2026"
     def iso_week
       w = @t[@i + S + 1]
-      @i += 2 * S
       day = nil
-      if joined?(@i) && @t[@i + S] == L::NUM && @t[@i + S + 2] & L::DIGITS == 1 && @t[@i + S + 1].between?(1, 7)
+      if @t[@i + S + 2] & L::DIGITS == 3
+        day = w % 10
+        w /= 10
+      end
+      @i += 2 * S
+      if !day && joined?(@i) && @t[@i + S] == L::NUM && @t[@i + S + 2] & L::DIGITS == 1 && @t[@i + S + 1].between?(1, 7)
         day = @t[@i + S + 1]
         @i += 2 * S
       end
@@ -237,7 +241,11 @@ module Acute
     end
 
     def week_number?(i)
-      return false unless @t[i] == L::NUM && @t[i + 2] & L::DIGITS <= 2 && @t[i + 1].between?(1, 53)
+      return false unless @t[i] == L::NUM
+      v = @t[i + 1]
+      # "W481": week 48, day 1, with no space after the W
+      return @t[i - 1] == @t[i + 3] && (v / 10).between?(1, 53) && (v % 10).between?(1, 7) if @t[i + 2] & L::DIGITS == 3
+      return false unless @t[i + 2] & L::DIGITS <= 2 && v.between?(1, 53)
       k = @t[i + S]
       k != L::UNIT && k != L::MER && k != L::SLASH && k != L::DOT && k != L::MONTH
     end

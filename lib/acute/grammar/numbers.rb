@@ -11,6 +11,7 @@ module Acute
       digits = flags & L::DIGITS
       nk = @t[i + S]
       if nk == L::SLASH || nk == L::DOT
+        return dotted_clock(i) if nk == L::DOT && dotted_clock?(i)
         return numeric_date(nk == L::SLASH ? :slash : :dot) if @t[i + 2 * S] == L::NUM
       elsif nk == L::DASH
         return dashed_month(v, digits) if @t[i + 2 * S] == L::MONTH && joined?(i + S)
@@ -139,12 +140,18 @@ module Acute
       short = false
       if @t[@i] == t[i + S] && @t[@i + S] == L::NUM
         digits = t[@i + S + 2] & L::DIGITS
+        # D37: year first only when the first number has four digits: "2026/11/23"
+        if t[i + 2] & L::DIGITS == 4 && digits <= 2
+          @i += 2 * S
+          return Date.new(a, b, t[@i - S + 1], nil, false)
+        end
         return failure(:invalid_date, @i + S) unless digits == 2 || digits == 4
         year = t[@i + S + 1]
         short = digits == 2
         @i += 2 * S
-        # D37: year first only when the first number has four digits
-        return Date.new(a, b, year, nil, false) if t[i + 2] & L::DIGITS == 4 && !short
+      elsif (d = t[i + 2 * S + 2] & L::DIGITS) == 4 || t[i + 2] & L::DIGITS == 4
+        # D44: "11/2026", "2013/12": a month and its year
+        return d == 4 ? Date.new(b, a, nil, nil, false) : Date.new(a, b, nil, nil, false) if (d == 4 ? a : b).between?(1, 12)
       end
       Date.new(year, a, b, sep, short)
     end
@@ -248,6 +255,8 @@ module Acute
         named(@t[@i - S + 1])
       elsif digits == 4
         four_digits(v, flags, at)
+      elsif digits == 8
+        compact_date(v, at)
       elsif digits <= 2 && loose && kind != L::NUM
         return failure(:invalid_date, at) if v > 23
         Clock.new(v, 0, 0, nil, nil, zero, false)

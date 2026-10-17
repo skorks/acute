@@ -288,4 +288,5 @@ end
 require_relative "grammar/nesting"
 require_relative "grammar/words"
 require_relative "grammar/numbers"
+require_relative "grammar/compact"
 require_relative "grammar/duration"
