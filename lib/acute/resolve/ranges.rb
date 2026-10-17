@@ -84,9 +84,11 @@ module Acute
       end
 
       # D9: days and larger include the end; with a clock the end is the stated time
+      # An end's exact UTC is kept, so "1am EDT – 1:30am EST" stays on each side of the repeated hour
       def self.finish(f, t)
-        e = clock?(t) ? t.b : t.e
-        e > f.b ? Span.new(f.b, e, f.grain, nil) : nil
+        clock = clock?(t)
+        e = clock ? t.b : t.e
+        e > f.b ? Span.new(f.b, e, f.grain, nil, f.ub, clock ? t.ub : t.ue) : nil
       end
 
       def self.clock?(s) = s.grain == :minute || s.grain == :second

@@ -65,4 +65,10 @@ class LexerTest < Minitest::Test
     assert_equal ['DAY(1) "tomorrow"'], tokens("tomorrow?! ")
     assert_raises(Acute::ParseError) { Acute.parse!("tomorrow? 5pm") }
   end
+
+  def test_d45_a_unicode_dash_ends_a_word
+    assert_equal ['MER(0) "am"', 'DASH(0) "–"'], tokens("10am–2pm")[1, 2]
+    assert_equal "2026-10-17 22:00:00 -04:00/2026-10-18 00:00:00 -04:00",
+                 parse("today, 10pm–12am").then { "#{wall(_1.begin)}/#{wall(_1.end)}" }
+  end
 end

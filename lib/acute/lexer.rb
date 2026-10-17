@@ -141,10 +141,12 @@ module Acute
           st = i
           k = 0
           while i < n
-            x = CODE[s.getbyte(i)]
+            x = CODE[b = s.getbyte(i)]
             if x == 0
-              break unless s.getbyte(i) == 46 && i + 1 < n && (x = CODE[s.getbyte(i + 1)]) >= 1 && x <= 26
+              break unless b == 46 && i + 1 < n && (x = CODE[s.getbyte(i + 1)]) >= 1 && x <= 26
               x = 27
+            elsif x == 31 && b >= 194 && wide(s, i, b)
+              break # "10am–2pm": a Unicode dash or space ends the word
             end
             k = k * 32 + x
             i += 1
