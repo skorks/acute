@@ -31,6 +31,13 @@ module Acute
     # alternatives of its own (D44)
     attr_accessor :dst, :past, :machine
 
+    # The zone a TimeWithZone, or a Time made with a TZInfo zone, brings with it
+    def self.carried_zone(now)
+      if now.respond_to?(:time_zone) then now.time_zone.tzinfo
+      elsif now.is_a?(Time) && now.zone.is_a?(TZInfo::Timezone) then now.zone
+      end
+    end
+
     def initialize(now, zone, context, locale = nil, week_start = nil, hemisphere = nil, fiscal_year_start = nil)
       @past = case context
               when :future then false
@@ -40,7 +47,7 @@ module Acute
       if zone
         @zone = Zone.for(zone)
       else
-        @zone = Zone.for(carried_zone(now) || rails_zone || SYSTEM_ZONE)
+        @zone = Zone.for(Context.carried_zone(now) || rails_zone || SYSTEM_ZONE)
         @inferred = true
       end
       @now = Time === now ? now.to_i : epoch(now)
@@ -105,11 +112,6 @@ module Acute
 
     private
 
-    def carried_zone(now)
-      if now.respond_to?(:time_zone) then now.time_zone.tzinfo
-      elsif now.is_a?(Time) && now.zone.is_a?(TZInfo::Timezone) then now.zone
-      end
-    end
 
     def rails_zone
       Time.zone&.tzinfo if defined?(ActiveSupport::TimeZone) && Time.respond_to?(:zone)

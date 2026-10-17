@@ -11,6 +11,7 @@ require_relative "acute/extract"
 require_relative "acute/read"
 require_relative "acute/describe"
 require_relative "acute/verify"
+require_relative "acute/parser"
 
 module Acute
   MAX_LENGTH = 512
