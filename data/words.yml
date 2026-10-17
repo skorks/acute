@@ -256,6 +256,7 @@ fuzzy:          # D2
   beginning: start
   start: start
   end: end
+  eod: eod
 
 article:        # "a" is also the meridiem in "8a"
   a: 1

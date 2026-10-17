@@ -42,7 +42,7 @@ module Acute
         around(WEEKEND)
       elsif k == L::SEASON
         @i += S
-        Season.new(v)
+        of(Season.new(v))
       elsif k == L::UNIT
         return clock_words(15) if v == :quarter && @t[i + S] == L::REL || @t[i + S + 1] == :to
         return iso_week if v == :week && week_number?(i + S)
@@ -97,6 +97,8 @@ module Acute
           @approx = true
           @i += S
         end
+        # "within the next 5 days" is within 5 days
+        @i += 2 * S if @t[@i + 1] == :the && @t[@i + S] == L::REL && @t[@i + S + 1] == :next
         q = quantity
         q && !(Failure === q) ? Rel.new(:next, q) : failure(:incomplete, i) # D31
       when :q
@@ -245,6 +247,11 @@ module Acute
       end
     end
 
+    def day_named?(i)
+      k = @t[i]
+      k == L::DAY || k == L::WDAY || k == L::MONTH
+    end
+
     # "early next week", "mid-october", "end of the month", "late tonight"
     def fuzzy_atom
       pos = @t[@i + 1]
@@ -253,6 +260,19 @@ module Acute
       if pos == :mid && ((day = @t[@i + 1] == :day) || @t[@i + 1] == :night) && (@t[@i] == L::UNIT || @t[@i] == L::PART)
         @i += S
         return named(day ? 12 : 0)
+      end
+      # D2: "EOD", "end of day tomorrow", "EOD friday": the end of the day named next, else of today
+      if pos == :eod || (@t[@i + 1] == :of && @t[@i + S] == L::UNIT && @t[@i + S + 1] == :day && day_named?(@i + 2 * S))
+        @i += 2 * S unless pos == :eod
+        node = day_named?(@i) ? atom(true) : Rel.new(:this, Unit.new(:day, nil))
+        return Failure === node ? node : Fuzzy.new(pos == :eod ? :end : pos, node)
+      end
+      # "early tomorrow evening", "late friday night": the part of that day
+      if (@t[@i] == L::DAY || @t[@i] == L::WDAY) && @t[@i + S] == L::PART
+        day = atom(true)
+        return day if Failure === day
+        part = atom(true)
+        return Failure === part ? part : Within.new(Fuzzy.new(pos, part), day)
       end
       @i += S if @t[@i + 1] == :of
       @i += S if @t[@i + 1] == :the

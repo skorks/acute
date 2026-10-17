@@ -9,7 +9,7 @@ module Acute
       SAME_DAY = Assumption.for(:same_day_or_next)
       SEASON_YEAR = Assumption.for(:season_year)
       SAME_OR_NEXT = [0, DAY].freeze
-      SUB_DAY = { G::Clock => true, G::Part => true, G::Range => true }.freeze
+      SUB_DAY = { G::Clock => true, G::Part => true, G::Range => true, G::Fuzzy => true }.freeze # "friday early evening"
 
       def self.cycle(node)
         case G::KIND[node.class]

@@ -113,4 +113,28 @@ class DepthMoreTest < Minitest::Test
     assert_raises(Acute::ParseError) { parse("dish") }
     assert_raises(Acute::ParseError) { parse("wish") }
   end
+
+  def test_d2_eod_and_end_of_day_before_a_day_are_that_days_last_second
+    assert_equal "2026-10-17 23:59:59 -04:00", wall(parse("EOD").begin)
+    assert_equal "2026-10-18 23:59:59 -04:00", wall(parse("eod tomorrow").begin)
+    assert_equal "2026-10-23 23:59:59 -04:00", wall(parse("end of day friday").begin)
+    assert_equal ["2026-10-17 14:00:00 -04:00", "2026-10-18 00:00:00 -04:00"], span("by EOD")
+    assert_equal ["2026-10-17 14:00:00 -04:00", "2026-10-17 23:59:00 -04:00"], span("until 23:59")
+  end
+
+  def test_d35_early_or_late_before_a_day_and_its_part_is_that_part_of_the_day
+    assert_equal ["2026-10-18 17:00:00 -04:00", "2026-10-18 19:00:00 -04:00"], span("early tomorrow evening")
+    assert_equal ["2026-10-18 09:00:00 -04:00", "2026-10-18 12:00:00 -04:00"], span("late tomorrow morning")
+    r = parse("early saturday evening")
+    assert_equal ["2026-10-17 17:00:00 -04:00", ["2026-10-24 17:00:00 -04:00"]], [wall(r.begin), alt_walls(r)]
+  end
+
+  def test_a_season_of_a_year
+    assert_equal "2028-03-01 00:00:00 -05:00", wall(parse("spring of 2028").begin)
+    assert_equal "2027-06-01 00:00:00 -04:00", wall(parse("summer of next year").begin)
+  end
+
+  def test_d31_within_the_next_n_units_is_within_n_units
+    assert_equal ["2026-10-17 14:00:00 -04:00", "2026-10-17 20:00:00 -04:00"], span("within the next 6 hours")
+  end
 end

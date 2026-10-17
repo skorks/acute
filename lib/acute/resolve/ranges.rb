@@ -125,7 +125,11 @@ module Acute
         list.map do |s|
           case node.dir
           when :since then Span.new(s.b, now, s.grain, nil, s.ub, ctx.now)
-          when :until then clock?(s) ? Span.new(now, s.b, s.grain, nil, ctx.now, s.ub) : Span.new(now, s.e, s.grain, nil, ctx.now, s.ue)
+          when :until
+            # D44: until the day's last second ("by EOD") is until the day's end
+            if clock?(s) && !(s.grain == :second && s.e % DAY == 0) then Span.new(now, s.b, s.grain, nil, ctx.now, s.ub)
+            else Span.new(now, s.e, s.grain, nil, ctx.now, s.ue)
+            end
           when :before then Span.new(nil, s.b, s.grain, nil, nil, s.ub)
           when :from then Span.new(s.b, nil, s.grain, nil, s.ub)
           else clock?(s) ? Span.new(s.b, nil, s.grain, nil, s.ub) : Span.new(s.e, nil, s.grain, nil, s.ue)
