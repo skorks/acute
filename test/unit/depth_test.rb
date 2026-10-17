@@ -333,6 +333,14 @@ class DepthTest < Minitest::Test
     assert_equal ["2026-10-18 11:30:00 -04:00", "2026-10-18 13:00:00 -04:00"], [wall(r.begin), wall(r.end)] # CST is -6
   end
 
+  def test_d44_a_spaced_dash_after_a_zone_is_a_range
+    r = parse("15:00 GMT - 18:00 GMT")
+    assert_equal ["2026-10-18 11:00:00 -04:00", "2026-10-18 14:00:00 -04:00"], [wall(r.begin), wall(r.end)]
+    assert_reads "1pm GMT-1", "2026-10-18 10:00:00 -04:00"
+    r = parse("2010-09-12 3:12pm -0700")
+    assert_equal ["2010-09-12 18:12:00 -04:00", 60], [wall(r.begin), r.end - r.begin]
+  end
+
   def test_d44_a_count_before_next_or_last_and_plural_units_is_next_or_last_that_many
     { "2 upcoming weeks" => "next 2 weeks", "10 previous weeks" => "previous 10 weeks", "5 past minutes" => "past 5 minutes" }.each do |said, same|
       a = parse(said)

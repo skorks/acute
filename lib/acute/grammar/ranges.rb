@@ -9,7 +9,13 @@ module Acute
     def range(from, to, fs, fe, ts)
       return Range.new(from, to) if Clock === from && Clock === to
       # "9:30 - 11:00 CST": the zone is a trailing atom too
-      return Zoned.new(Range.new(from, to.node), to.offset, to.numeric) if Clock === from && Zoned === to && Clock === to.node
+      if Zoned === to && Clock === to.node
+        return Zoned.new(Range.new(from, to.node), to.offset, to.numeric) if Clock === from
+        # "15:00 GMT - 18:00 GMT": the same zone at both ends is one zone for the range
+        if Zoned === from && Clock === from.node && from.offset == to.offset
+          return Zoned.new(Range.new(from.node, to.node), to.offset, to.numeric)
+        end
+      end
       if Date === from && from.month && from.day && !from.sep && (Clock === to || (Date === to && !to.month)) &&
          (d = bare_day(ts, @i))
         to = Date.new(from.year, from.month, d, nil, from.short)

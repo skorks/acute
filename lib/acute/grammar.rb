@@ -177,7 +177,9 @@ module Acute
         elsif k == L::ZONE
           zone = v
           @i += S
-          if @i + S < @n && (@t[@i] == L::PLUS || @t[@i] == L::DASH) && (off = offset(@i + S))
+          # "GMT-1", "UTC +8"; with spaces both sides it is a range ("15:00 GMT - 18:00 GMT")
+          if @i + S < @n && (@t[@i] == L::PLUS || @t[@i] == L::DASH) &&
+             (@t[@i + 3] == @t[@i - 1] || @t[@i + S + 3] == @t[@i + 4]) && (off = offset(@i + S))
             zone += @t[@i] == L::PLUS ? off : -off
             numeric = true
             @i += 2 * S
@@ -239,6 +241,7 @@ module Acute
     # D42: "15:45 -0800", "11:00 -03:00": after a clock, a dash with a space before it and none after, then
     # four digits or hh:mm, is an offset; "3:00 - 5:00" and "9-5" stay ranges
     def dash_offset?(last)
+      last = last.inner if Within === last # "2010-09-12 3:12pm -0700"
       return false unless Clock === last && @i + S < @n && @t[@i + 3] > @t[@i - 1] && @t[@i + S + 3] == @t[@i + 4]
       k = @t[@i + S]
       (k == L::NUM && @t[@i + S + 2] & L::DIGITS == 4) || (k == L::CLOCK && @t[@i + S + 2] & L::DIGITS == 2)
