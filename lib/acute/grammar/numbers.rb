@@ -42,6 +42,10 @@ module Acute
           @i += 2 * S
           return four_digits(v, flags, i)
         end
+        if digits <= 2 && v <= 23 && t[i + S + 1] == :hour && t[i + S + 4] - t[i + 4] == 1 && t[i + 4] == t[i + S + 3] &&
+           (c = h_clock(v, i, loose))
+          return c
+        end
       elsif (nk == L::WDAY || nk == L::WEEKEND || nk == L::HOLIDAY) && counted?(i + S)
         @i += S
         return counted(v)
@@ -282,6 +286,9 @@ module Acute
       elsif kind == L::NAMED && hour == 12 && min == 0 && sec == 0
         @i += S
         named(@t[@i - S + 1])
+      elsif kind == L::UNIT && @t[@i + 1] == :hour && @t[@i + 4] - @t[at + 4] == 1 # D44: "06:00h"
+        @i += S
+        Clock.new(hour, min, sec, nil, nil, true, flags & L::SECONDS != 0)
       else
         Clock.new(hour, min, sec, nil, nil, flags & L::ZERO != 0, flags & L::SECONDS != 0)
       end

@@ -40,6 +40,21 @@ module Acute
       Clock.new(h, m, 0, nil, nil, false, false)
     end
 
+    # D44: "15h30", "3h18": a joined "h" between hours and minutes is a 24-hour clock; "15h" alone after "at",
+    # another atom or before a zone ("at 16h", "Thursday 8h GMT"). Nil when it counts: "2h ago", "15h" alone.
+    def h_clock(v, i, loose)
+      j = i + 2 * S
+      if @t[j] == L::NUM && @t[j + 2] & L::DIGITS == 2 && @t[j + 3] == @t[i + S + 4]
+        return failure(:invalid_date, j) if @t[j + 1] > 59
+        @i = j + S
+        return Clock.new(v, @t[j + 1], 0, nil, nil, true, false)
+      end
+      k = @t[j]
+      return unless (loose && !(k == L::WORD && SHIFT_TAIL[@t[j + 1]])) || k == L::ZONE
+      @i = j
+      Clock.new(v, 0, 0, nil, nil, true, false)
+    end
+
     # D5: a time with a leading zero, after "at", or with "h"/"hrs"; otherwise a year
     def four_digits(v, flags, at)
       if flags & L::ZERO != 0 || (at >= S && @t[at - S] == L::AT) || @t[at + S] == L::UNIT

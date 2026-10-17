@@ -8,6 +8,8 @@ module Acute
     # 15 july", "4 to 22 this month"), and a year said only at the end is the start's too.
     def range(from, to, fs, fe, ts)
       return Range.new(from, to) if Clock === from && Clock === to
+      # "9:30 - 11:00 CST": the zone is a trailing atom too
+      return Zoned.new(Range.new(from, to.node), to.offset, to.numeric) if Clock === from && Zoned === to && Clock === to.node
       if Date === from && from.month && from.day && !from.sep && (Clock === to || (Date === to && !to.month)) &&
          (d = bare_day(ts, @i))
         to = Date.new(from.year, from.month, d, nil, from.short)

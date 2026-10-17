@@ -316,4 +316,20 @@ class DepthTest < Minitest::Test
   def test_d44_a_count_past_a_time_is_after_it
     assert_reads "three hours past noon on friday", "2026-10-23 15:00:00 -04:00"
   end
+
+  def test_d44_a_joined_h_marks_a_24_hour_clock
+    assert_reads "15h30", "2026-10-17 15:30:00 -04:00"
+    assert_reads "3h18", "2026-10-18 03:18:00 -04:00"
+    assert_reads "at 16h", "2026-10-17 16:00:00 -04:00"
+    assert_reads "thursday 8h", "2026-10-22 08:00:00 -04:00"
+    assert_reads "06:00h", "2026-10-18 06:00:00 -04:00"
+    assert_reads "2h ago", "2026-10-17 12:00:00 -04:00"
+    assert_raises(Acute::ParseError) { parse("15h") } # alone it may be a count of hours
+    assert_raises(Acute::ParseError) { parse("15h75") }
+  end
+
+  def test_d44_a_zone_after_a_clock_range_is_both_ends
+    r = parse("9h30 - 11h CST")
+    assert_equal ["2026-10-18 11:30:00 -04:00", "2026-10-18 13:00:00 -04:00"], [wall(r.begin), wall(r.end)] # CST is -6
+  end
 end
