@@ -202,5 +202,24 @@ class DepthMoreTest < Minitest::Test
     assert_equal "1776-01-01 00:00:00 -04:56", wall(parse("seventeen seventy six").begin)
     assert_equal "2026-10-18 10:30:00 -04:00", wall(parse("ten thirty").begin)
     assert_raises(Acute::ParseError) { parse("fourteen thirty") }
+    assert_equal "2000-01-01 00:00:00 -05:00", wall(parse("the year two thousand").begin)
+    assert_equal "2018-01-01 00:00:00 -05:00", wall(parse("two thousand and eighteen").begin)
+    assert_equal "2010-01-01 00:00:00 -05:00", wall(parse("two thousand ten").begin)
+  end
+
+  def test_d44_a_clock_said_with_oh
+    assert_equal "2026-10-18 12:03:00 -04:00", wall(parse("twelve oh three").begin)
+    assert_equal "2026-10-17 21:05:00 -04:00", wall(parse("nine zero five pm").begin)
+    assert_equal "2026-10-18 12:03:00 -04:00", wall(parse("twelve-o-three").begin)
+    assert_raises(Acute::ParseError) { parse("oh") }
+  end
+
+  def test_spellings_of_quarter_weekend_oclock_and_lunch
+    assert_equal ["2027-01-01 00:00:00 -05:00", "2027-04-01 00:00:00 -04:00"], span("next qtr")
+    assert_equal ["2026-10-24 00:00:00 -04:00", "2026-10-26 00:00:00 -04:00"], span("next wkend")
+    assert_equal ["2026-10-17 00:00:00 -04:00", "2026-10-19 00:00:00 -04:00"], span("this week end")
+    assert_equal "2026-10-17 17:00:00 -04:00", wall(parse("5 oclock pm").begin)
+    assert_equal "2026-10-18 17:00:00 -04:00", wall(parse("tomorrow at 5 o clock").begin)
+    assert_equal "2026-10-18 12:00:00 -04:00", wall(parse("lunch time tomorrow").begin)
   end
 end

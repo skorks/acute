@@ -113,6 +113,8 @@ unit:
   months: month
   quarter: quarter
   quarters: quarter
+  qtr: quarter
+  qtrs: quarter
   y: year
   yr: year
   yrs: year
@@ -229,6 +231,7 @@ holiday:        # D15, D28: formulas only
 weekend:
   weekend: 0
   weekends: 0
+  wkend: 0
 
 zone:           # value: the UTC offset in seconds (D18, D40: abbreviations are fixed offsets)
                 # D38: an ambiguous one lists its offsets in order; a leading country is where the first alone holds
@@ -300,6 +303,11 @@ word:           # function words; the grammar gives them their meaning
   circa: around
   ish: around
   o'clock: oclock
+  thousand: thousand
+  oh: oh            # "twelve oh three"
+  o: oh
+  zero: oh
+  oclock: oclock
   half: half
   for: for
   more: more
@@ -315,6 +323,9 @@ word:           # function words; the grammar gives them their meaning
 
 # Several words read as one token, longest first. Spaces in a key stand for any run of spaces or hyphens.
 phrases:
+  o clock: [word, oclock]
+  week end: [weekend, 0]
+  lunch time: [part, lunch]
   christmas eve: [holiday, christmas_eve]
   christmas day: [holiday, christmas]
   thanksgiving day: [holiday, thanksgiving]

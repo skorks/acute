@@ -51,8 +51,9 @@ module Acute
       elsif k == L::UNIT
         return clock_words(15) if v == :quarter && @t[i + S] == L::REL || @t[i + S + 1] == :to
         return iso_week if v == :week && week_number?(i + S)
-        # "the year 1980", "in the year '89", "the year twenty ten"
-        if v == :year && t[i + S] == L::NUM && ((f = t[i + S + 2]) & L::DIGITS == 4 || f & L::SHORT != 0 || (f & L::WORDY != 0 && t[i + 2 * S] == L::NUM))
+        # "the year 1980", "in the year '89", "the year twenty ten", "the year two thousand"
+        if v == :year && t[i + S] == L::NUM && ((f = t[i + S + 2]) & L::DIGITS == 4 || f & L::SHORT != 0 ||
+                                                (f & L::WORDY != 0 && (t[i + 2 * S] == L::NUM || t[i + 2 * S + 1] == :thousand)))
           @i += S
           return number_atom(true)
         end

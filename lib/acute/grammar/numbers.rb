@@ -1,5 +1,5 @@
 module Acute
-  # Atoms led by digits or a number word: clocks, numeric and ISO dates, years, "four twenty-three"
+  # Atoms led by digits or a number word: clocks, numeric and ISO dates, years
   class Grammar
     private
 
@@ -57,6 +57,7 @@ module Acute
         return shift_tail(q) if q
       elsif nk == L::WORD
         return clock_words(v) if minutes_to?(i)
+        return w if flags & L::WORDY != 0 && (w = said(v, i))
         # D44: "15 of february", "20 of next month": a number of a month is its day, as an ordinal is; not
         # "5 to 6 of April 22", where the month has its own
         if t[i + S + 1] == :of && digits <= 2 && v >= 1 && v <= 31
@@ -85,24 +86,7 @@ module Acute
           return Years.new(:decade, v * 100 + t[i + S + 1], false)
         end
       elsif nk == L::NUM
-        # "four twenty-three"
-        if flags & L::WORDY != 0 && t[i + S + 2] & L::WORDY != 0 && v.between?(1, 12) && t[i + S + 1].between?(10, 59)
-          @i += S
-          c = Clock.new(v, t[i + S + 1], 0, nil, nil, false, false)
-          @i += S
-          if @t[@i] == L::MER
-            c.meridiem = @t[@i + 1] == 0 ? :am : :pm
-            @i += S
-          end
-          return c
-        end
-        # D44: "nineteen ninety five", "twenty ten": a year written as two numbers; "fourteen thirty" may be a
-        # clock, so from 13 to 23 the second must be past any minute
-        if flags & L::WORDY != 0 && t[i + S + 2] & L::WORDY != 0 && v.between?(13, 29) && (w = t[i + S + 1]).between?(10, 99) &&
-           (v.between?(18, 20) || v > 23 || w > 59)
-          @i += 2 * S
-          return Date.new(v * 100 + t[i + S + 1], nil, nil, nil, false)
-        end
+        return w if flags & L::WORDY != 0 && (w = said(v, i))
       end
       if nk == L::UNIT || nk == L::SLASH
         # D44: "20 minutes past 3pm", "ten minutes to three"
