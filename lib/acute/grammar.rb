@@ -42,7 +42,7 @@ module Acute
     Nth = Struct.new(:n, :node)                 # the nth (n = -1: the last) node inside its outer period
     Within = Struct.new(:inner, :outer)
     Range = Struct.new(:from, :to)
-    Open = Struct.new(:dir, :node)              # :after, :before, :since, :until, :upto, :from
+    Open = Struct.new(:dir, :node)              # :after, :before, :since, :until, :upto, :from, :through
     Lasting = Struct.new(:unit, :start)         # a counted Unit from the start's start: "3 days starting monday"
     Approx = Struct.new(:node)
     Fuzzy = Struct.new(:pos, :node)             # :early, :mid, :late, :start, :end
@@ -59,8 +59,9 @@ module Acute
 
     L = Lexer
     S = Lexer::STRIDE
-    OPEN = { after: :after, before: :before, since: :since, until: :until, by: :until, upto: :upto }.freeze
-    RANGE = { to: true, through: true, until: true }.freeze
+    OPEN = { after: :after, before: :before, since: :since, until: :until, by: :until, upto: :upto, through: :until,
+             onafter: :from, onbefore: :through }.freeze
+    RANGE = { to: true, through: true, until: true, butbefore: true }.freeze
     BEFORE_DAY = { the: true, from: true, between: true }.freeze # words that make "ninth" a day
     SHIFT_TAIL = { ago: true, hence: true, later: true, from: true, after: true, before: true }.freeze
     UNIT_SIZE = { second: 0, minute: 0, hour: 0, day: 2, business_day: 2, week: 3, fortnight: 3, month: 5,
@@ -110,6 +111,7 @@ module Acute
         @i += S if dir == :from && @t[@i + 1] == :from # "starting from 1/1/2016"
         node = body
         return node if Failure === node
+        return between(dir, node) if @but
         # "after 3 hours" is a shift, not an open end
         return Shift.new(node.count, node.unit, nil) if Unit === node && node.count && dir == :after
         return failure(:incomplete) if Unit === node
@@ -119,7 +121,7 @@ module Acute
         @approx = true
         body
       else
-        body(w)
+        open_after(body(w))
       end
     end
 
@@ -141,6 +143,7 @@ module Acute
         return from unless separator?(false)
       end
       fe = @i
+      @but = @t[@i + 1] == :butbefore
       @i += S
       ts = @i
       to = day_and_year(from, ts)
@@ -212,7 +215,7 @@ module Acute
               @t[@i + 3] == @t[@i - 1] && @t[@i + 4] == @t[@i + S + 3]
           @i += S # D44: "05/31/2024-14:15": a clock joined to a numeric date by a dash is its time, as after a T
           next
-        elsif k == L::DASH || (k == L::WORD && (RANGE[v] || v == :and))
+        elsif k == L::DASH || (k == L::WORD && (RANGE[v] || v == :and || v == :or || v == :orlater || v == :orearlier))
           break
         end
         start = @i

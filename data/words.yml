@@ -279,9 +279,11 @@ word:           # function words; the grammar gives them their meaning
   back: ago
   hence: hence
   later: later
+  earlier: ago
   from: from
   to: to
   and: and
+  or: or
   of: of
   the: the
   "on": "on"
@@ -292,6 +294,7 @@ word:           # function words; the grammar gives them their meaning
   until: until
   till: until
   til: until
+  untill: until
   through: through
   thru: through
   by: by
@@ -319,6 +322,8 @@ word:           # function words; the grammar gives them their meaning
   ad: ad
   a.d: ad
   starting: starting
+  onwards: orlater
+  onward: orlater
   commencing: starting
 
 # Several words read as one token, longest first. Spaces in a key stand for any run of spaces or hyphens.
@@ -425,6 +430,33 @@ phrases:
   a m: [meridiem, 0]
   p m: [meridiem, 12]
   prior to: [word, before]
+  later than or at: [word, onafter]
+  later than or in: [word, onafter]
+  later than or on: [word, onafter]
+  after or equal to: [word, onafter]
+  on or after: [word, onafter]
+  at or after: [word, onafter]
+  after or on: [word, onafter]
+  on or earlier than: [word, onbefore]
+  on or before: [word, onbefore]
+  at or before: [word, onbefore]
+  before or on: [word, onbefore]
+  before or in: [word, onbefore]
+  before or at: [word, onbefore]
+  no later than: [word, by]
+  later than: [word, after]
+  but before: [word, butbefore]
+  greater than: [word, after]
+  year greater than: [word, after]
+  earlier than: [word, before]
+  sooner than: [word, before]
+  in advance of: [word, before]
+  or later: [word, orlater]
+  and later: [word, orlater]
+  or greater: [word, orlater]
+  and greater: [word, orlater]
+  and beyond: [word, orlater]
+  or earlier: [word, orearlier]
   up to: [word, upto]
   right now: [now, 0]
   just now: [now, 0]

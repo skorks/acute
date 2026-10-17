@@ -132,6 +132,8 @@ module Acute
             end
           when :upto then Span.new(now, s.b, s.grain, nil, ctx.now, s.ub) # D9: "up to <date>" leaves it out
           when :before then Span.new(nil, s.b, s.grain, nil, nil, s.ub)
+          # D44: "on or before X", "X or earlier": up to X's end, or to a clock time itself
+          when :through then clock?(s) ? Span.new(nil, s.b, s.grain, nil, nil, s.ub) : Span.new(nil, s.e, s.grain, nil, nil, s.ue)
           when :from then Span.new(s.b, nil, s.grain, nil, s.ub)
           else clock?(s) ? Span.new(s.b, nil, s.grain, nil, s.ub) : Span.new(s.e, nil, s.grain, nil, s.ue)
           end

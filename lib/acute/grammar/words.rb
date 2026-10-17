@@ -141,6 +141,10 @@ module Acute
     end
 
     # "3rd", "the 3rd of may", "second tuesday of march", "1st day of next month", "first of next month"
+    def range_word?(j) = @t[j] == L::DASH || (@t[j] == L::WORD && RANGE[@t[j + 1]])
+
+    def day_before?(j) = (@t[j] == L::ORD || @t[j] == L::NUM) && j >= S && @t[j - S] == L::MONTH
+
     def ordinal_atom
       n = @t[@i + 1]
       @i += S
@@ -164,10 +168,10 @@ module Acute
         return dated(@t[@i - S + 1], n)
       end
       return failure(:invalid_date, @i - S) if n < 1 || n > 31
-      # "first" alone is not a date; "the first", "first of next month", "from ninth till ..." and "eighth to
-      # eleventh may" are
+      # "first" alone is not a date; "the first", "first of next month", "from ninth till ...", "eighth to
+      # eleventh may" and "april 9th through seventeenth" are
       if @t[@i - S + 2] & L::WORDY != 0 && @t[@i + 1] != :of && !(@i >= 2 * S && @t[@i - 2 * S] == L::WORD && BEFORE_DAY[@t[@i - 2 * S + 1]]) &&
-         !(@t[@i + S] == L::ORD && (@t[@i] == L::DASH || (@t[@i] == L::WORD && RANGE[@t[@i + 1]])))
+         !(@t[@i + S] == L::ORD && range_word?(@i)) && !(@i >= 3 * S && range_word?(@i - 2 * S) && day_before?(@i - 3 * S))
         return failure(:incomplete, @i - S)
       end
       of(Date.new(nil, nil, n, nil, false))

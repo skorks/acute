@@ -38,6 +38,30 @@ module Acute
       Range.new(from, to)
     end
 
+    # D44: "later than 9:30 but before 11:00 on thursday" is the range between two clock times; the day an
+    # after starts on, or ends on, would differ from a range's
+    def between(dir, node)
+      r = Within === node ? node.inner : node
+      return failure(:conflict) unless (dir == :after || dir == :from) && Range === r && Clock === r.from && Clock === r.to
+      node
+    end
+
+    # D44: "2012 or later", "3 pm onwards": from X on; "2012 or earlier": until X's end, with no start. "or
+    # after" and "or before" only end the phrase: "before 2010 or after 2018" is two
+    def open_after(node)
+      return node if Failure === node || Unit === node
+      return failure(:conflict) if @but # "9 but before 11" says after nothing
+      return node unless @t[@i] == L::WORD
+      w = @t[@i + 1]
+      if w == :or && @i + 2 * S == @n && @t[@i + S] == L::WORD && ((x = @t[@i + S + 1]) == :after || x == :before)
+        @i += S
+        w = x == :after ? :orlater : :orearlier
+      end
+      return node unless w == :orlater || w == :orearlier
+      @i += S
+      Open.new(w == :orlater ? :from : :through, node)
+    end
+
     # D44: "june 12-14, 2021", "august 10 to 22 2012": a bare day and a year end a range begun with a month's
     # day, and the year is both ends'
     def day_and_year(from, ts)
