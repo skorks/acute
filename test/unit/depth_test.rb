@@ -197,4 +197,22 @@ class DepthTest < Minitest::Test
     assert_reads "2 hours after March 8, 2026 at 1:30 AM", "2026-03-08 04:30:00 -04:00"
     assert_reads "2 hours after November 1, 2026 at 1:30 AM", "2026-11-01 02:30:00 -05:00"
   end
+
+  def test_d40_a_part_of_day_fixes_am_or_pm_and_lunch_takes_the_closer
+    at10 = "2026-10-17T10:00"
+    assert_reads "12:15 in the afternoon", "2026-10-17 12:15:00 -04:00", now: at10
+    assert_reads "afternoon 7:00:05", "2026-10-17 19:00:05 -04:00", now: at10
+    assert_reads "this afternoon at 11", "2026-10-17 23:00:00 -04:00", now: at10
+    assert_reads "at lunchtime 11 o'clock", "2026-10-17 11:00:00 -04:00", now: at10
+    assert_reads "lunch at 1", "2026-10-17 13:00:00 -04:00", now: at10
+  end
+
+  def test_a_bare_number_before_a_part_of_day_is_an_hour
+    at10 = "2026-10-17T10:00"
+    assert_reads "8 in the evening", "2026-10-17 20:00:00 -04:00", now: at10
+    assert_reads "6 in the morning", "2026-10-18 06:00:00 -04:00", now: at10
+    assert_reads "one in the morning", "2026-10-18 01:00:00 -04:00", now: at10
+    assert_reads "12 at night", "2026-10-18 00:00:00 -04:00", now: at10
+  end
 end
+

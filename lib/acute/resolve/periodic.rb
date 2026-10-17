@@ -252,9 +252,12 @@ module Acute
           return cands.map { |secs| Span.new(day + secs, day + secs + len, grain, nil) }
         end
         if c.hour == 12 && !c.meridiem && !c.named # D30, D40: 12 in the morning, 12 at night
-          cands = part == :morning ? [0] : part == :afternoon || part == :lunch ? [43_200] : [86_400]
-        elsif !c.meridiem && part != :night && part != :tonight
+          secs = c.min * 60 + c.sec
+          cands = [secs + (part == :morning ? 0 : part == :afternoon || part == :lunch ? 43_200 : 86_400)]
+        elsif !c.meridiem && part != :night && part != :tonight && part != :lunch
+          # D40: the part fixes am or pm, even for a time written with seconds; D35: lunch takes the closer
           pm = part != :morning && part != :early_hours
+          cands = [c.hour * 3600 + c.min * 60 + c.sec + (pm ? 43_200 : 0)] if !c.h24 && c.hour >= 1 && c.hour <= 11
           fixed = cands.select { |x| (x >= 43_200) == pm }
           cands = fixed unless fixed.empty?
         end

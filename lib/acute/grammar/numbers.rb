@@ -69,8 +69,18 @@ module Acute
         q = quantity
         return shift_tail(q) if q
       end
-      loose ||= @n == S + i || nk == L::DASH || (nk == L::WORD && (RANGE[t[i + S + 1]] || t[i + S + 1] == :and))
+      loose ||= @n == S + i || nk == L::DASH || (nk == L::WORD && (RANGE[t[i + S + 1]] || t[i + S + 1] == :and)) ||
+                part_next?(i + S)
       number(v, flags, loose)
+    end
+
+    # "6 in the morning", "12 at night": a part of day after a bare number makes it an hour
+    def part_next?(j)
+      k = @t[j]
+      return false unless k == L::AT || (k == L::WORD && @t[j + 1] == :in)
+      j += S
+      j += S if @t[j + 1] == :the
+      @t[j] == L::PART
     end
 
     # D42: "five to 9" is 8:55 when the minutes are a word; "5 to 9" and "from five to nine" are ranges

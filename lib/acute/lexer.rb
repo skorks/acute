@@ -121,6 +121,11 @@ module Acute
         if cl == SPACE
           i += 1
         elsif cl == LETTER
+          # the "T" between an ISO date and its time
+          if c | 32 == 116 && i > 0 && i + 1 < n && CLASS[s.getbyte(i - 1)] == DIGIT && CLASS[s.getbyte(i + 1)] == DIGIT
+            i += 1
+            next
+          end
           st = i
           k = 0
           while i < n
