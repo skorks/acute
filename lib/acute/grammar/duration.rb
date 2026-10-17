@@ -42,9 +42,18 @@ module Acute
       Unit.new(unit == :hour ? :minute : :second, @t[@i - S + 1])
     end
 
-    # "two and a half years", "one and three quarters of an hour", "3-min", "2 more minutes", or a quantity
+    # "two and a half years", "one and three quarters of an hour", "a quarter of an hour", "3-min", "2 more
+    # minutes", or a quantity
     def duration_quantity
       i = @i
+      if (f = fraction(i)) && @t[f[0] + 1] == :of && @t[f[0]] == L::WORD
+        j = f[0] + S
+        j += S if @t[j] == L::ART
+        if (unit = unit_at(j))
+          @i = j + S
+          return Unit.new(unit, f[1])
+        end
+      end
       return quantity unless @t[i] == L::NUM
       if @t[i + S + 1] == :and && (f = fraction(i + 2 * S))
         j = f[0]

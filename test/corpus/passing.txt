@@ -432,6 +432,7 @@ chronic-forks-test-test-parsing-rb-74-1
 chronic-forks-test-test-parsing-rb-744-1
 chronic-forks-test-test-parsing-rb-757-1
 chronic-forks-test-test-parsing-rb-760-1
+chronic-forks-test-test-parsing-rb-765-1
 chronic-forks-test-test-parsing-rb-768-1
 chronic-forks-test-test-repeater-day-rb-10-1
 chronic-forks-test-test-repeater-day-rb-24-1
@@ -2952,10 +2953,13 @@ duckling-0301
 duckling-0303
 duckling-0304
 duckling-0306
+duckling-0307
 duckling-0308
 duckling-0309
+duckling-0310
 duckling-0311
 duckling-0312
+duckling-0313
 duckling-0314
 duckling-0315
 duckling-0316
@@ -2963,10 +2967,12 @@ duckling-0317
 duckling-0318
 duckling-0319
 duckling-0320
+duckling-0321
 duckling-0322
 duckling-0323
 duckling-0324
 duckling-0325
+duckling-0326
 duckling-0327
 duckling-0328
 duckling-0329
@@ -3011,6 +3017,7 @@ duckling-0368
 duckling-0369
 duckling-0370
 duckling-0371
+duckling-0372
 duckling-0379
 duckling-0380
 duckling-0381
@@ -10554,6 +10561,7 @@ generated-ordinals-numbers-0099
 generated-ordinals-numbers-0100
 generated-ordinals-numbers-0101
 generated-ordinals-numbers-0102
+generated-ordinals-numbers-0103
 generated-ordinals-numbers-0104
 generated-ordinals-numbers-0105
 generated-ordinals-numbers-0106
@@ -12683,6 +12691,9 @@ recognizers-0168
 recognizers-0169
 recognizers-0170
 recognizers-0171
+recognizers-0172
+recognizers-0173
+recognizers-0174
 recognizers-0175
 recognizers-0176
 recognizers-0177
@@ -13688,6 +13699,7 @@ recognizers-1206
 recognizers-1208
 recognizers-1209
 recognizers-1210
+recognizers-1211
 recognizers-1212
 recognizers-1213
 recognizers-1214
@@ -13709,6 +13721,7 @@ recognizers-1229
 recognizers-1230
 recognizers-1231
 recognizers-1232
+recognizers-1233
 recognizers-1234
 recognizers-1235
 recognizers-1236

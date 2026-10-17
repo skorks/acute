@@ -99,9 +99,9 @@ module Acute
           @approx = true
           @i += S
         end
-        if (q = quantity)
+        if (q = duration_quantity)
           return q if Failure === q
-          return shifts(1, q, more_units, nil)
+          return shifts(1, q, more_units(q), nil)
         end
         @i += S if @t[@i + 1] == :the
         return failure(:incomplete) if @i >= @n
@@ -116,6 +116,7 @@ module Acute
         end
         # "within the next 5 days" is within 5 days
         @i += 2 * S if @t[@i + 1] == :the && @t[@i + S] == L::REL && @t[@i + S + 1] == :next
+        @i += S if @t[@i] == L::REL && @t[@i + 1] == :next && @t[@i + S] == L::NUM # "within next 10 months"
         q = quantity
         q && !(Failure === q) ? Rel.new(:next, q) : failure(:incomplete, i) # D31
       when :q

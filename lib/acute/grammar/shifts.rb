@@ -9,7 +9,7 @@ module Acute
     # quantities before the tail are each applied in the order said ("1 week and a day from now").
     def shift_tail(q)
       start = @i
-      more = more_units
+      more = more_units(q)
       w = @t[@i + 1]
       w = :after if w == :past && @t[@i] == L::REL # "three hours past noon"
       if more && !SHIFT_TAIL[w]
@@ -41,6 +41,22 @@ module Acute
         start = item(true)
         Failure === start ? start : Lasting.new(q, start)
       end
+    end
+
+    # D44: "for 3 days from today", "for 1 week, from 20th dec": that long from the start of what follows;
+    # nil when no "from" or "starting" follows the length
+    def for_from
+      i = @i
+      @i += S
+      q = duration_quantity
+      if q && !(Failure === q) && (@t[@i + 1] == :from || starting?(@i))
+        @i += S
+        @i += S if @t[@i + 1] == :from
+        start = item(true)
+        return Failure === start ? start : Lasting.new(q, start)
+      end
+      @i = i
+      nil
     end
 
     # D44: "starting", "commencing", or "beginning" with no "of" after it: from the start of what follows. Not
@@ -99,17 +115,19 @@ module Acute
       node
     end
 
-    # "4 months" in "2 years 4 months ago", "a day" in "1 week and a day"; nil when none follow
-    def more_units
+    # "4 months" in "2 years 4 months ago", "a day" in "1 week and a day", "and a half" in "an hour and a
+    # half ago"; nil when none follow
+    def more_units(last)
       list = nil
       while @i < @n
         save = @i
         @i += S if @t[@i + 1] == :and
-        unless (q = quantity)
+        unless (q = duration_tail(last.unit) || quantity)
           @i = save
           break
         end
         (list ||= []) << q
+        last = q
       end
       list
     end

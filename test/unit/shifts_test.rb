@@ -37,6 +37,27 @@ class ShiftsTest < Minitest::Test
     assert_at "half past 3", "2026-10-17 15:30:00 -04:00"
   end
 
+  def test_in_takes_any_spoken_length
+    assert_at "in an hour and a half", "2026-10-17 15:30:00 -04:00"
+    assert_at "in three and a half hours", "2026-10-17 17:30:00 -04:00"
+    assert_at "in a quarter of an hour", "2026-10-17 14:15:00 -04:00"
+    assert_at "in 2 more minutes", "2026-10-17 14:02:00 -04:00"
+    assert_at "in a pair of minutes", "2026-10-17 14:02:00 -04:00"
+    assert_at "in 1 hour 30", "2026-10-17 15:30:00 -04:00"
+    assert_at "an hour and a half ago", "2026-10-17 12:30:00 -04:00"
+    assert_at "in a quarter", "2027-01-17 14:00:00 -05:00"
+  end
+
+  def test_d44_for_a_length_from_a_start_is_that_long_from_it
+    r = parse("for 3 days from today")
+    assert_equal ["2026-10-17 00:00:00 -04:00", "2026-10-20 00:00:00 -04:00"], [wall(r.begin), wall(r.end)]
+    r = parse("for 1 week, from 20th dec")
+    assert_equal ["2026-12-20 00:00:00 -05:00", "2026-12-27 00:00:00 -05:00"], [wall(r.begin), wall(r.end)]
+    r = parse("for 2 hours starting 3pm")
+    assert_equal ["2026-10-17 15:00:00 -04:00", "2026-10-17 17:00:00 -04:00"], [wall(r.begin), wall(r.end)]
+    assert_raises(Acute::ParseError) { parse("for 3 days") }
+  end
+
   def test_a_shift_beside_a_fixed_day_moves_it
     assert_at "3 years ago tomorrow", "2023-10-18 00:00:00 -04:00"
   end

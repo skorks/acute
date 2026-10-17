@@ -19,6 +19,8 @@ class DurationTest < Minitest::Test
     assert_equal "PT1H15M", Acute.duration("an hour and a quarter").iso8601
     assert_equal "PT1H30M", Acute.duration("one hour and half").iso8601
     assert_equal "PT12H", Acute.duration("half day").iso8601
+    assert_equal "PT15M", Acute.duration("a quarter of an hour").iso8601
+    assert_equal "PT2M", Acute.duration("a pair of minutes").iso8601
   end
 
   def test_a_bare_number_after_hours_or_minutes_is_the_next_unit

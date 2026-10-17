@@ -122,7 +122,7 @@ module Acute
         @approx = true
         body
       else
-        open_after(body(w))
+        (w == :for && for_from) || open_after(body(w))
       end
     end
 

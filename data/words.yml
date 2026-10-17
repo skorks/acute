@@ -482,6 +482,7 @@ phrases:
   a couple of: [word, couple]
   a couple: [word, couple]
   couple of: [word, couple]
+  a pair of: [word, couple]
 
 # Words that are also plain English. In extraction they need a neighbour that confirms the date reading.
 english: [may, march, following, sat, sun, tu, fr, second, fall, a, mon, wed, start, end, last, past, this, next, d, m, s, h, w, y, lunch,
