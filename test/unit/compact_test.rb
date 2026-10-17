@@ -97,4 +97,16 @@ class CompactTest < Minitest::Test
     assert_span "00:00:00 am", "2026-10-18 00:00:00 -04:00", 1
     assert_raises(Acute::ParseError) { parse("0pm") }
   end
+
+  def test_d46_exif_dates_put_colons_for_dashes
+    assert_span "2012:05:25 22:06:50", "2012-05-25 22:06:50 -04:00", 1
+    assert_span "2012:05:25", "2012-05-25 00:00:00 -04:00", 86_400
+  end
+
+  def test_d46_a_bare_number_before_on_and_a_day_is_its_hour
+    r = parse("5 on may 28")
+    assert_equal ["2027-05-28 17:00:00 -04:00", ["2027-05-28 05:00:00 -04:00"]], [wall(r.begin), alt_walls(r)]
+    assert_equal "2026-10-23 17:00:00 -04:00", wall(parse("5 on friday").begin)
+    assert_includes codes(parse("5 on friday")), :bare_hour_window
+  end
 end

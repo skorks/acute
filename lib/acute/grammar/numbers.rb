@@ -50,7 +50,7 @@ module Acute
            (c = h_clock(v, i, loose))
           return c
         end
-      elsif (nk == L::WDAY || nk == L::WEEKEND || nk == L::HOLIDAY) && counted?(i + S)
+      elsif (nk == L::WDAY || nk == L::WEEKEND || nk == L::HOLIDAY || nk == L::PART) && counted?(i + S)
         @i += S
         return counted(v)
       elsif nk == L::ORD
@@ -115,10 +115,15 @@ module Acute
     end
 
     # "6 in the morning", "12 at night", D44: "7 tonight", "8 this evening", "9 tomorrow", "7, this morning":
-    # a part of day or a day after a bare number makes it an hour
+    # a part of day or a day after a bare number makes it an hour; D46: so does "on" and a named day,
+    # "5 on may 28", "5 on friday", as "at 5 on may 28"
     def part_next?(j)
       k = @t[j]
       return true if k == L::PART || k == L::DAY || (k == L::REL && @t[j + S] == L::PART)
+      if k == L::WORD && @t[j + 1] == :on
+        k = @t[j + S]
+        return k == L::MONTH || k == L::WDAY || k == L::HOLIDAY
+      end
       return false unless k == L::AT || (k == L::WORD && @t[j + 1] == :in)
       j += S
       j += S if @t[j + 1] == :the

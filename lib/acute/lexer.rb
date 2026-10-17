@@ -198,6 +198,15 @@ module Acute
           if i < n && c == 58
             # the minutes, and below the seconds: two digits, each byte less 48
             unless nd <= 2 && i + 2 < n && CLASS[a = s.getbyte(i + 1)] == DIGIT && CLASS[b = s.getbyte(i + 2)] == DIGIT
+              # D46: "2012:05:25", EXIF's date, is the ISO date with colons for dashes
+              if nd == 4 && i + 5 < n && CLASS[a = s.getbyte(i + 1)] == DIGIT && CLASS[b = s.getbyte(i + 2)] == DIGIT &&
+                 s.getbyte(i + 3) == 58 && CLASS[d = s.getbyte(i + 4)] == DIGIT && CLASS[e = s.getbyte(i + 5)] == DIGIT &&
+                 (i + 6 == n || (s.getbyte(i + 6) != 58 && CLASS[s.getbyte(i + 6)] != DIGIT))
+                t.push(NUM, v, flags, st, i, DASH, 0, 0, i, i + 1, NUM, a * 10 + b - 528, a == 48 ? 2 | ZERO : 2, i + 1, i + 3,
+                       DASH, 0, 0, i + 3, i + 4, NUM, d * 10 + e - 528, d == 48 ? 2 | ZERO : 2, i + 4, i + 6)
+                i += 6
+                next
+              end
               if nd == 4 && i + 6 < n && s.getbyte(i + 3) == 58 && s.getbyte(i + 6) == 58
                 # "06/Nov/2023:06:36:02", a log's timestamp: the year, then its time
                 t.push(NUM, v, flags, st, i)

@@ -66,10 +66,10 @@ module Acute
       @t[i] == L::FUZZ && @t[i + 1] == :start && (w = @t[i + S + 1]) != :of && w != :from
     end
 
-    # D44: "3 fridays from now", "2nd monday before may 25", "two weekends ago": i is the day after the count
+    # D44: "3 fridays from now", "2nd monday before may 25", "two weekends ago", D46: "5 mornings ago": i is the day after the count
     def counted?(i)
       k = @t[i]
-      (k == L::WDAY || k == L::WEEKEND || k == L::HOLIDAY) && @t[i + S] == L::WORD && SHIFT_TAIL[@t[i + S + 1]]
+      (k == L::WDAY || k == L::WEEKEND || k == L::HOLIDAY || k == L::PART) && @t[i + S] == L::WORD && SHIFT_TAIL[@t[i + S + 1]]
     end
 
     # D44: "the sunday after next wed", "the monday before christmas" are the first one after or before the
@@ -99,7 +99,7 @@ module Acute
     def counted(n)
       k = @t[@i]
       v = @t[@i + 1]
-      node = k == L::WDAY ? Weekday.new(v) : k == L::HOLIDAY ? Holiday.new(v) : WEEKEND
+      node = k == L::WDAY ? Weekday.new(v) : k == L::HOLIDAY ? Holiday.new(v) : k == L::PART ? Part.new(v) : WEEKEND
       w = @t[@i + S + 1]
       @i += 2 * S
       return Counted.new(-n, node, nil) if w == :ago

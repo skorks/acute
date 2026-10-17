@@ -100,4 +100,13 @@ class ShiftsTest < Minitest::Test
     assert_raises(Acute::ParseError) { parse("final friday after christmas") }
     assert_raises(Acute::ParseError) { parse("final 3 days") }
   end
+
+  # today's morning is over, so it is the first one ago; tonight has not begun, so it is the first one ahead
+  def test_d46_parts_of_the_day_count_as_weekdays_do
+    assert_at "5 mornings ago", "2026-10-13 06:00:00 -04:00"
+    assert_at "two nights ago", "2026-10-15 21:00:00 -04:00"
+    assert_at "3 evenings from now", "2026-10-19 17:00:00 -04:00"
+    assert_raises(Acute::ParseError) { parse("mornings") }
+    assert_raises(Acute::ParseError) { parse("this mornings") }
+  end
 end

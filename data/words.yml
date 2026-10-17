@@ -206,6 +206,10 @@ part:           # parts of the day (D1, D35)
   morning: morning
   afternoon: afternoon
   evening: evening
+  mornings: morning
+  afternoons: afternoon
+  evenings: evening
+  nights: night
   night: night
   tonight: tonight
   lunch: lunch
@@ -526,7 +530,7 @@ english: [may, march, following, sat, sun, tu, fr, second, fall, a, mon, wed, st
 # let "2 upcoming weeks" be "next 2 weeks" while "3 next week" is not.
 plural: [sundays, mondays, tuesdays, wednesdays, thursdays, fridays, saturdays, black fridays, memorial days,
          secs, seconds, mins, minutes, hrs, hours, days, wks, weeks, fortnights, months, quarters, yrs, years,
-         decades, centuries]
+         decades, centuries, mornings, afternoons, evenings, nights]
 
 # D18: a fixed table, only misspellings the corpus has. Each maps to the word it stands for.
 misspellings:

@@ -30,6 +30,7 @@ module Acute
         named(v)
       elsif k == L::ORD then ordinal_atom
       elsif k == L::PART
+        return failure(:incomplete) if t[i + 2] & L::PLURAL != 0
         @i += S
         of(Part.new(v))
       elsif k == L::NOW
@@ -168,7 +169,7 @@ module Acute
         k = L::UNIT
         v = :second
       end
-      return failure(:conflict) if k == L::WDAY && @t[@i + 2] & L::PLURAL != 0
+      return failure(:conflict) if (k == L::WDAY || k == L::PART) && @t[@i + 2] & L::PLURAL != 0
       if k == L::WDAY || k == L::UNIT || k == L::WEEKEND
         node = k == L::WDAY ? Weekday.new(v) : k == L::UNIT ? Unit.new(v, nil) : WEEKEND
         @i += S
