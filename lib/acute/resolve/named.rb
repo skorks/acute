@@ -71,10 +71,10 @@ module Acute
 
       def self.day_of(f, year)
         a, b, wday = f
-        if a == :easter then Calendar.easter(year) + b
-        elsif Symbol === a then day_of(HOLIDAYS.fetch(a), year) + b
-        elsif wday then nth_weekday(Calendar.days_from_civil(year, a, b), wday, 1)
-        else Calendar.days_from_civil(year, a, b)
+        if Integer === a
+          wday ? nth_weekday(Calendar.days_from_civil(year, a, b), wday, 1) : Calendar.days_from_civil(year, a, b)
+        elsif a == :easter then Calendar.easter(year) + b
+        else day_of(HOLIDAYS.fetch(a), year) + b
         end
       end
 

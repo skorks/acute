@@ -105,7 +105,7 @@ module Acute
         return Shift.new(node.count, node.unit, nil) if Unit === node && node.count && dir == :after
         return failure(:incomplete) if Unit === node
         Open.new(dir, node)
-      elsif w == :around
+      elsif @t[@i] == L::WORD && w == :around
         @i += S
         node = body
         Failure === node ? node : Approx.new(node)
@@ -115,7 +115,7 @@ module Acute
     end
 
     def body(w = @t[@i + 1])
-      open = w == :between || w == :from
+      open = @t[@i] == L::WORD && (w == :between || w == :from) # the kind first: Integer == Symbol is slow
       if open
         start = @i
         @i += S

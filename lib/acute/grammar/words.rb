@@ -166,9 +166,9 @@ module Acute
 
     # "... of <period>": "second tuesday of march", "tuesday of next week", "morning of xmas", "labor day of 2012"
     def of(node)
-      return node unless @t[@i + 1] == :of
+      return node unless @t[@i] == L::WORD && @t[@i + 1] == :of
       @i += S
-      @i += S if @t[@i + 1] == :the
+      @i += S if @t[@i] == L::WORD && @t[@i + 1] == :the
       # D42: "the first monday of the month" repeats monthly, so it is the coming one: next month's once passed
       if @t[@i] == L::UNIT && @t[@i + 1] == :month && (Date === node || (Nth === node && !(Unit === node.node && UNIT_SIZE[node.node.unit] >= 5)))
         @i += S

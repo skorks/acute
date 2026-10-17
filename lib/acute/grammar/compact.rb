@@ -65,7 +65,7 @@ module Acute
         return Date.new(y, m, nil, nil, false)
       end
       date = Date.new(y, m, d, nil, false)
-      @i += S if @t[@i + 1] == :t && @t[@i + S] == L::CLOCK
+      @i += S if @t[@i] == L::WORD && @t[@i + 1] == :t && @t[@i + S] == L::CLOCK
       return date unless @t[@i] == L::CLOCK
       c = written(@t[@i + 1], @t[@i + 2])
       return c if Failure === c
