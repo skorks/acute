@@ -173,6 +173,11 @@ class ChronicDurationTest < Minitest::Test
     assert_equal 10_800, ChronicDuration.parse("about 3 hours")
   end
 
+  def test_d47_text_acute_refuses_gets_the_gems_reading
+    assert_equal 18_000, ChronicDuration.parse("1. 5 hours")
+    assert_equal 522_000, ChronicDuration.parse("half145h")
+  end
+
   def test_d46_raise_exceptions_only_for_text_acute_cannot_read_either
     ChronicDuration.raise_exceptions = true
     assert_equal 3600, ChronicDuration.parse("an hour")

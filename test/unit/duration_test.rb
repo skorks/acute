@@ -12,6 +12,15 @@ class DurationTest < Minitest::Test
     assert_equal({ business_days: 5 }, Acute.duration("5 business days").parts)
   end
 
+  def test_d47_no_spaced_decimals_or_counted_halves
+    assert_nil Acute.duration("1. 5 hours")
+    assert_nil Acute.duration("half145h")
+    assert_nil Acute.duration("half 3 hours")
+    assert_equal 5400, Acute.duration("1.5 hours").seconds
+    assert_equal 43_200, Acute.duration("half a day").seconds
+    assert_equal 1800, Acute.duration("half hour").seconds
+  end
+
   def test_d47_counts_in_words_past_ninety_nine
     assert_equal 205, Acute.duration("two hundred and five seconds").seconds
     assert_equal 360_000, Acute.duration("a hundred hours").seconds

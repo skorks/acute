@@ -91,7 +91,7 @@ module Acute
 
     # "the 90s", "1990s"; "30s ago" is seconds
     def decade_atom
-      return shift_tail(quantity) if @t[@i + 2] == 2 && SHIFT_TAIL[@t[@i + S + 1]]
+      return shift_tail(quantity) if SHIFT_TAIL[@t[@i + S + 1]] # D47: "5400s ago" as "30s ago"
       v = @t[@i + 1]
       @i += S
       Years.new(:decade, v, v < 100)

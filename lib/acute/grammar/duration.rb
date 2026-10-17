@@ -18,6 +18,8 @@ module Acute
         if half && @t[@i] == L::UNIT # "half hour"
           q = Unit.new(@t[@i + 1], 1)
           @i += S
+        elsif half && @t[@i] != L::ART # D47: "half an hour", not "half145h"
+          return failure(@i < @n ? :conflict : :incomplete)
         else
           q = duration_quantity
         end

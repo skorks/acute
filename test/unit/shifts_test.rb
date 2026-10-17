@@ -78,6 +78,20 @@ class ShiftsTest < Minitest::Test
                  wall(parse("3 months ago saturday at 5:00 pm", now: "2006-08-16T14:00").time)
   end
 
+  def test_d47_a_decade_before_a_shift_word_is_seconds
+    assert_at "5400s ago", "2026-10-17 12:30:00 -04:00"
+    assert_at "5400s from now", "2026-10-17 15:30:00 -04:00"
+    assert_at "in 5400s", "2026-10-17 15:30:00 -04:00"
+    assert_at "1990s ago", "2026-10-17 13:26:50 -04:00"
+    assert_equal 5400, parse("5400s").begin.year
+    assert_equal 1990, parse("in the 1990s").begin.year
+  end
+
+  def test_d47_a_decimal_count_has_no_spaces
+    assert_at "in 1.5 hours", "2026-10-17 15:30:00 -04:00"
+    assert_raises(Acute::ParseError) { parse("in 1. 5 hours") }
+  end
+
   def test_d47_counts_in_words_past_ninety_nine
     assert_equal "2006-09-18 18:32:12 -04:00",
                  wall(parse("two million eight hundred and sixty seven thousand five hundred and thirty two seconds from now",

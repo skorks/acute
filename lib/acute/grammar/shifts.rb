@@ -170,7 +170,7 @@ module Acute
         if @t[i + S] == L::SLASH && @t[i + 2 * S] == L::NUM && @t[i + 2 * S + 1] > 0
           count = Rational(count, @t[i + 2 * S + 1])
           i += 2 * S
-        elsif @t[i + S] == L::DOT && @t[i + 2 * S] == L::NUM && unit_at(i + 3 * S) # "2.5 hours", "3.5 second"
+        elsif @t[i + S] == L::DOT && @t[i + 2 * S] == L::NUM && unit_at(i + 3 * S) && touching?(i, i + 2 * S) # "2.5 hours", not "1. 5 hours" (D47)
           count += Rational(@t[i + 2 * S + 1], 10**(@t[i + 2 * S + 2] & L::DIGITS))
           i += 2 * S
         end
@@ -179,7 +179,7 @@ module Acute
         i += S
       elsif @t[i + 1] == :couple # D44: "a couple of days" is two
         count = 2
-      elsif @t[i] == L::DECADE && @t[i + 2] == 2 # "30s": seconds, not the thirties
+      elsif @t[i] == L::DECADE # "30s", "5400s": seconds, not a decade (D47)
         @i = i + S
         return Unit.new(:second, @t[i + 1])
       else return
@@ -202,6 +202,8 @@ module Acute
       else Failure === x ? x : failure(:conflict, i)
       end
     end
+
+    def touching?(from, to) = (from...to).step(S).all? { |j| @t[j + 4] == @t[j + S + 3] }
 
     # "second" is the ordinal unless it follows a count
     def unit_at(i)
