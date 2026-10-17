@@ -300,4 +300,20 @@ class DepthTest < Minitest::Test
     assert_reads "the monday before christmas", "2026-12-21 00:00:00 -05:00"
     assert_raises(Acute::ParseError) { parse("monday after 5pm") }
   end
+
+  def test_d44_minutes_after_or_before_an_hour_are_a_clock
+    assert_reads "10 after 2", "2026-10-17 14:10:00 -04:00", ["2026-10-18 02:10:00 -04:00"]
+    assert_reads "twenty after 3pm", "2026-10-17 15:20:00 -04:00"
+    assert_reads "10 prior to 5pm", "2026-10-17 16:50:00 -04:00"
+    assert_reads "a quarter past noon", "2026-10-18 12:15:00 -04:00"
+    assert_reads "a quarter to midnight", "2026-10-17 23:45:00 -04:00"
+    assert_reads "20 minutes past 3pm", "2026-10-17 15:20:00 -04:00"
+    assert_reads "20 minutes to 2pm tomorrow", "2026-10-18 13:40:00 -04:00"
+    assert_reads "a minute to midnight", "2026-10-17 23:59:00 -04:00"
+    assert_reads "5 to 9", "2026-10-17 17:00:00 -04:00" # D42: still a range
+  end
+
+  def test_d44_a_count_past_a_time_is_after_it
+    assert_reads "three hours past noon on friday", "2026-10-23 15:00:00 -04:00"
+  end
 end

@@ -385,6 +385,7 @@ phrases:
   small hours: [part, early_hours]
   a m: [meridiem, 0]
   p m: [meridiem, 12]
+  prior to: [word, before]
 
 # Words that are also plain English. In extraction they need a neighbour that confirms the date reading.
 english: [may, march, following, sat, sun, second, fall, a, mon, wed, start, end, last, past, this, next, d, m, s, h, w, y, lunch]

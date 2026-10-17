@@ -9,6 +9,7 @@ module Acute
       start = @i
       more = more_units
       w = @t[@i + 1]
+      w = :after if w == :past && @t[@i] == L::REL # "three hours past noon"
       if more && !SHIFT_TAIL[w]
         @i = start
         more = nil

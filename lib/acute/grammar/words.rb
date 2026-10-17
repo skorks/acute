@@ -107,22 +107,35 @@ module Acute
 
     def article_atom
       i = @i
-      return clock_words(15) if @t[i + S] == L::UNIT && @t[i + S + 1] == :quarter && clock_word?(i + 2 * S)
+      if @t[i + S] == L::UNIT && ((u = @t[i + S + 1]) == :quarter || u == :minute) && clock_word?(i + 2 * S) && hour?(i + 3 * S)
+        return clock_words(u == :quarter ? 15 : 1)
+      end
       q = quantity
       return failure(:conflict) unless q
       shift_tail(q)
     end
 
-    def clock_word?(i) = (@t[i] == L::REL && @t[i + 1] == :past) || @t[i + 1] == :to
+    def clock_word?(i)
+      k = @t[i]
+      v = @t[i + 1]
+      (k == L::REL && v == :past) || (k == L::WORD && (v == :to || v == :after || v == :before))
+    end
 
-    # "twenty past four", "half past twelve", "a quarter to six"
+    # "twenty past four", "half past twelve", "a quarter to six", D44: "twenty after 3pm", "10 before 2",
+    # "a quarter past noon"
     def clock_words(minutes)
       @i += S
       @i += S if @t[@i - S] == L::ART
-      @i += S if @t[@i] == L::UNIT && @t[@i + 1] == :quarter
+      @i += S if @t[@i] == L::UNIT && (@t[@i + 1] == :quarter || @t[@i + 1] == :minute)
       return failure(:incomplete) unless clock_word?(@i)
-      to = @t[@i + 1] == :to
+      to = @t[@i + 1] == :to || @t[@i + 1] == :before
       @i += S
+      if @t[@i] == L::NAMED
+        noon = @t[@i + 1] == 12
+        @i += S
+        return Clock.new(11, 60 - minutes, 0, noon ? :am : :pm, nil, false, false) if to
+        return Clock.new(12, minutes, 0, noon ? :pm : :am, nil, false, false)
+      end
       return failure(:incomplete) unless @t[@i] == L::NUM && @t[@i + 1].between?(1, 12)
       hour = @t[@i + 1]
       @i += S
