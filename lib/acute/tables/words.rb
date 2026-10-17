@@ -256,6 +256,7 @@ module Acute
       "ad" => [:word, :ad].freeze,
       "a.d" => [:word, :ad].freeze,
       "tommorow" => [:day, 1].freeze,
+      "tonite" => [:part, :tonight].freeze,
     }.freeze
 
     PHRASES = {

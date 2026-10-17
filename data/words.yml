@@ -395,3 +395,4 @@ plural: [sundays, mondays, tuesdays, wednesdays, thursdays, fridays, saturdays, 
 # D18: a fixed table, only misspellings the corpus has. Each maps to the word it stands for.
 misspellings:
   tommorow: tomorrow
+  tonite: tonight

@@ -96,9 +96,11 @@ module Acute
       number(v, flags, loose)
     end
 
-    # "6 in the morning", "12 at night": a part of day after a bare number makes it an hour
+    # "6 in the morning", "12 at night", D44: "7 tonight", "8 this evening", "9 tomorrow", "7, this morning":
+    # a part of day or a day after a bare number makes it an hour
     def part_next?(j)
       k = @t[j]
+      return true if k == L::PART || k == L::DAY || (k == L::REL && @t[j + S] == L::PART)
       return false unless k == L::AT || (k == L::WORD && @t[j + 1] == :in)
       j += S
       j += S if @t[j + 1] == :the
@@ -242,6 +244,8 @@ module Acute
       elsif kind == L::NAMED && v == 12 && digits <= 2
         @i += S
         named(@t[@i - S + 1])
+      elsif digits == 3 && (kind == L::MER || (at >= S && (@t[at - S] == L::AT || @t[at - S] == L::PART)))
+        three_digits(v, at)
       elsif digits == 4
         four_digits(v, flags, at)
       elsif digits == 8
@@ -252,6 +256,20 @@ module Acute
       else
         failure(:incomplete, at)
       end
+    end
+
+    # D44: "330 pm", "at 730 in the evening", "tonight 815": three digits marked as a time, by am or pm after
+    # them or "at" or a part of day before, are its hour and minutes
+    def three_digits(v, at)
+      h = v / 100
+      m = v % 100
+      return failure(:invalid_date, at) if m > 59
+      if @t[@i] == L::MER
+        return failure(:invalid_date, at) if h > 12
+        @i += S
+        return Clock.new(h, m, 0, @t[@i - S + 1] == 0 ? :am : :pm, nil, false, false)
+      end
+      Clock.new(h, m, 0, nil, nil, false, false)
     end
 
     # D5: a time with a leading zero, after "at", or with "h"/"hrs"; otherwise a year

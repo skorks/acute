@@ -516,6 +516,7 @@ chronic-issues-134-3
 chronic-issues-134-4
 chronic-issues-134-5
 chronic-issues-134-6
+chronic-issues-139-2
 chronic-issues-141-1
 chronic-issues-141-3
 chronic-issues-141-4
@@ -1536,6 +1537,7 @@ chronic-tests-test-parsing-rb-806-1
 chronic-tests-test-parsing-rb-809-1
 chronic-tests-test-parsing-rb-81-1
 chronic-tests-test-parsing-rb-812-1
+chronic-tests-test-parsing-rb-815-1
 chronic-tests-test-parsing-rb-820-1
 chronic-tests-test-parsing-rb-823-1
 chronic-tests-test-parsing-rb-829-1
@@ -1818,6 +1820,7 @@ chrono-node-0289
 chrono-node-0290
 chrono-node-0291
 chrono-node-0292
+chrono-node-0293
 chrono-node-0294
 chrono-node-0295
 chrono-node-0296
@@ -2612,6 +2615,7 @@ duckling-0041
 duckling-0042
 duckling-0043
 duckling-0044
+duckling-0051
 duckling-0052
 duckling-0053
 duckling-0054
@@ -2765,6 +2769,7 @@ duckling-0249
 duckling-0250
 duckling-0252
 duckling-0253
+duckling-0254
 duckling-0255
 duckling-0256
 duckling-0262
@@ -2781,7 +2786,10 @@ duckling-0279
 duckling-0281
 duckling-0282
 duckling-0284
+duckling-0286
 duckling-0287
+duckling-0288
+duckling-0289
 duckling-0290
 duckling-0291
 duckling-0292
@@ -2912,6 +2920,7 @@ duckling-0462
 duckling-0463
 duckling-0464
 duckling-0465
+duckling-0466
 duckling-0467
 duckling-0468
 duckling-0469
@@ -3032,6 +3041,9 @@ duckling-0621
 duckling-0622
 duckling-0623
 duckling-0624
+duckling-0625
+duckling-0626
+duckling-0627
 duckling-0628
 duckling-0629
 duckling-0631
@@ -3046,6 +3058,7 @@ duckling-0640
 duckling-0641
 duckling-0642
 duckling-0643
+duckling-0644
 duckling-0645
 duckling-0647
 duckling-0648
@@ -12351,6 +12364,7 @@ recognizers-0361
 recognizers-0362
 recognizers-0363
 recognizers-0365
+recognizers-0367
 recognizers-0369
 recognizers-0370
 recognizers-0371
@@ -12358,6 +12372,7 @@ recognizers-0372
 recognizers-0373
 recognizers-0374
 recognizers-0375
+recognizers-0376
 recognizers-0377
 recognizers-0378
 recognizers-0381
@@ -12917,6 +12932,8 @@ recognizers-1008
 recognizers-1009
 recognizers-1010
 recognizers-1011
+recognizers-1012
+recognizers-1013
 recognizers-1014
 recognizers-1015
 recognizers-1016
@@ -13007,6 +13024,7 @@ recognizers-1131
 recognizers-1132
 recognizers-1133
 recognizers-1134
+recognizers-1135
 recognizers-1136
 recognizers-1137
 recognizers-1138

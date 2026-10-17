@@ -268,5 +268,20 @@ class DepthTest < Minitest::Test
     assert_reads "the day after next 6pm", "2026-10-19 18:00:00 -04:00"
     assert_reads "the week after next", "2026-10-25 00:00:00 -04:00"
   end
-end
 
+  def test_d44_a_bare_number_before_a_part_of_day_or_a_day_is_an_hour
+    assert_reads "7 tonight", "2026-10-17 19:00:00 -04:00"
+    assert_reads "8 this evening", "2026-10-17 20:00:00 -04:00"
+    assert_reads "7, this morning", "2026-10-17 07:00:00 -04:00"
+    assert_reads "9 tomorrow", "2026-10-18 09:00:00 -04:00", ["2026-10-18 21:00:00 -04:00"]
+    assert_reads "tonite", "2026-10-17 17:00:00 -04:00"
+  end
+
+  def test_d44_three_digits_marked_as_a_time
+    assert_reads "330 p.m.", "2026-10-17 15:30:00 -04:00"
+    assert_reads "tonight 815", "2026-10-17 20:15:00 -04:00"
+    assert_reads "at 730 in the evening", "2026-10-17 19:30:00 -04:00"
+    assert_equal :incomplete, assert_raises(Acute::ParseError) { parse("134 this afternoon") }.code
+    assert_equal :invalid_date, assert_raises(Acute::ParseError) { parse("at 975") }.code
+  end
+end
