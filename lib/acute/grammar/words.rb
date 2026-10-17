@@ -157,8 +157,8 @@ module Acute
         return dated(@t[@i - S + 1], n)
       end
       return failure(:invalid_date, @i - S) if n < 1 || n > 31
-      # "first" alone is not a date; "the first" and "first of next month" are
-      if @t[@i - S + 2] & L::WORDY != 0 && @t[@i + 1] != :of && !(@i >= 2 * S && @t[@i - 2 * S] == L::WORD && @t[@i - 2 * S + 1] == :the)
+      # "first" alone is not a date; "the first", "first of next month" and "from ninth till ..." are
+      if @t[@i - S + 2] & L::WORDY != 0 && @t[@i + 1] != :of && !(@i >= 2 * S && @t[@i - 2 * S] == L::WORD && BEFORE_DAY[@t[@i - 2 * S + 1]])
         return failure(:incomplete, @i - S)
       end
       of(Date.new(nil, nil, n, nil, false))

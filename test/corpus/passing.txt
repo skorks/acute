@@ -1354,6 +1354,7 @@ chronic-tests-test-parsing-rb-125-1
 chronic-tests-test-parsing-rb-130-1
 chronic-tests-test-parsing-rb-133-1
 chronic-tests-test-parsing-rb-136-1
+chronic-tests-test-parsing-rb-139-1
 chronic-tests-test-parsing-rb-142-1
 chronic-tests-test-parsing-rb-147-1
 chronic-tests-test-parsing-rb-15-1
@@ -2657,6 +2658,7 @@ duckling-0100
 duckling-0101
 duckling-0102
 duckling-0103
+duckling-0104
 duckling-0105
 duckling-0106
 duckling-0107
@@ -2687,9 +2689,11 @@ duckling-0135
 duckling-0136
 duckling-0137
 duckling-0138
+duckling-0139
 duckling-0140
 duckling-0141
 duckling-0142
+duckling-0143
 duckling-0144
 duckling-0145
 duckling-0147
@@ -2862,6 +2866,7 @@ duckling-0395
 duckling-0396
 duckling-0397
 duckling-0398
+duckling-0399
 duckling-0400
 duckling-0401
 duckling-0402
@@ -2908,6 +2913,7 @@ duckling-0463
 duckling-0464
 duckling-0465
 duckling-0467
+duckling-0468
 duckling-0469
 duckling-0470
 duckling-0471
@@ -2951,10 +2957,16 @@ duckling-0508
 duckling-0509
 duckling-0510
 duckling-0511
+duckling-0512
+duckling-0513
 duckling-0514
 duckling-0515
+duckling-0516
+duckling-0517
 duckling-0518
 duckling-0519
+duckling-0520
+duckling-0521
 duckling-0522
 duckling-0523
 duckling-0524
@@ -2962,6 +2974,7 @@ duckling-0525
 duckling-0535
 duckling-0536
 duckling-0538
+duckling-0541
 duckling-0544
 duckling-0546
 duckling-0548
@@ -2973,6 +2986,7 @@ duckling-0554
 duckling-0556
 duckling-0557
 duckling-0558
+duckling-0559
 duckling-0560
 duckling-0561
 duckling-0562
@@ -6746,8 +6760,10 @@ generated-conventions-ranges-0006
 generated-conventions-ranges-0007
 generated-conventions-ranges-0008
 generated-conventions-ranges-0009
+generated-conventions-ranges-0010
 generated-conventions-ranges-0011
 generated-conventions-ranges-0012
+generated-conventions-ranges-0013
 generated-conventions-ranges-0014
 generated-conventions-ranges-0015
 generated-conventions-ranges-0016
@@ -6773,6 +6789,7 @@ generated-conventions-ranges-0038
 generated-conventions-ranges-0039
 generated-conventions-ranges-0040
 generated-conventions-ranges-0041
+generated-conventions-ranges-0042
 generated-conventions-ranges-0043
 generated-conventions-ranges-0044
 generated-conventions-ranges-0045
@@ -6794,8 +6811,10 @@ generated-conventions-ranges-0062
 generated-conventions-ranges-0063
 generated-conventions-ranges-0064
 generated-conventions-ranges-0065
+generated-conventions-ranges-0066
 generated-conventions-ranges-0067
 generated-conventions-ranges-0068
+generated-conventions-ranges-0069
 generated-conventions-ranges-0070
 generated-conventions-ranges-0071
 generated-conventions-ranges-0072
@@ -6813,6 +6832,7 @@ generated-conventions-ranges-0085
 generated-conventions-ranges-0086
 generated-conventions-ranges-0087
 generated-conventions-ranges-0088
+generated-conventions-ranges-0089
 generated-conventions-ranges-0090
 generated-conventions-ranges-0091
 generated-conventions-ranges-0092
@@ -6840,8 +6860,10 @@ generated-conventions-ranges-0116
 generated-conventions-ranges-0117
 generated-conventions-ranges-0118
 generated-conventions-ranges-0119
+generated-conventions-ranges-0120
 generated-conventions-ranges-0121
 generated-conventions-ranges-0122
+generated-conventions-ranges-0123
 generated-conventions-ranges-0124
 generated-conventions-ranges-0125
 generated-conventions-ranges-0126
@@ -6859,7 +6881,9 @@ generated-conventions-ranges-0139
 generated-conventions-ranges-0140
 generated-conventions-ranges-0141
 generated-conventions-ranges-0142
+generated-conventions-ranges-0143
 generated-conventions-ranges-0144
+generated-conventions-ranges-0145
 generated-conventions-ranges-0146
 generated-conventions-ranges-0147
 generated-conventions-ranges-0148
@@ -6869,7 +6893,9 @@ generated-conventions-ranges-0151
 generated-conventions-ranges-0152
 generated-conventions-ranges-0153
 generated-conventions-ranges-0154
+generated-conventions-ranges-0155
 generated-conventions-ranges-0156
+generated-conventions-ranges-0157
 generated-conventions-ranges-0158
 generated-conventions-ranges-0159
 generated-conventions-ranges-0160
@@ -10213,6 +10239,7 @@ generated-ranges-0086
 generated-ranges-0087
 generated-ranges-0088
 generated-ranges-0089
+generated-ranges-0090
 generated-ranges-0091
 generated-ranges-0092
 generated-ranges-0093
@@ -10221,6 +10248,7 @@ generated-ranges-0095
 generated-ranges-0096
 generated-ranges-0097
 generated-ranges-0098
+generated-ranges-0099
 generated-ranges-0100
 generated-ranges-0101
 generated-ranges-0102
@@ -10229,6 +10257,7 @@ generated-ranges-0104
 generated-ranges-0105
 generated-ranges-0106
 generated-ranges-0107
+generated-ranges-0108
 generated-ranges-0109
 generated-ranges-0110
 generated-ranges-0111
@@ -12096,8 +12125,11 @@ recognizers-0089
 recognizers-0090
 recognizers-0091
 recognizers-0092
+recognizers-0093
 recognizers-0094
+recognizers-0095
 recognizers-0096
+recognizers-0097
 recognizers-0098
 recognizers-0100
 recognizers-0101
@@ -12209,11 +12241,16 @@ recognizers-0236
 recognizers-0237
 recognizers-0238
 recognizers-0239
+recognizers-0240
+recognizers-0241
+recognizers-0242
+recognizers-0243
 recognizers-0244
 recognizers-0245
 recognizers-0246
 recognizers-0247
 recognizers-0248
+recognizers-0250
 recognizers-0252
 recognizers-0253
 recognizers-0254
@@ -12417,6 +12454,7 @@ recognizers-0483
 recognizers-0484
 recognizers-0485
 recognizers-0486
+recognizers-0487
 recognizers-0488
 recognizers-0489
 recognizers-0490
@@ -12441,6 +12479,7 @@ recognizers-0515
 recognizers-0516
 recognizers-0517
 recognizers-0518
+recognizers-0519
 recognizers-0520
 recognizers-0521
 recognizers-0523
@@ -12479,6 +12518,7 @@ recognizers-0565
 recognizers-0566
 recognizers-0567
 recognizers-0568
+recognizers-0569
 recognizers-0570
 recognizers-0571
 recognizers-0572
@@ -12497,6 +12537,7 @@ recognizers-0585
 recognizers-0586
 recognizers-0587
 recognizers-0588
+recognizers-0589
 recognizers-0590
 recognizers-0591
 recognizers-0592
@@ -12618,6 +12659,7 @@ recognizers-0715
 recognizers-0716
 recognizers-0717
 recognizers-0718
+recognizers-0719
 recognizers-0720
 recognizers-0721
 recognizers-0722
@@ -12657,6 +12699,7 @@ recognizers-0756
 recognizers-0757
 recognizers-0758
 recognizers-0759
+recognizers-0760
 recognizers-0761
 recognizers-0762
 recognizers-0763
@@ -12716,6 +12759,13 @@ recognizers-0837
 recognizers-0838
 recognizers-0839
 recognizers-0840
+recognizers-0841
+recognizers-0842
+recognizers-0843
+recognizers-0844
+recognizers-0845
+recognizers-0846
+recognizers-0847
 recognizers-0848
 recognizers-0849
 recognizers-0850
@@ -12724,6 +12774,8 @@ recognizers-0852
 recognizers-0853
 recognizers-0854
 recognizers-0856
+recognizers-0858
+recognizers-0859
 recognizers-0860
 recognizers-0861
 recognizers-0862
@@ -12896,6 +12948,7 @@ recognizers-1042
 recognizers-1043
 recognizers-1044
 recognizers-1045
+recognizers-1046
 recognizers-1047
 recognizers-1048
 recognizers-1049
@@ -12933,6 +12986,7 @@ recognizers-1095
 recognizers-1096
 recognizers-1102
 recognizers-1106
+recognizers-1107
 recognizers-1108
 recognizers-1109
 recognizers-1110
@@ -13015,6 +13069,7 @@ recognizers-1199
 recognizers-1200
 recognizers-1201
 recognizers-1202
+recognizers-1203
 recognizers-1204
 recognizers-1205
 recognizers-1206

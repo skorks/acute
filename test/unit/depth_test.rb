@@ -104,6 +104,20 @@ class DepthTest < Minitest::Test
     assert_equal alts, r.alternatives.map { |x| x.begin.strftime("%F %R") }, text
   end
 
+  def test_d44_a_range_after_a_day_is_within_it
+    assert_span "tomorrow from 2 to 4pm", "2026-10-18 14:00", "2026-10-18 16:00"
+    assert_span "friday between 1pm and 4 pm", "2026-10-23 13:00", "2026-10-23 16:00"
+    assert_span "dec 9th between 8am and 2pm", "2026-12-09 08:00", "2026-12-09 14:00"
+    assert_raises(Acute::ParseError) { parse("tomorrow from 9am") }
+  end
+
+  def test_d44_a_number_of_a_month_is_its_day
+    assert_span "15 of february", "2027-02-15 00:00", "2027-02-16 00:00"
+    assert_span "20 of next month", "2026-11-20 00:00", "2026-11-21 00:00"
+    assert_span "from the 13th to the 15 of july", "2027-07-13 00:00", "2027-07-16 00:00"
+    assert_span "from ninth till seventeenth of april", "2027-04-09 00:00", "2027-04-18 00:00"
+  end
+
   def test_d44_a_bare_day_in_a_range_takes_its_month_from_the_other_end
     assert_span "from 13 to 15 July", "2027-07-13 00:00", "2027-07-16 00:00"
     assert_span "1-8 september", "2027-09-01 00:00", "2027-09-09 00:00"

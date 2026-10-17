@@ -50,6 +50,16 @@ module Acute
         return shift_tail(q) if q
       elsif nk == L::WORD
         return clock_words(v) if minutes_to?(i)
+        # D44: "15 of february", "20 of next month": a number of a month is its day, as an ordinal is; not
+        # "5 to 6 of April 22", where the month has its own
+        if t[i + S + 1] == :of && digits <= 2 && v >= 1 && v <= 31
+          mk = @t[i + 2 * S]
+          return day_month(v, i + 2 * S) if mk == L::MONTH && !(@t[i + 3 * S] == L::NUM && @t[i + 3 * S + 2] & L::DIGITS <= 2)
+          if mk == L::REL && @t[i + 3 * S] == L::UNIT && @t[i + 3 * S + 1] == :month
+            @i += S
+            return of(Date.new(nil, nil, v, nil, false))
+          end
+        end
         if t[i + S + 1] == :oclock
           @i += S
           c = number(v, flags, true)
