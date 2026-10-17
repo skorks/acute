@@ -8,6 +8,7 @@ module Acute
       LIMIT = 12 # cycles to search; enough for "feb 29"
       SAME_DAY = Assumption.for(:same_day_or_next)
       SAME_OR_NEXT = [0, DAY].freeze
+      SUB_DAY = { G::Clock => true, G::Part => true, G::Range => true }.freeze
 
       def self.cycle(node)
         case G::KIND[node.class]
@@ -34,8 +35,14 @@ module Acute
         i = Period.index(cyc, ctx, now)
         # The cycles either side of now's are looked at only when an occurrence there can reach into it
         near = contained?(node) ? 0 : 1
-        that_day = on_that_day(node, ctx, i, cyc)
-        return that_day if that_day
+        # The weekday or day of the month, under any time or part of day; (today + 4) % 7 is today's weekday
+        if cyc == :week || cyc == :month
+          day = node
+          day = day.outer while G::Within === day && SUB_DAY[day.inner.class]
+          today = cyc == :week ? G::Weekday === day && (ctx.today + 4) % 7 == day.wday :
+                    G::Date === day && day.day == Calendar.civil_from_days(ctx.today) % 100
+          return on_that_day(node, ctx, i, cyc) if today && ctx.past != :back
+        end
         if ctx.past?
           list = last(node, ctx, i + near, cyc) { |s| s.b <= now }
           # D44: in past context, a period under way is the current one, then the one before
@@ -56,9 +63,6 @@ module Acute
       # D40, D44: a weekday or a day of the month said on that day, with or without a time: today's, then the
       # next one (in past context the one before); today's comes second once it is over
       def self.on_that_day(node, ctx, i, cyc)
-        return if ctx.past == :back || !(day = day_of(node, cyc))
-        # (today + 4) % 7: today's weekday
-        return unless G::Weekday === day ? (ctx.today + 4) % 7 == day.wday : Calendar.civil_from_days(ctx.today) % 100 == day.day
         ctx.note(SAME_DAY)
         cur = at(node, ctx, i, cyc)
         if ctx.past?
@@ -68,15 +72,6 @@ module Acute
           other = first(node, ctx, i + 1, cyc) { true }
           other = other.take(1) if cur.size == 1
           cur[0].e > ctx.now_local ? cur + other : other + cur
-        end
-      end
-
-      # The weekday or day of the month a phrase falls on, under a time or part of day
-      def self.day_of(node, cyc)
-        case node
-        when G::Weekday then cyc == :week ? node : nil
-        when G::Date then cyc == :month && node.day ? node : nil
-        when G::Within then cycle(node.inner) == :day || G::Range === node.inner ? day_of(node.outer, cyc) : nil
         end
       end
 
@@ -227,7 +222,10 @@ module Acute
         grain, len = c.seconds ? Clock::SECOND : Clock::MINUTE
         day = s.b - s.b % DAY
         part = part_name(outer)
-        return cands.map { |secs| Span.new(day + secs, day + secs + len, grain, nil) } unless part
+        unless part
+          return [Span.new(day + cands[0], day + cands[0] + len, grain, nil)] if cands.size == 1
+          return cands.map { |secs| Span.new(day + secs, day + secs + len, grain, nil) }
+        end
         if c.hour == 12 && !c.meridiem && !c.named # D30, D40: 12 in the morning, 12 at night
           cands = part == :morning ? [0] : part == :afternoon || part == :lunch ? [43_200] : [86_400]
         elsif !c.meridiem && part != :night && part != :tonight
