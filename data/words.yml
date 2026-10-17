@@ -120,6 +120,7 @@ relative:       # "past" is also the clock word in "twenty past four"
   past: past
   coming: next
   upcoming: next
+  following: next
   previous: last
   prev: last
 
@@ -206,6 +207,11 @@ holiday:        # D15, D28: formulas only
   xmas: christmas
   thanksgiving: thanksgiving
   halloween: halloween
+  easter: easter
+  juneteenth: juneteenth
+  pentecost: pentecost
+  whitsunday: pentecost
+  whitsun: pentecost
 
 weekend:
   weekend: 0
@@ -285,6 +291,79 @@ phrases:
   new years eve: [holiday, new_years_eve]
   new year's day: [holiday, new_years_day]
   new years day: [holiday, new_years_day]
+  valentine's day: [holiday, valentines]
+  valentines day: [holiday, valentines]
+  valentine day: [holiday, valentines]
+  st patrick's day: [holiday, st_patricks]
+  st patricks day: [holiday, st_patricks]
+  saint patrick's day: [holiday, st_patricks]
+  saint patricks day: [holiday, st_patricks]
+  saint patrick: [holiday, st_patricks]
+  april fools day: [holiday, april_fools]
+  april fool's day: [holiday, april_fools]
+  april fools' day: [holiday, april_fools]
+  independence day: [holiday, independence_day]
+  veterans day: [holiday, veterans_day]
+  veteran's day: [holiday, veterans_day]
+  veterans' day: [holiday, veterans_day]
+  veteran day: [holiday, veterans_day]
+  boxing day: [holiday, boxing_day]
+  groundhog day: [holiday, groundhog_day]
+  groundhogs day: [holiday, groundhog_day]
+  groundhog's day: [holiday, groundhog_day]
+  earth day: [holiday, earth_day]
+  flag day: [holiday, flag_day]
+  patriot day: [holiday, patriot_day]
+  boss's day: [holiday, bosses_day]
+  boss day: [holiday, bosses_day]
+  bosses day: [holiday, bosses_day]
+  bosses' day: [holiday, bosses_day]
+  australia day: [holiday, australia_day]
+  anzac day: [holiday, anzac_day]
+  canada day: [holiday, canada_day]
+  victoria day: [holiday, victoria_day]
+  melbourne cup day: [holiday, melbourne_cup]
+  melbourne cup: [holiday, melbourne_cup]
+  mlk day: [holiday, mlk_day]
+  mlk jr day: [holiday, mlk_day]
+  martin luther king day: [holiday, mlk_day]
+  martin luther king's day: [holiday, mlk_day]
+  martin luther kings day: [holiday, mlk_day]
+  martin luther king jr day: [holiday, mlk_day]
+  presidents day: [holiday, presidents_day]
+  president day: [holiday, presidents_day]
+  presidents' day: [holiday, presidents_day]
+  president's day: [holiday, presidents_day]
+  mother's day: [holiday, mothers_day]
+  mothers day: [holiday, mothers_day]
+  mothers' day: [holiday, mothers_day]
+  mothering sunday: [holiday, mothering_sunday]
+  memorial day: [holiday, memorial_day]
+  father's day: [holiday, fathers_day]
+  fathers day: [holiday, fathers_day]
+  fathers' day: [holiday, fathers_day]
+  labor day: [holiday, labor_day]
+  labour day: [holiday, labor_day]
+  columbus day: [holiday, columbus_day]
+  black friday: [holiday, black_friday]
+  cyber monday: [holiday, cyber_monday]
+  easter sunday: [holiday, easter]
+  easter day: [holiday, easter]
+  good friday: [holiday, good_friday]
+  easter monday: [holiday, easter_monday]
+  easter mon: [holiday, easter_monday]
+  palm sunday: [holiday, palm_sunday]
+  maundy thursday: [holiday, maundy_thursday]
+  holy thursday: [holiday, maundy_thursday]
+  ash wednesday: [holiday, ash_wednesday]
+  mardi gras: [holiday, mardi_gras]
+  shrove tuesday: [holiday, mardi_gras]
+  whit sunday: [holiday, pentecost]
+  white sunday: [holiday, pentecost]
+  whit monday: [holiday, whit_monday]
+  trinity sunday: [holiday, trinity_sunday]
+  new year eve: [holiday, new_years_eve]
+  new year day: [holiday, new_years_day]
   business day: [unit, business_day]
   business days: [unit, business_day]
   working day: [unit, business_day]
@@ -295,7 +374,7 @@ phrases:
   p m: [meridiem, 12]
 
 # Words that are also plain English. In extraction they need a neighbour that confirms the date reading.
-english: [may, march, sat, sun, second, fall, a, mon, wed, start, end, last, past, this, next, d, m, s, h, w, y, lunch]
+english: [may, march, following, sat, sun, second, fall, a, mon, wed, start, end, last, past, this, next, d, m, s, h, w, y, lunch]
 
 # D18: a fixed table, only misspellings the corpus has. Each maps to the word it stands for.
 misspellings:

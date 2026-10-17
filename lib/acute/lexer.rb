@@ -257,7 +257,7 @@ module Acute
         j = i
         ok = rest.all? do |want|
           gap = j
-          j += 1 while j < n && ((c = s.getbyte(j)) == 32 || c == 45)
+          j += 1 while j < n && ((c = s.getbyte(j)) == 32 || c == 45 || c == 46) # "st. patrick's"
           next false if j == gap
           k = 0
           while j < n && (ALPHA[c = s.getbyte(j)] || c == 39)

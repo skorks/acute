@@ -163,7 +163,7 @@ module Acute
         when :weekend
           week = s.grain == :week ? s : Period.span(:week, ctx, Period.index(:week, ctx, s.b))
           Named.weekends(week, ctx)
-        when :holiday then within(Named.holiday(node.name, Period.year(s.b), ctx), s)
+        when :holiday then (h = Named.holiday(node.name, Period.year(s.b), ctx)) ? within(h, s) : []
         when :season
           y = Period.year(s.b)
           list = within(Named.season(node.name, y, ctx), s)

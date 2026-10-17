@@ -16,8 +16,28 @@ module Acute
       })
       # D3: meteorological, by the month each starts in; the south is six months on
       SEASONS = { spring: 3, summer: 6, autumn: 9, winter: 12 }.freeze
-      FIXED_HOLIDAYS = { christmas: 1225, christmas_eve: 1224, new_years_eve: 1231, new_years_day: 101,
-                         halloween: 1031 }.freeze
+      # D15, D28: each built-in holiday as a formula. [month, day] is a fixed date; [month, day, wday] the first
+      # wday on or after it (the third Monday of January is the first from the 15th); [holiday, days] an offset
+      # from Easter or another holiday
+      HOLIDAYS = Ractor.make_shareable({
+        new_years_day: [1, 1], groundhog_day: [2, 2], valentines: [2, 14], st_patricks: [3, 17], april_fools: [4, 1],
+        earth_day: [4, 22], flag_day: [6, 14], juneteenth: [6, 19], independence_day: [7, 4], patriot_day: [9, 11],
+        bosses_day: [10, 16], halloween: [10, 31], veterans_day: [11, 11], christmas_eve: [12, 24],
+        christmas: [12, 25], boxing_day: [12, 26], new_years_eve: [12, 31],
+        mlk_day: [1, 15, 1], presidents_day: [2, 15, 1], mothers_day: [5, 8, 0], memorial_day: [5, 25, 1],
+        fathers_day: [6, 15, 0], labor_day: [9, 1, 1], columbus_day: [10, 8, 1], thanksgiving: [11, 22, 4],
+        us_thanksgiving: [11, 22, 4], black_friday: [:us_thanksgiving, 1], cyber_monday: [:us_thanksgiving, 4],
+        easter: [:easter, 0], good_friday: [:easter, -2], easter_monday: [:easter, 1], palm_sunday: [:easter, -7],
+        maundy_thursday: [:easter, -3], ash_wednesday: [:easter, -46], mardi_gras: [:easter, -47],
+        pentecost: [:easter, 49], whit_monday: [:easter, 50], trinity_sunday: [:easter, 56]
+      })
+      # D15, D27: the holidays a country has its own way, or alone
+      MOTHERING = { mothers_day: [:easter, -21], mothering_sunday: [:easter, -21] }.freeze
+      LOCAL = Ractor.make_shareable({
+        "CA" => { thanksgiving: [10, 8, 1], canada_day: [7, 1], victoria_day: [5, 18, 1] },
+        "AU" => { australia_day: [1, 26], anzac_day: [4, 25], melbourne_cup: [11, 1, 2] },
+        "NZ" => { anzac_day: [4, 25] }, "GB" => MOTHERING, "IE" => MOTHERING
+      })
 
       def self.part(name, day, ctx)
         b, e, point = PARTS.fetch(name)
@@ -41,16 +61,21 @@ module Acute
         Span.new(b, Period.add(b, 3, :month), :season, nil)
       end
 
-      # D15, D28: formula holidays for the locale
+      # D15, D28: the holiday in the year, or nil when the locale has none of that name
       def self.holiday(name, year, ctx)
-        d = if (md = FIXED_HOLIDAYS[name])
-              Calendar.days_from_civil(year, md / 100, md % 100)
-            elsif ctx.locale.country == "CA" # name == :thanksgiving
-              nth_weekday(Calendar.days_from_civil(year, 10, 1), 1, 2)
-            else
-              nth_weekday(Calendar.days_from_civil(year, 11, 1), 4, 4)
-            end
+        f = (own = LOCAL[ctx.locale.country]) && own[name] || HOLIDAYS[name]
+        return unless f
+        d = day_of(f, year)
         Span.new(d * DAY, d * DAY + DAY, :day, nil)
+      end
+
+      def self.day_of(f, year)
+        a, b, wday = f
+        if a == :easter then Calendar.easter(year) + b
+        elsif Symbol === a then day_of(HOLIDAYS.fetch(a), year) + b
+        elsif wday then nth_weekday(Calendar.days_from_civil(year, a, b), wday, 1)
+        else Calendar.days_from_civil(year, a, b)
+        end
       end
 
       # The day number of the nth wday on or after the day first

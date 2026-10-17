@@ -16,7 +16,7 @@ module Acute
         DayRef.new(v)
       elsif k == L::WDAY
         @i += S
-        Weekday.new(v)
+        of(Weekday.new(v))
       elsif k == L::MONTH then month_atom
       elsif k == L::REL then rel_atom
       elsif k == L::NAMED
@@ -25,13 +25,13 @@ module Acute
       elsif k == L::ORD then ordinal_atom
       elsif k == L::PART
         @i += S
-        Part.new(v)
+        of(Part.new(v))
       elsif k == L::NOW
         @i += S
         NOW
       elsif k == L::HOLIDAY
         @i += S
-        Holiday.new(v)
+        of(Holiday.new(v))
       elsif k == L::WORD then word_atom(v)
       elsif k == L::ART then article_atom
       elsif k == L::FUZZ then fuzzy_atom
@@ -198,13 +198,13 @@ module Acute
       of(Date.new(nil, nil, n, nil, false))
     end
 
-    # "... of <period>"
+    # "... of <period>": "second tuesday of march", "tuesday of next week", "morning of xmas", "labor day of 2012"
     def of(node)
       return node unless @t[@i + 1] == :of
       @i += S
       @i += S if @t[@i + 1] == :the
       # D42: "the first monday of the month" repeats monthly, so it is the coming one: next month's once passed
-      if @t[@i] == L::UNIT && @t[@i + 1] == :month && (Date === node || !(Unit === node.node && UNIT_SIZE[node.node.unit] >= 5))
+      if @t[@i] == L::UNIT && @t[@i + 1] == :month && (Date === node || (Nth === node && !(Unit === node.node && UNIT_SIZE[node.node.unit] >= 5)))
         @i += S
         return node
       end

@@ -52,5 +52,17 @@ module Acute
 
     # 0 = Sunday
     def self.weekday(days) = (days + 4) % 7
+
+    # The day number of Western Easter Sunday, by the anonymous Gregorian algorithm (Meeus, Jones, Butcher)
+    def self.easter(y)
+      a = y % 19
+      b = y / 100
+      c = y % 100
+      h = (19 * a + b - b / 4 - (b - (b + 8) / 25 + 1) / 3 + 15) % 30
+      l = (32 + 2 * (b % 4) + 2 * (c / 4) - h - c % 4) % 7
+      m = (a + 11 * h + 22 * l) / 451
+      n = h + l - 7 * m + 114
+      days_from_civil(y, n / 31, n % 31 + 1)
+    end
   end
 end
