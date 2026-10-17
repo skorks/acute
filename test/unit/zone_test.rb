@@ -93,6 +93,22 @@ class ZoneTest < Minitest::Test
     assert_raises(Acute::ParseError) { parse("3pm Europe/Atlantis") }
   end
 
+  def test_d47_a_named_zone_records_its_clock_change
+    r = parse("nov 1 2026 1:30am America/Chicago")
+    assert_equal "2026-11-01 01:30:00 -05:00", wall(r.time)
+    assert_includes codes(r), :dst_repeated_time
+    r = parse("march 8 2026 2:30am America/Chicago")
+    assert_equal "2026-03-08 04:30:00 -04:00", wall(r.time)
+    assert_includes codes(r), :dst_skipped_time
+    refute_includes codes(parse("nov 2 2026 1:30am America/Chicago")), :dst_repeated_time
+  end
+
+  def test_d47_a_named_zone_follows_the_dst_option
+    assert_equal "2026-11-01 02:30:00 -05:00", wall(parse("nov 1 2026 1:30am America/Chicago", dst: :later).time)
+    e = assert_raises(Acute::ParseError) { parse("nov 1 2026 1:30am America/Chicago", dst: :reject) }
+    assert_equal :dst_repeated_time, e.code
+  end
+
   def test_d44_a_us_zone_without_standard_or_daylight_follows_the_clock_change
     assert_equal "2022-03-13 04:00:00 +00:00", wall(parse("2022-03-12 23:00 ET", zone: "UTC").begin)
     assert_equal "2022-03-14 03:00:00 +00:00", wall(parse("2022-03-13 23:00 ET", zone: "UTC").begin)

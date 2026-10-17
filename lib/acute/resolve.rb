@@ -13,8 +13,9 @@ module Acute
     # to begin, if any; point is the D1 point of a part of day; frac the fraction of a second an instant was written with (D47)
     Reading = Struct.new(:begin, :end, :grain, :dst, :point, :frac)
     # The same in local wall seconds. An instant ("now", "in 3 hours", a time with an offset) also carries its
-    # UTC in ub and ue, so a wall time the clocks repeat keeps the side it is on
-    Span = Struct.new(:b, :e, :grain, :point, :ub, :ue)
+    # UTC in ub and ue, so a wall time the clocks repeat keeps the side it is on; dst is the DST adjustment
+    # made converting ub from a zone named in the text (D47)
+    Span = Struct.new(:b, :e, :grain, :point, :ub, :ue, :dst)
 
     APPROXIMATE = Assumption.for(:approximate)
     FIXED_OFFSET = Assumption.for(:fixed_offset)
@@ -151,10 +152,12 @@ module Acute
       ctx.note(FIXED_OFFSET)
       inner = ctx.in_zone(zone) { spans(node.node, ctx) }
       inner.map do |s|
+        ctx.dst = nil
         ub = s.ub || (s.b && zone.local_to_utc(s.b, ctx, ctx.dst_policy))
+        dst = s.ub ? s.dst : ctx.dst
         ue = s.ue || (s.e && zone.local_to_utc(s.e, ctx, ctx.dst_policy))
         point = s.point && zone.local_to_utc(s.point, ctx, ctx.dst_policy)
-        Span.new(ub && ctx.local(ub), ue && ctx.local(ue), s.grain, point && ctx.local(point), ub, ue)
+        Span.new(ub && ctx.local(ub), ue && ctx.local(ue), s.grain, point && ctx.local(point), ub, ue, dst)
       end
     end
 
@@ -183,7 +186,7 @@ module Acute
           dst = nil
         else
           b = s.ub || (b && zone.local_to_utc(b, ctx, ctx.dst_policy))
-          dst = ctx.dst
+          dst = s.ub ? s.dst : ctx.dst
           e = s.ue || (e && zone.local_to_utc(e, ctx, ctx.dst_policy))
           # a start the clocks skipped moved forward by the gap, past the end: it keeps its length
           e = b + (s.e - s.b) if b && e && e <= b
