@@ -38,4 +38,12 @@ class DepthTest < Minitest::Test
     assert_reads "since saturday", "2026-10-17 00:00:00 -04:00"
     assert_reads "since october", "2026-10-01 00:00:00 -04:00"
   end
+
+  def test_d3_a_season_with_a_year_starts_in_it_and_the_one_ending_in_it_is_an_alternative
+    assert_reads "winter 2026", "2026-12-01 00:00:00 -05:00", ["2025-12-01 00:00:00 -05:00"]
+    assert_reads "2026 winter", "2026-12-01 00:00:00 -05:00", ["2025-12-01 00:00:00 -05:00"]
+    assert_reads "summer 2026", "2026-06-01 00:00:00 -04:00"
+    assert_reads "summer 2026", "2026-12-01 00:00:00 +11:00", ["2025-12-01 00:00:00 +11:00"], zone: "Australia/Sydney"
+    assert_reads "this winter", "2026-12-01 00:00:00 -05:00"
+  end
 end

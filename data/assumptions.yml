@@ -49,6 +49,9 @@ weekend_friday_evening:
 meteorological_season:
   rule: D3
   message: "seasons are meteorological (three whole months) for the locale's hemisphere"
+season_year:
+  rule: D3
+  message: "a season that runs over New Year belongs to the year it starts in; the one ending in that year is an alternative"
 same_day_or_next:
   rule: D40
   message: "that day is today, so it means today; the next one is an alternative"

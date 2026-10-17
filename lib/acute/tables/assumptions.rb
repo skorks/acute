@@ -20,6 +20,7 @@ module Acute
       part_of_day_point: ["D1", "a part of the day is a range; its time is a representative point"].freeze,
       weekend_friday_evening: ["D8", "the weekend is Saturday 00:00 to Monday 00:00; from Friday 18:00 is an alternative"].freeze,
       meteorological_season: ["D3", "seasons are meteorological (three whole months) for the locale's hemisphere"].freeze,
+      season_year: ["D3", "a season that runs over New Year belongs to the year it starts in; the one ending in that year is an alternative"].freeze,
       same_day_or_next: ["D40", "that day is today, so it means today; the next one is an alternative"].freeze,
       next_two_readings: ["D20", "\"next\" can mean the coming one or the one after; both are given, the coming one first"].freeze,
       this_passed: ["D21", "that one has passed in the current period, so the next one comes first; the passed one is an alternative"].freeze,

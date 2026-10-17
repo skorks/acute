@@ -7,6 +7,7 @@ module Acute
       DAY = Period::DAY
       LIMIT = 12 # cycles to search; enough for "feb 29"
       SAME_DAY = Assumption.for(:same_day_or_next)
+      SEASON_YEAR = Assumption.for(:season_year)
       SAME_OR_NEXT = [0, DAY].freeze
       SUB_DAY = { G::Clock => true, G::Part => true, G::Range => true }.freeze
 
@@ -149,7 +150,15 @@ module Acute
           week = s.grain == :week ? s : Period.span(:week, ctx, Period.index(:week, ctx, s.b))
           Named.weekends(week, ctx)
         when :holiday then within(Named.holiday(node.name, Period.year(s.b), ctx), s)
-        when :season then within(Named.season(node.name, Period.year(s.b), ctx), s)
+        when :season
+          y = Period.year(s.b)
+          list = within(Named.season(node.name, y, ctx), s)
+          return list unless G::Date === outer && s.grain == :year
+          # D3: "winter 2026" is the one starting in 2026, then the one ending in it
+          before = Named.season(node.name, y - 1, ctx)
+          return list unless before.e > s.b
+          ctx.note(SEASON_YEAR)
+          list << before
         when :nth then nth(node, s, ctx)
         when :range then Ranges.inside(node, outer, s, ctx)
         when :fuzzy then inside(node.node, outer, s, ctx).flat_map { |x| Fuzzy.apply(node.pos, x, node.node, ctx) }
