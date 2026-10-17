@@ -332,4 +332,19 @@ class DepthTest < Minitest::Test
     r = parse("9h30 - 11h CST")
     assert_equal ["2026-10-18 11:30:00 -04:00", "2026-10-18 13:00:00 -04:00"], [wall(r.begin), wall(r.end)] # CST is -6
   end
+
+  def test_d44_a_count_before_next_or_last_and_plural_units_is_next_or_last_that_many
+    { "2 upcoming weeks" => "next 2 weeks", "10 previous weeks" => "previous 10 weeks", "5 past minutes" => "past 5 minutes" }.each do |said, same|
+      a = parse(said)
+      b = parse(same)
+      assert_equal [b.begin, b.end, alt_walls(b)], [a.begin, a.end, alt_walls(a)], said
+    end
+    assert_raises(Acute::ParseError) { parse("3 next week") } # a singular unit is not counted
+    assert_reads "4 to 23 next month", "2026-11-04 00:00:00 -05:00"
+  end
+
+  def test_d44_oclock_after_the_hour_of_minutes_past_it
+    assert_reads "15 past seven o'clock", "2026-10-18 07:15:00 -04:00", ["2026-10-17 19:15:00 -04:00"] # as "15 past seven"
+    assert_reads "a quarter to six o'clock", "2026-10-17 17:45:00 -04:00", ["2026-10-18 05:45:00 -04:00"]
+  end
 end

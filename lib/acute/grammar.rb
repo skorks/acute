@@ -270,6 +270,7 @@ end
 require_relative "grammar/nesting"
 require_relative "grammar/ranges"
 require_relative "grammar/words"
+require_relative "grammar/clock_words"
 require_relative "grammar/numbers"
 require_relative "grammar/compact"
 require_relative "grammar/shifts"

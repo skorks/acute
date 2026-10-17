@@ -71,6 +71,11 @@ module Acute
           return c
         end
       elsif nk == L::REL
+        # D44: "2 upcoming weeks", "10 previous weeks" are "next 2 weeks", "previous 10 weeks"
+        if t[i + 2 * S] == L::UNIT && t[i + 2 * S + 2] & L::PLURAL != 0
+          @i += 3 * S
+          return Rel.new(t[i + S + 1], Unit.new(t[i + 2 * S + 1], v))
+        end
         return clock_words(v) if t[i + S + 1] == :past && flags & L::WORDY != 0 || (v <= 30 && (@t[i + 2 * S] == L::NUM || @t[i + 2 * S] == L::NAMED))
       elsif nk == L::DECADE
         # "nineteen seventies"
@@ -119,18 +124,6 @@ module Acute
       @i = j + S
       Date.new(v, nil, nil, nil, false)
     end
-
-    # D42: "five to 9" is 8:55 when the minutes are a word; "5 to 9" and "from five to nine" are ranges.
-    # D44: "10 after 2", "twenty before noon" are clocks however the minutes are written.
-    def minutes_to?(i)
-      w = @t[i + S + 1]
-      hour = hour?(i + 2 * S)
-      return hour && @t[i + 1].between?(1, 59) if w == :after || w == :before
-      w == :to && @t[i + 2] & L::WORDY != 0 && @t[i + 1].between?(1, 30) && hour &&
-        !(i >= S && @t[i - S] == L::WORD && (@t[i - S + 1] == :from || @t[i - S + 1] == :between))
-    end
-
-    def hour?(i) = (@t[i] == L::NUM && @t[i + 1].between?(1, 12)) || @t[i] == L::NAMED
 
     # "10/23", "23/10/2026", "11.9.2003", "8-15": the numbers as written; resolve picks the order
     def numeric_date(sep)

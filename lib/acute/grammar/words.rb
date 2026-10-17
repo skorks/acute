@@ -115,39 +115,6 @@ module Acute
       shift_tail(q)
     end
 
-    def clock_word?(i)
-      k = @t[i]
-      v = @t[i + 1]
-      (k == L::REL && v == :past) || (k == L::WORD && (v == :to || v == :after || v == :before))
-    end
-
-    # "twenty past four", "half past twelve", "a quarter to six", D44: "twenty after 3pm", "10 before 2",
-    # "a quarter past noon"
-    def clock_words(minutes)
-      @i += S
-      @i += S if @t[@i - S] == L::ART
-      @i += S if @t[@i] == L::UNIT && (@t[@i + 1] == :quarter || @t[@i + 1] == :minute)
-      return failure(:incomplete) unless clock_word?(@i)
-      to = @t[@i + 1] == :to || @t[@i + 1] == :before
-      @i += S
-      if @t[@i] == L::NAMED
-        noon = @t[@i + 1] == 12
-        @i += S
-        return Clock.new(11, 60 - minutes, 0, noon ? :am : :pm, nil, false, false) if to
-        return Clock.new(12, minutes, 0, noon ? :pm : :am, nil, false, false)
-      end
-      return failure(:incomplete) unless @t[@i] == L::NUM && @t[@i + 1].between?(1, 12)
-      hour = @t[@i + 1]
-      @i += S
-      meridiem = nil
-      if @t[@i] == L::MER
-        meridiem = @t[@i + 1] == 0 ? :am : :pm
-        @i += S
-      end
-      return Clock.new(hour == 1 ? 12 : hour - 1, 60 - minutes, 0, meridiem, nil, false, false) if to
-      Clock.new(hour, minutes, 0, meridiem, nil, false, false)
-    end
-
     # "3rd", "the 3rd of may", "second tuesday of march", "1st day of next month", "first of next month"
     def ordinal_atom
       n = @t[@i + 1]
