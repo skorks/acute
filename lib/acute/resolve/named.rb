@@ -29,14 +29,23 @@ module Acute
         us_thanksgiving: [11, 22, 4], black_friday: [:us_thanksgiving, 1], cyber_monday: [:us_thanksgiving, 4],
         easter: [:easter, 0], good_friday: [:easter, -2], easter_monday: [:easter, 1], palm_sunday: [:easter, -7],
         maundy_thursday: [:easter, -3], ash_wednesday: [:easter, -46], mardi_gras: [:easter, -47],
-        pentecost: [:easter, 49], whit_monday: [:easter, 50], trinity_sunday: [:easter, 56]
+        pentecost: [:easter, 49], whit_monday: [:easter, 50], trinity_sunday: [:easter, 56],
+        # D40, D48: the Tuesday after the first Monday; the Wednesday of April's last full week
+        election_day: [11, 2, 2], admin_day: [4, 21, 3], grandparents_day: [:labor_day, 6],
+        military_spouse_day: [:mothers_day, -2], lincolns_birthday: [2, 12], law_day: [5, 1], loyalty_day: [5, 1],
+        may_day: [5, 1], workers_day: [5, 1], siblings_day: [4, 10], world_vegan_day: [11, 1], kwanzaa: [12, 26],
+        ides_of_march: [3, 15]
       })
+      # D48: a holiday of several days names its first, then all of them
+      LASTS = { kwanzaa: 7 }.freeze
       # D15, D27: the holidays a country has its own way, or alone
-      MOTHERING = { mothers_day: [:easter, -21], mothering_sunday: [:easter, -21] }.freeze
+      GB_IE = { mothers_day: [:easter, -21], mothering_sunday: [:easter, -21], may_day: [5, 1, 1] }.freeze
       LOCAL = Ractor.make_shareable({
-        "CA" => { thanksgiving: [10, 8, 1], canada_day: [7, 1], victoria_day: [5, 18, 1] },
+        "CA" => { thanksgiving: [10, 8, 1], canada_day: [7, 1], victoria_day: [5, 18, 1], vimy_ridge_day: [4, 9] },
         "AU" => { australia_day: [1, 26], anzac_day: [4, 25], melbourne_cup: [11, 1, 2] },
-        "NZ" => { anzac_day: [4, 25] }, "GB" => MOTHERING, "IE" => MOTHERING
+        "NZ" => { anzac_day: [4, 25] }, "GB" => { **GB_IE, guy_fawkes: [11, 5] }, "IE" => GB_IE,
+        "ZA" => { reconciliation_day: [12, 16], kruger_day: [10, 10] }, "PH" => { rizal_day: [12, 30] },
+        "TT" => { indian_arrival_day: [5, 30] }, "BZ" => { garifuna_day: [11, 19] }
       })
 
       def self.part(name, day, ctx)
@@ -50,6 +59,18 @@ module Acute
         sat = week.b + ((6 - ctx.week_start) % 7) * DAY
         ctx.note(WEEKEND_FRIDAY)
         [Span.new(sat, sat + 2 * DAY, :weekend, nil), Span.new(sat - 6 * 3600, sat + 2 * DAY, :weekend, nil)]
+      end
+
+      # D48: "labor day weekend": the weekend nearest the holiday, the one before from Monday to Wednesday, and the
+      # holiday with it when it is a Monday or Friday
+      def self.long_weekend(h, ctx)
+        d = h.b / DAY
+        wd = (d + 4) % 7
+        sat = (d + (wd == 0 ? -1 : wd <= 3 ? -1 - wd : 6 - wd)) * DAY
+        e = [sat + 2 * DAY, h.e].max
+        return [Span.new(h.b, e, :weekend, nil)] if h.b < sat
+        ctx.note(WEEKEND_FRIDAY)
+        [Span.new(sat, e, :weekend, nil), Span.new(sat - 6 * 3600, e, :weekend, nil)]
       end
 
       # D3, D33: a season belongs to the year it starts in

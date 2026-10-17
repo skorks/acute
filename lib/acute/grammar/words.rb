@@ -39,6 +39,11 @@ module Acute
       elsif k == L::HOLIDAY
         return failure(:incomplete) if t[i + 2] & L::PLURAL != 0
         @i += S
+        # D48: "labor day weekend" is the long weekend with the holiday
+        if t[@i] == L::WEEKEND
+          @i += S
+          return Within.new(WEEKEND, Holiday.new(v))
+        end
         around(of(Holiday.new(v)))
       elsif k == L::WORD then word_atom(v)
       elsif k == L::ART then article_atom

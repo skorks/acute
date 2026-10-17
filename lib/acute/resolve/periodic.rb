@@ -160,9 +160,14 @@ module Acute
         when :date then date(node, s, ctx)
         when :part then [Named.part(node.name, Period.day(s.b), ctx)]
         when :weekend
+          return Named.long_weekend(s, ctx) if G::Holiday === outer
           week = s.grain == :week ? s : Period.span(:week, ctx, Period.index(:week, ctx, s.b))
           Named.weekends(week, ctx)
-        when :holiday then (h = Named.holiday(node.name, Period.year(s.b), ctx)) ? within(h, s) : []
+        when :holiday
+          return [] unless (h = Named.holiday(node.name, Period.year(s.b), ctx))
+          list = within(h, s)
+          n = Named::LASTS[node.name]
+          n && !list.empty? ? [*list, Span.new(h.b, h.b + n * DAY, :day, nil)] : list
         when :season
           y = Period.year(s.b)
           list = within(Named.season(node.name, y, ctx), s)
