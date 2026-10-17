@@ -131,21 +131,24 @@ module Acute
       ts = @i
       to = item(true)
       return to if Failure === to
-      range(from, to, bare_day(fs, fe), bare_day(ts, @i), ts)
+      range(from, to, fs, fe, ts)
     end
 
     # The range's trailing atoms ("between 9:30 and 11:00 on thursday") belong to both ends, and so do its
     # leading ones ("monday 8-9am"). D44: a bare day takes its month from the other end ("june 3-7", "13 to
     # 15 july", "4 to 22 this month"), and a year said only at the end is the start's too.
-    def range(from, to, fd, td, ts)
-      if fd && (Date === to && to.month && to.day && !to.sep)
-        from = Date.new(to.year, to.month, fd, nil, to.short)
-      elsif (fd || Date === from && from.day && !from.month) && Within === to && size(to.outer) == 5 &&
-            ((d = bare_day(ts, ts + S)) || (Date === to.inner && !to.inner.month && (d = to.inner.day)))
-        return Range.new(Within.new(Date.new(nil, nil, fd || from.day, nil, false), to.outer),
-                         Within.new(Date.new(nil, nil, d, nil, false), to.outer))
-      elsif td && Date === from && from.month && from.day && !from.sep
-        to = Date.new(from.year, from.month, td, nil, from.short)
+    def range(from, to, fs, fe, ts)
+      return Range.new(from, to) if Clock === from && Clock === to
+      if Date === from && from.month && from.day && !from.sep && (Clock === to || (Date === to && !to.month)) &&
+         (d = bare_day(ts, @i))
+        to = Date.new(from.year, from.month, d, nil, from.short)
+      elsif Date === to && to.month && to.day && !to.sep && (Clock === from || (Date === from && !from.month)) &&
+            (d = bare_day(fs, fe))
+        from = Date.new(to.year, to.month, d, nil, to.short)
+      elsif Within === to && size(to.outer) == 5 && (d = bare_day(fs, fe) || (Date === from && !from.month && from.day)) &&
+            (e = Date === to.inner && !to.inner.month ? to.inner.day : Clock === to.inner && bare_day(ts, ts + S))
+        return Range.new(Within.new(Date.new(nil, nil, d, nil, false), to.outer),
+                         Within.new(Date.new(nil, nil, e, nil, false), to.outer))
       end
       if Date === from && Date === to && from.month && to.month && !from.year && to.year && !from.sep && !to.sep
         later = from.month > to.month || (from.month == to.month && (from.day || 0) > (to.day || 0))

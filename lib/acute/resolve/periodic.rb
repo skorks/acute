@@ -43,6 +43,12 @@ module Acute
           today = cyc == :week ? G::Weekday === day && (ctx.today + 4) % 7 == day.wday :
                     G::Date === day && day.day == Calendar.civil_from_days(ctx.today) % 100
           return on_that_day(node, ctx, i, cyc) if today && ctx.past != :back
+          # A weekday already gone this week (or, looking back, still to come) can't hold the occurrence
+          if near == 0 && !today && G::Weekday === day
+            w = i * 7 + ctx.week_start - 4 # the week's first day
+            d = w + (day.wday - w - 4) % 7
+            i += ctx.past? ? (d > ctx.today ? -1 : 0) : (d < ctx.today ? 1 : 0)
+          end
         end
         if ctx.past?
           list = last(node, ctx, i + near, cyc) { |s| s.b <= now }
