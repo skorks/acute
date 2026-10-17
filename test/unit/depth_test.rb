@@ -369,4 +369,11 @@ class DepthTest < Minitest::Test
     r = parse("next saturday", now: "1993-08-14T17:17", zone: "Pacific/Kwajalein") # the 21st never happened there
     assert_equal ["1993-08-22 00:00:00 +12:00", 86_400], [wall(r.begin), r.end - r.begin]
   end
+
+  def test_d44_a_weekday_picks_between_todays_day_of_the_month_and_the_next
+    r = parse("Sat 16th at 4pm", now: "2006-08-16T14:00")
+    assert_equal ["2006-09-16 16:00:00 -04:00", [], []], [wall(r.begin), alt_walls(r), codes(r) - [:zone_default]]
+    r = parse("Fri, Jul 18", now: "2013-02-12T04:30")
+    assert_equal ["2013-07-18 00:00:00 -04:00", true], [wall(r.begin), codes(r).include?(:weekday_mismatch)]
+  end
 end

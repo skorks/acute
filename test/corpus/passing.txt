@@ -392,6 +392,7 @@ chronic-forks-test-test-new-parsing-methods-rb-38-1
 chronic-forks-test-test-parsing-rb-1248-1
 chronic-forks-test-test-parsing-rb-1412-1
 chronic-forks-test-test-parsing-rb-1415-1
+chronic-forks-test-test-parsing-rb-1459-1
 chronic-forks-test-test-parsing-rb-1465-1
 chronic-forks-test-test-parsing-rb-1478-1
 chronic-forks-test-test-parsing-rb-1481-1
@@ -2685,6 +2686,8 @@ duckling-0108
 duckling-0109
 duckling-0110
 duckling-0111
+duckling-0112
+duckling-0113
 duckling-0114
 duckling-0115
 duckling-0116
@@ -13765,6 +13768,7 @@ rust-parsers-0542
 rust-parsers-0543
 rust-parsers-0544
 rust-parsers-0545
+rust-parsers-0546
 rust-parsers-0547
 rust-parsers-0548
 rust-parsers-0549

@@ -92,6 +92,8 @@ module Acute
       end
     end
 
+    def unnote(assumption) = @notes&.delete(assumption)
+
     # The main reading's assumptions: the rules applied, then its DST adjustment, then the zone
     def assumptions(main)
       return NO_NOTES unless @notes || main.dst || @inferred

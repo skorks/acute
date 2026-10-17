@@ -40,6 +40,14 @@ module Acute
         return list unless list.empty?
       end
       list = spans(date, ctx)
+      # D37: a weekday that fits one of the date's readings picks it ("Sat 16th" said on Wednesday the 16th)
+      wday = node
+      wday = wday.outer until G::Weekday === wday.inner
+      fit = list.select { |s| (s.b.div(Period::DAY) + 4) % 7 == wday.inner.wday }
+      unless fit.empty?
+        ctx.unnote(Periodic::SAME_DAY) if fit.size < list.size
+        return fit
+      end
       ctx.note(WEEKDAY_MISMATCH) unless list.empty?
       list
     end
