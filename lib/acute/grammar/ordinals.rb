@@ -54,7 +54,7 @@ module Acute
 
     # "... of <period>": "second tuesday of march", "tuesday of next week", "morning of xmas", "labor day of 2012"
     def of(node)
-      return node unless @t[@i] == L::WORD && @t[@i + 1] == :of
+      return node unless @t[@i] == L::WORD && (@t[@i + 1] == :of || from_week?(node))
       @i += S
       @i += S if @t[@i] == L::WORD && @t[@i + 1] == :the
       # D42: "the first monday of the month" repeats monthly, so it is the coming one: next month's once passed
@@ -67,6 +67,9 @@ module Acute
       return outer if Failure === outer
       Within.new(node, outer)
     end
+
+    # D48: "sunday from last week" is "sunday of last week"
+    def from_week?(node) = @t[@i + 1] == :from && Weekday === node && @t[@i + S] == L::REL && @t[@i + 2 * S] == L::UNIT
 
     # "the month" in "the first monday of the month": the current one
     def this_unit

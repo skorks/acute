@@ -8,6 +8,11 @@ day:            # value: days from today
   tmrw: 1
   tmr: 1
   yesterday: -1
+  today's: 0
+  todays: 0
+  tomorrow's: 1
+  tomorrows: 1
+  yesterday's: -1
 
 meridiem:       # value: hours added to 1-12
   am: 0
@@ -105,11 +110,13 @@ unit:
   wk: week
   wks: week
   week: week
+  week's: week
   weeks: week
   fortnight: fortnight
   fortnights: fortnight
   mo: month
   month: month
+  month's: month
   months: month
   quarter: quarter
   quarters: quarter
@@ -119,6 +126,7 @@ unit:
   yr: year
   yrs: year
   year: year
+  year's: year
   years: year
   decade: decade
   decades: decade
@@ -212,6 +220,7 @@ part:           # parts of the day (D1, D35)
   nights: night
   night: night
   tonight: tonight
+  tonight's: tonight
   lunch: lunch
   lunchtime: lunch
 
@@ -308,6 +317,7 @@ word:           # function words; the grammar gives them their meaning
   ago: ago
   back: ago
   hence: hence
+  out: hence
   later: later
   earlier: ago
   from: from
@@ -605,6 +615,10 @@ phrases:
   couple of: [word, couple]
   a pair of: [word, couple]
   fiscal year: [word, fy]
+  calendar year: [unit, year]
+  calendar month: [unit, month]
+  calendar week: [unit, week]
+  calendar quarter: [unit, quarter]
   financial year: [word, fy]
 
 # Words that are also plain English. In extraction they need a neighbour that confirms the date reading.
