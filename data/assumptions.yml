@@ -85,3 +85,6 @@ weekday_mismatch:
 also_duration:
   rule: D45
   message: "the text also reads as a length of time, which Acute.duration gives; read takes the time"
+unknown_words_skipped:
+  rule: D47
+  message: "strict: false skipped words acute doesn't know; this is the first time in the rest of the text"

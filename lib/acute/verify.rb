@@ -1,9 +1,11 @@
 module Acute
   def self.verify(text, value, now: nil, zone: nil, context: :future, locale: nil, week_start: nil, hemisphere: nil,
-                  fiscal_year_start: nil)
-    ctx = Context.new(now, zone, context, locale, week_start, hemisphere, fiscal_year_start)
+                  fiscal_year_start: nil, strict: true, dst: nil, holidays: nil, business_days: nil, year_bias: nil)
+    ctx = Context.new(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays,
+                      business_days, year_bias)
     opts = { now: Time.at(ctx.now), zone: zone, context: context, locale: locale, week_start: week_start,
-             hemisphere: hemisphere, fiscal_year_start: fiscal_year_start }
+             hemisphere: hemisphere, fiscal_year_start: fiscal_year_start, strict: strict, dst: dst,
+             holidays: holidays, business_days: business_days, year_bias: year_bias }
     Verify.new(text, value, ctx, opts).verdict
   end
 

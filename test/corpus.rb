@@ -12,7 +12,9 @@ module Corpus
   CASES = File.join(ROOT, "research/cases")
   RATCHET = File.join(ROOT, "test/corpus/passing.txt")
   WALL = /\A(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)(?::(\d\d))?\z/
-  CHRONIC_ONLY = %w[endian_precedence hours24 ambiguous_time_range ambiguous_year_future_bias].freeze
+  CHRONIC_ONLY = %w[endian_precedence hours24 ambiguous_time_range].freeze
+  # chronic's names for acute's options (D47)
+  RENAMED = { "ambiguous_year_future_bias" => :year_bias }.freeze
   GRAINS = %w[second minute hour day week month quarter year].freeze
   STATUSES = %w[pass alt_differs wrong nil garbage raises chronic_option other_kind].freeze
   TZS = Hash.new { |h, name| h[name] = TZInfo::Timezone.get(name) }
@@ -91,7 +93,7 @@ module Corpus
   end
 
   def context(c)
-    kwargs = (c["options"] || {}).to_h { |k, v| [k.to_sym, k == "context" ? v.to_sym : v] }
+    kwargs = (c["options"] || {}).to_h { |k, v| [RENAMED[k] || k.to_sym, k == "context" ? v.to_sym : v] }
     { now: Time.at(epoch(c["now"], TZS[c["tz"]])), zone: c["tz"], **kwargs }
   end
 

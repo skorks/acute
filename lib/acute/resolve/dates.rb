@@ -64,14 +64,11 @@ module Acute
         G::Date.new(y, m, day, nil, false)
       end
 
-      # D23: chronic's window, from 50 years before now to 49 after
+      # D23: chronic's window, the 100 years from year_bias: years before now (50 by default)
       def self.two_digit_year(yy, ctx)
-        now = Period.year(ctx.now_local)
-        y = now - now % 100 + yy
-        if y >= now + 50 then y - 100
-        elsif y < now - 50 then y + 100
-        else y
-        end
+        first = Period.year(ctx.now_local) - ctx.year_bias
+        y = first - first % 100 + yy
+        y < first ? y + 100 : y
       end
     end
   end

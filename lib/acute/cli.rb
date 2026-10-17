@@ -42,6 +42,10 @@ module Acute
         o.on("--week-start DAY", %w[sunday monday], "sunday or monday") { @options[:week_start] = _1.to_sym }
         o.on("--hemisphere SIDE", %w[north south], "north or south, for seasons") { @options[:hemisphere] = _1.to_sym }
         o.on("--fiscal-year-start MONTH", Integer, "1–12") { @options[:fiscal_year_start] = _1 }
+        o.on("--lenient", "Skip unknown words (strict: false)") { @options[:strict] = false }
+        o.on("--dst POLICY", %w[compatible earlier later reject], "compatible, earlier, later or reject") { @options[:dst] = _1.to_sym }
+        o.on("--holidays REGION", "A holidays-gem region, such as us (needs the gem)") { @options[:holidays] = _1 }
+        o.on("--year-bias YEARS", Integer, "Two-digit years: the 100 from this many years ago (default 50)") { @options[:year_bias] = _1 }
         o.on("-v", "--version") { @say = Acute::VERSION }
         o.on("-h", "--help") { @say = o.to_s }
       end

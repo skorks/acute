@@ -30,7 +30,7 @@ module Acute
               else
                 unit = x.unit
                 if unit == :business_day # D44: the nth weekday, or the last
-                  b = n > 0 ? Period.business(s.b - DAY, n) : Period.business(s.e, -1)
+                  b = n > 0 ? Period.business(s.b - DAY, n, ctx) : Period.business(s.e, -1, ctx)
                   [Span.new(b, b + DAY, :day, nil)]
                 elsif Period::DAYS[unit]
                   b = n > 0 ? s.b + (n - 1) * Period::DAYS[unit] * DAY : s.e - Period::DAYS[unit] * DAY

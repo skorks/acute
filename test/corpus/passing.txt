@@ -390,6 +390,7 @@ chronic-forks-test-test-new-parsing-methods-rb-29-1
 chronic-forks-test-test-new-parsing-methods-rb-32-1
 chronic-forks-test-test-new-parsing-methods-rb-35-1
 chronic-forks-test-test-new-parsing-methods-rb-38-1
+chronic-forks-test-test-parsing-rb-122-1
 chronic-forks-test-test-parsing-rb-1248-1
 chronic-forks-test-test-parsing-rb-1412-1
 chronic-forks-test-test-parsing-rb-1415-1
@@ -405,6 +406,7 @@ chronic-forks-test-test-parsing-rb-1503-1
 chronic-forks-test-test-parsing-rb-1506-1
 chronic-forks-test-test-parsing-rb-1509-1
 chronic-forks-test-test-parsing-rb-164-1
+chronic-forks-test-test-parsing-rb-182-1
 chronic-forks-test-test-parsing-rb-247-1
 chronic-forks-test-test-parsing-rb-38-1
 chronic-forks-test-test-parsing-rb-39-1
@@ -1399,6 +1401,7 @@ chronic-tests-test-parsing-rb-15-1
 chronic-tests-test-parsing-rb-150-1
 chronic-tests-test-parsing-rb-153-1
 chronic-tests-test-parsing-rb-161-1
+chronic-tests-test-parsing-rb-164-1
 chronic-tests-test-parsing-rb-167-1
 chronic-tests-test-parsing-rb-172-1
 chronic-tests-test-parsing-rb-177-1

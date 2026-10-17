@@ -61,8 +61,13 @@ module Acute
         Span.new(b, Period.add(b, 3, :month), :season, nil)
       end
 
-      # D15, D28: the holiday in the year, or nil when the locale has none of that name
+      # D15, D28: the holiday in the year, or nil when the locale has none of that name. D47: a holidays: given
+      # is asked first
       def self.holiday(name, year, ctx)
+        if (given = ctx.holidays) && (date = given.named(name, year))
+          d = date.jd - 2_440_588
+          return Span.new(d * DAY, d * DAY + DAY, :day, nil)
+        end
         f = (own = LOCAL[ctx.locale.country]) && own[name] || HOLIDAYS[name]
         return unless f
         d = day_of(f, year)

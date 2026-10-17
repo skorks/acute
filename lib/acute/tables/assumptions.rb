@@ -32,6 +32,7 @@ module Acute
       zone_inferred: [nil, "no zone was given; the zone comes from now, Time.zone or the system"].freeze,
       weekday_mismatch: ["D37", "the weekday given doesn't fall on that date, so the date is used"].freeze,
       also_duration: ["D45", "the text also reads as a length of time, which Acute.duration gives; read takes the time"].freeze,
+      unknown_words_skipped: ["D47", "strict: false skipped words acute doesn't know; this is the first time in the rest of the text"].freeze,
     }.freeze
   end
 end

@@ -13,10 +13,11 @@ module Acute
 
     attr_reader :text, :grain, :assumptions
 
-    # readings: the main reading first; the rest become alternatives
-    def initialize(text, readings, zone, assumptions)
+    # readings: the main reading first; the rest become alternatives. matched: the part of the text used (A12)
+    def initialize(text, readings, zone, assumptions, matched = nil)
       main = readings[0]
       @text = text
+      @matched = matched
       @readings = readings
       @point = main.point || main.begin || main.end
       @begin_epoch = main.begin
@@ -27,6 +28,8 @@ module Acute
     end
 
     def kind = :time
+
+    def matched = @matched || @text
 
     def time = @time ||= at(@point)
 
@@ -45,7 +48,7 @@ module Acute
     end
 
     def alternatives
-      @alternatives ||= @readings.drop(1).map { |r| Result.new(@text, [r], @zone, NO_ASSUMPTIONS) }.freeze
+      @alternatives ||= @readings.drop(1).map { |r| Result.new(@text, [r], @zone, NO_ASSUMPTIONS, @matched) }.freeze
     end
 
     def ambiguous? = @readings.size > 1

@@ -1,12 +1,16 @@
 module Acute
   def self.describe(value, now: nil, zone: nil, context: :future, locale: nil, week_start: nil, hemisphere: nil,
-                    fiscal_year_start: nil, style: :relative)
+                    fiscal_year_start: nil, strict: true, dst: nil, holidays: nil, business_days: nil, year_bias: nil,
+                    style: :relative)
     raise ArgumentError, "style: must be :relative or :calendar" unless Describe::STYLES.include?(style)
     return Describe.duration(value) if Duration === value
     zone ||= value.zone if Result === value
-    ctx = Context.new(now, zone, context, locale, week_start, hemisphere, fiscal_year_start)
+    ctx = Context.new(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays,
+                      business_days, year_bias)
+    # strict: is left out: what describe writes always reads back strictly
     opts = { now: Time.at(ctx.now), zone: zone || ctx.zone.name, context: context, locale: locale,
-             week_start: week_start, hemisphere: hemisphere, fiscal_year_start: fiscal_year_start }
+             week_start: week_start, hemisphere: hemisphere, fiscal_year_start: fiscal_year_start, dst: dst,
+             holidays: holidays, business_days: business_days, year_bias: year_bias }
     Describe.new(value, style == :calendar, ctx, opts).text
   end
 

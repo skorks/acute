@@ -141,9 +141,9 @@ module Acute
       ctx.note(FIXED_OFFSET)
       inner = ctx.in_zone(zone) { spans(node.node, ctx) }
       inner.map do |s|
-        ub = s.ub || (s.b && zone.local_to_utc(s.b, ctx))
-        ue = s.ue || (s.e && zone.local_to_utc(s.e, ctx))
-        point = s.point && zone.local_to_utc(s.point, ctx)
+        ub = s.ub || (s.b && zone.local_to_utc(s.b, ctx, ctx.dst_policy))
+        ue = s.ue || (s.e && zone.local_to_utc(s.e, ctx, ctx.dst_policy))
+        point = s.point && zone.local_to_utc(s.point, ctx, ctx.dst_policy)
         Span.new(ub && ctx.local(ub), ue && ctx.local(ue), s.grain, point && ctx.local(point), ub, ue)
       end
     end
@@ -171,12 +171,12 @@ module Acute
           point -= off if point
           dst = nil
         else
-          b = s.ub || (b && zone.local_to_utc(b, ctx))
+          b = s.ub || (b && zone.local_to_utc(b, ctx, ctx.dst_policy))
           dst = ctx.dst
-          e = s.ue || (e && zone.local_to_utc(e, ctx))
+          e = s.ue || (e && zone.local_to_utc(e, ctx, ctx.dst_policy))
           # a start the clocks skipped moved forward by the gap, past the end: it keeps its length
           e = b + (s.e - s.b) if b && e && e <= b
-          point &&= zone.local_to_utc(point, ctx)
+          point &&= zone.local_to_utc(point, ctx, ctx.dst_policy)
         end
         next if !out.empty? && out.any? { |o| o.begin == b && o.end == e }
         out << Reading.new(b, e, s.grain, dst, point)

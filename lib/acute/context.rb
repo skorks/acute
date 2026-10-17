@@ -3,6 +3,7 @@ require_relative "calendar"
 require_relative "zone"
 require_relative "assumption"
 require_relative "locale"
+require_relative "holidays"
 
 module Acute
   # Everything a parse depends on besides the text: now, the zone and the direction. It also collects the
@@ -25,8 +26,11 @@ module Acute
 
     WEEK_STARTS = { sunday: 0, monday: 1 }.freeze
     HEMISPHERES = { north: false, south: true }.freeze
+    DST_POLICIES = { compatible: nil, earlier: :earlier, later: :later, reject: :reject }.freeze
+    YEAR_BIAS = 50
 
-    attr_reader :now, :now_local, :zone, :today, :now_secs, :notes, :fiscal_year_start
+    attr_reader :now, :now_local, :zone, :today, :now_secs, :notes, :fiscal_year_start, :strict, :dst_policy,
+                :holidays, :year_bias
     # past: true in past context; :back while resolve looks back for the most recent one, which adds no
     # alternatives of its own (D44)
     attr_accessor :dst, :past, :machine
@@ -38,7 +42,8 @@ module Acute
       end
     end
 
-    def initialize(now, zone, context, locale = nil, week_start = nil, hemisphere = nil, fiscal_year_start = nil)
+    def initialize(now, zone, context, locale = nil, week_start = nil, hemisphere = nil, fiscal_year_start = nil,
+                   strict = true, dst = nil, holidays = nil, business_days = nil, year_bias = nil)
       @past = case context
               when :future then false
               when :past then true
@@ -57,7 +62,29 @@ module Acute
       @week_start = week_start && WEEK_STARTS.fetch(week_start.to_sym) { raise ArgumentError, "week_start: must be :sunday or :monday" }
       @south = hemisphere && HEMISPHERES.fetch(hemisphere.to_sym) { raise ArgumentError, "hemisphere: must be :north or :south" }
       @fiscal_year_start = fiscal_year_start && Integer(fiscal_year_start)
+      @strict = strict
+      unless strict
+        raise ArgumentError, "strict: must be true or false" unless strict == false
+        # Lenient parsing resolves each piece it tries in a fresh context
+        @args = [now || Time.at(@now), zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst,
+                 holidays, business_days, year_bias]
+      end
+      @dst_policy = dst && DST_POLICIES.fetch(dst.to_sym) do
+        raise ArgumentError, "dst: must be :compatible, :earlier, :later or :reject"
+      end
+      @holidays = holidays && Holidays.for(holidays)
+      if business_days
+        raise ArgumentError, "business_days: must answer business_day?(date)" unless business_days.respond_to?(:business_day?)
+        @business_days = business_days
+      end
+      @year_bias = year_bias ? Integer(year_bias) : YEAR_BIAS
     end
+
+    def fresh = Context.new(*@args)
+
+    # D47: the days business-day counts step over, or nil for Monday to Friday. The built-in holidays only name
+    # days; a holidays: given is taken as days off.
+    def business_days = @business_days || (@holidays && (@workdays ||= Holidays::Workdays.new(@holidays)))
 
     # Under a zone named in the text, today and now_secs move with it; returns the block's value
     def in_zone(zone)
@@ -103,9 +130,10 @@ module Acute
 
     # The main reading's assumptions: the rules applied, then its DST adjustment, then the zone
     def assumptions(main)
-      return NO_NOTES unless @notes || main.dst || @inferred
+      dst = main.dst unless @dst_policy # D47: a policy the caller chose is not an assumption
+      return NO_NOTES unless @notes || dst || @inferred
       list = @notes || []
-      list << Assumption.for(main.dst) if main.dst
+      list << Assumption.for(dst) if dst
       list << ZONE_INFERRED if @inferred
       list.freeze
     end

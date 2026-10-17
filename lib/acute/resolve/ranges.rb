@@ -148,7 +148,7 @@ module Acute
       # D44: "3 days starting next monday", "the week beginning february 4": that many units from its start
       def self.lasting(node, ctx)
         n, u = Period.whole(node.unit.count, node.unit.unit)
-        Resolve.spans(node.start, ctx).map { |s| Span.new(s.b, Period.add(s.b, n, u), s.grain, nil) }
+        Resolve.spans(node.start, ctx).map { |s| Span.new(s.b, Period.add(s.b, n, u, ctx), s.grain, nil) }
       end
 
       # D40: "after christmas" said on Dec 27 is this year's, whose after still holds now. Only holidays: "after

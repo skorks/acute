@@ -14,14 +14,14 @@ module Acute
             t = ctx.local(utc)
             return [Span.new(t, t + 1, :second, nil, utc, utc + 1)]
           end
-          t = Period.add(ctx.now_local, n, u)
+          t = Period.add(ctx.now_local, n, u, ctx)
           return [Span.new(t, t + 1, :second, nil)]
         end
         len = Period::SECONDS[u]
         Resolve.spans(node.anchor, ctx).map do |s|
-          next calendar(s, n, u) unless len
+          next calendar(s, n, u, ctx) unless len
           # D44: from the anchor's instant, at a grain no coarser than the unit
-          ub = (s.ub || ctx.zone.local_to_utc(s.b, ctx)) + n * len
+          ub = (s.ub || ctx.zone.local_to_utc(s.b, ctx, ctx.dst_policy)) + n * len
           grain = s.grain
           size = s.ue ? s.ue - s.ub : s.e - s.b
           if !(r = FINE[grain]) || r > FINE[u]
@@ -38,12 +38,12 @@ module Acute
 
       # D44: a shift in days or longer from a longer anchor counts from its start at the unit's grain ("1 day
       # before next month"); a day or less keeps its length ("a month from today" on 28 February is 28 March)
-      def self.calendar(s, n, u)
-        b = Period.add(s.b, n, u)
+      def self.calendar(s, n, u, ctx)
+        b = Period.add(s.b, n, u, ctx)
         rank = RANK.fetch(s.grain)
-        return Span.new(b, Period.add(b, 1, u), GRAIN[u] || u, nil) if rank > RANK.fetch(u)
+        return Span.new(b, Period.add(b, 1, u, ctx), GRAIN[u] || u, nil) if rank > RANK.fetch(u)
         return Span.new(b, b + s.e - s.b, s.grain, s.point && s.point - s.b + b) if rank <= 3
-        Span.new(b, Period.add(s.e, n, u), s.grain, s.point && Period.add(s.point, n, u))
+        Span.new(b, Period.add(s.e, n, u, ctx), s.grain, s.point && Period.add(s.point, n, u, ctx))
       end
 
       # D44: "3 fridays from now" is the third Friday after now, not counting today's; "2 weekends ago" the

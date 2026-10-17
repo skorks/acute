@@ -75,7 +75,7 @@ module Acute
         k = word == :next || word == :coming ? 1 : word == :this ? 0 : -1
         if u == :business_day
           # D44: "this weekday" on a weekend is Monday
-          b = k == 0 ? Period.business(Period.day(now) * DAY - DAY, 1) : Period.business(Period.day(now) * DAY, k)
+          b = k == 0 ? Period.business(Period.day(now) * DAY - DAY, 1, ctx) : Period.business(Period.day(now) * DAY, k, ctx)
           return [Span.new(b, b + DAY, :day, nil)]
         end
         cur = Period.unit(u, ctx, now)
@@ -109,15 +109,15 @@ module Acute
         ctx.note(ROLLING)
         if word == :next || word == :this
           return [window(ctx, n * Period::SECONDS[u], u)] if Period::SECONDS[u]
-          out = [Span.new(now, Period.add(now, n, u), u, nil)]
-          b = Period.add(Period.unit(u, ctx, now).b, 1, u)
-          out << Span.new(b, Period.add(b, n, u), u, nil)
+          out = [Span.new(now, Period.add(now, n, u, ctx), u, nil)]
+          b = Period.add(Period.unit(u, ctx, now).b, 1, u, ctx)
+          out << Span.new(b, Period.add(b, n, u, ctx), u, nil)
         else
           return [window(ctx, -n * Period::SECONDS[u], u)] if Period::SECONDS[u]
-          out = [Span.new(Period.add(now, -n, u), now, u, nil)]
+          out = [Span.new(Period.add(now, -n, u, ctx), now, u, nil)]
           cur = Period.unit(u, ctx, now).b
-          e = Period.add(cur, 1, u)
-          out << Span.new(Period.add(e, -n, u), e, u, nil) << Span.new(Period.add(cur, -n, u), cur, u, nil)
+          e = Period.add(cur, 1, u, ctx)
+          out << Span.new(Period.add(e, -n, u, ctx), e, u, nil) << Span.new(Period.add(cur, -n, u, ctx), cur, u, nil)
         end
       end
 

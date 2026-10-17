@@ -92,8 +92,9 @@ module Acute
     end
 
     # Temporal's "compatible" policy: a repeated wall time takes the earlier instant, a skipped one moves
-    # forward by the gap. Either case is reported through notes.dst= so callers can record it.
-    def local_to_utc(local, notes)
+    # forward by the gap. Either case is reported through notes.dst= so callers can record it. D47: policy
+    # :earlier or :later takes that instant in both cases.
+    def local_to_utc(local, notes, policy = nil)
       i = period_index(local - 86_400)
       return local - (i < 0 ? @first_offset : @offsets[i]) if i + 1 >= @ats.size || @ats[i + 1] > local + 86_400
 
@@ -107,12 +108,12 @@ module Acute
       ok2 = offset_at(u2) == o2
       if ok1 && ok2
         notes.dst = :dst_repeated_time
-        u1 < u2 ? u1 : u2
+        policy == :later ? u2 : u1
       elsif ok1 then u1
       elsif ok2 then u2
       else
         notes.dst = :dst_skipped_time
-        u1
+        policy == :earlier ? u2 : u1
       end
     end
 

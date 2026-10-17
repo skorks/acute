@@ -68,11 +68,11 @@ module Acute
         end
       end
 
-      # t moved by n units (D23: Temporal arithmetic, so jan 31 + 1 month is feb 28)
-      def self.add(t, n, unit)
+      # t moved by n units (D23: Temporal arithmetic, so jan 31 + 1 month is feb 28). ctx only for business days.
+      def self.add(t, n, unit, ctx = nil)
         if (s = SECONDS[unit]) then t + n * s
         elsif (d = DAYS[unit]) then t + n * d * DAY
-        elsif unit == :business_day then business(t, n)
+        elsif unit == :business_day then business(t, n, ctx)
         else
           p = ymd(t)
           y = p / 10_000
@@ -86,13 +86,18 @@ module Acute
         end
       end
 
-      # D17: Monday to Friday; D38: the time of day is kept
-      def self.business(t, n)
+      # D17: Monday to Friday, or D47: the days business_days: or holidays: give; D38: the time of day is kept
+      def self.business(t, n, ctx)
+        days = ctx.business_days
         step = n < 0 ? -1 : 1
         n = n.abs
         while n > 0
           t += step * DAY
-          t += step * DAY while (t / DAY + 4) % 7 % 6 == 0 # Saturday or Sunday
+          if days
+            t += step * DAY until days.business_day?(::Date.jd(t / DAY + 2_440_588))
+          else
+            t += step * DAY while (t / DAY + 4) % 7 % 6 == 0 # Saturday or Sunday
+          end
           n -= 1
         end
         t

@@ -62,20 +62,13 @@ module Chronic
 
     private
 
-    # Strict first. Chronic skips words it doesn't know, so text with such words then gives the first time
-    # mentioned in it; text acute knows every word of and still refuses ("5th tuesday in february") stays nil (D46).
+    # Chronic skips words it doesn't know, as acute does with strict: false: text with such words gives the
+    # first time mentioned in it; text acute knows every word of and still refuses ("5th tuesday in february")
+    # stays nil (D46)
     def read(text, zone)
-      opts = { now: @now, zone: zone.name, context: @options[:context] == :past ? :past : :future,
-               week_start: @options[:week_start] }
-      result = Acute.parse(text, **opts)
-      return result if result || !unknown_words?(text)
-      Acute.extract(text, **opts).mentions.find { _1.kind == :time }&.value
-    end
-
-    def unknown_words?(text)
-      unknown = []
-      Acute::Lexer.lex(text, unknown)
-      !unknown.empty?
+      Acute.parse(text, now: @now, zone: zone.name, context: @options[:context] == :past ? :past : :future,
+                        week_start: @options[:week_start], strict: false,
+                        year_bias: @options[:ambiguous_year_future_bias])
     end
 
     # Chronic's options for ambiguous text pick among acute's readings; acute's order stands where they don't
@@ -95,7 +88,7 @@ module Chronic
           end
         end
       end
-      bias_years(all.first, text, zone)
+      all.first
     end
 
     def prefer(all)
@@ -109,27 +102,6 @@ module Chronic
       range = @options[:ambiguous_time_range]
       start = @options[:hours24] == true || range == :none ? 1 : Integer(range)
       start...start + 12
-    end
-
-    # A two-digit year falls in the 100 years from ambiguous_year_future_bias years ago, when that is given
-    def bias_years(reading, text, zone)
-      bias = @options[:ambiguous_year_future_bias]
-      return reading if bias == DEFAULT_OPTIONS[:ambiguous_year_future_bias] || reading.point.nil?
-      year = civil(reading.point, zone)[0]
-      first = Time.at(@now.to_i).year - bias
-      return reading if (first...first + 100).cover?(year) || text.include?(year.to_s)
-      return reading unless text.match?(/(?<!\d)'?#{format("%02d", year % 100)}(?!\d)/)
-      by = year < first ? 100 : -100
-      Reading.new(*[reading.begin, reading.end, reading.point].map { _1 && shift_years(_1, by, zone) }, reading.span)
-    end
-
-    def shift_years(epoch, by, zone)
-      local = wall(epoch, zone)
-      days = local.div(86_400)
-      ymd = Acute::Calendar.civil_from_days(days)
-      y, m, d = ymd / 10_000 + by, ymd / 100 % 100, ymd % 100
-      d = [d, Acute::Calendar.days_in_month(y, m)].min
-      zone.local_to_utc(Acute::Calendar.days_from_civil(y, m, d) * 86_400 + local - days * 86_400, Notes.new)
     end
 
     # Epochs, or a Range of them when guess is false, which in chronic always returns a Span

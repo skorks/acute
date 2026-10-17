@@ -31,14 +31,15 @@ module Acute
     PUNCT = [44, 46, 59, 33, 63].freeze
     GLUE = { L::DASH => true, L::SLASH => true, L::DOT => true }.freeze
 
-    def self.call(text, make_context)
+    # whole: the text each Result is for, when it is not the mention's own (parse with strict: false)
+    def self.call(text, make_context, whole = nil)
       unknown = []
       tokens = Lexer.lex(text, unknown)
       mentions = []
       runs(text, tokens, unknown).each do |a, b|
         i = a
         while i < b
-          found = starts_mention?(tokens, i) && longest(text, tokens[i * S...b * S], make_context)
+          found = starts_mention?(tokens, i) && longest(text, tokens[i * S...b * S], make_context, whole)
           if found
             mentions << found[0]
             i += found[1] / S
@@ -52,7 +53,7 @@ module Acute
 
     # The longest mention at the start of the tokens, as [mention, its length in entries]. Only the prefixes
     # the grammar accepts are tried, longest first: a phrase's, then a duration's.
-    def self.longest(text, all, make_context)
+    def self.longest(text, all, make_context, whole)
       tokens = all
       while tokens.size > 0
         tree, t = Grammar.longest(tokens)
@@ -60,7 +61,7 @@ module Acute
         return unless tree || units
         j = t.to_i > d.to_i ? t : d
         slice = j == tokens.size ? tokens : tokens[0, j]
-        found = !glued?(all, j) && mention(text, slice, j == t ? tree : nil, j == d ? units : nil, make_context)
+        found = !glued?(all, j) && mention(text, slice, j == t ? tree : nil, j == d ? units : nil, make_context, whole)
         return [found, j] if found
         tokens = tokens[0, j - S]
       end
@@ -104,12 +105,12 @@ module Acute
         tokens[j - 1] == tokens[j + 3] && tokens[j + 4] == tokens[j + S + 3]
     end
 
-    def self.mention(text, slice, tree, units, make_context)
+    def self.mention(text, slice, tree, units, make_context, whole)
       st = slice[3]
       return if plain_english?(slice, sentence_start?(text, st)) || (slice.size == S && slice[0] == L::NUM)
       stop = slice[-1]
       piece = text.byteslice(st, stop - st)
-      value = (tree && time(piece, tree, make_context)) || (units && Duration.from_units(units))
+      value = (tree && time(piece, tree, make_context, whole)) || (units && Duration.from_units(units))
       return unless value
       # E2: "for 2 hours" is the duration's mention, "for" included
       if value.kind == :duration && (m = text.byteslice(0, st).match(/\bfor\s+\z/i))
@@ -119,10 +120,10 @@ module Acute
       Extraction::Mention.new(value.kind, piece, chars(text, st)...chars(text, stop), value)
     end
 
-    def self.time(piece, tree, make_context)
+    def self.time(piece, tree, make_context, whole)
       ctx = make_context.()
       readings = Resolve.call(tree, ctx)
-      Result.new(piece, readings, ctx.zone, ctx.assumptions(readings[0])) unless readings.empty?
+      Result.new(whole || piece, readings, ctx.zone, ctx.assumptions(readings[0]), piece) unless readings.empty?
     end
 
     # E3: "may", "sat", "second" in lower case and with nothing else to say they are times are words. A
