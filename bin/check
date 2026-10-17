@@ -1,8 +1,9 @@
 #!/usr/bin/env ruby
-# The one command: tables, unit tests, corpus ratchet, fuzz, speed. Prints one line per stage, and the
-# failures of a stage that failed.
-#   bin/check [--record] [--only tables|unit|corpus|fuzz|speed] [--grep TEXT] [--file NAME] [--rule D20]
-# --grep and --file narrow the corpus and imply --only corpus. --record updates test/corpus/passing.txt.
+# The one command: tables, unit tests, corpus ratchet, chronic compatibility, fuzz, speed. Prints one line
+# per stage, and the failures of a stage that failed.
+#   bin/check [--record] [--only tables|unit|corpus|chronic|fuzz|speed] [--grep TEXT] [--file NAME] [--rule D20]
+# --grep and --file narrow the corpus and imply --only corpus. --record updates test/corpus/passing.txt and
+# test/chronic/differences.yml.
 # --rule runs the cases tagged with or noting that rule and the unit tests that mention it, and lists the
 # rules no case covers.
 require "open3"
@@ -40,6 +41,7 @@ STAGES = {
               [[RUBY, "-Itest", "-e", UNIT, *(["--", "-n", "/^(?:#{names.join("|")})$/"] if rule)], ->(out) { out[/^\d+ runs.*$/] }]
             end,
   "corpus" => [[RUBY, "test/corpus.rb", *corpus_args, *(["--rule", rule] if rule)], ->(out) { out }],
+  "chronic" => [[RUBY, "test/chronic/run.rb", *(["--record"] if corpus_args.include?("--record"))], ->(out) { out.lines.first }],
   "fuzz" => [[RUBY, "test/fuzz.rb"], ->(out) { out }],
   "speed" => [[RUBY, "test/speed.rb"], ->(out) { out }]
 }.freeze
@@ -52,7 +54,7 @@ failed = STAGES.select { |name, _| only ? only == name : !rule || %w[unit corpus
   out, status = Open3.capture2e(*cmd, chdir: ROOT)
   secs = Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0
   shown = status.success? ? summary.(out).to_s.strip : out.strip
-  printf "%s %-6s %5.1fs  %s\n", status.success? ? "ok  " : "FAIL", name, secs, shown.gsub("\n", "\n" + " " * 20)
+  printf "%s %-7s %5.1fs  %s\n", status.success? ? "ok  " : "FAIL", name, secs, shown.gsub("\n", "\n" + " " * 20)
   status.success?
 end
 printf "%s in %.1fs\n", failed.empty? ? "all passed" : "failed: #{failed.keys.join(", ")}",
