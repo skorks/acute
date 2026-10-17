@@ -43,6 +43,17 @@ class ChronicTest < Minitest::Test
     assert_equal [Time.local(2026, 10, 17, 15), Time.local(2026, 10, 17, 15, 1)], [span.begin, span.end]
   end
 
+  def test_d47_every_span_but_a_said_clock_is_guessed
+    assert_equal Time.local(2026, 10, 17, 14, 30), chronic("next hour")
+    assert_equal Time.local(2026, 10, 17, 14, 0, 30), chronic("this minute")
+    assert_equal Time.local(2026, 10, 17, 14), chronic("next hour", guess: :begin)
+    assert_equal Time.local(2026, 10, 17, 15), chronic("next hour", guess: :end)
+    assert_equal Time.local(2026, 10, 18, 12), chronic("noon")
+    assert_equal Time.local(2026, 10, 17, 17, 30), chronic("at 5:30")
+    assert_equal Time.local(2026, 10, 19, 15), chronic("monday 3pm")
+    assert_equal Time.local(2026, 10, 17, 17), chronic("in 3 hours")
+  end
+
   def test_guess_takes_the_middle_as_chronic_does
     parser = Chronic::Parser.new
     assert_equal Time.local(2006, 8, 16, 12), parser.guess(Chronic::Span.new(Time.local(2006, 8, 16), Time.local(2006, 8, 17)))

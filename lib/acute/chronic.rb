@@ -74,8 +74,14 @@ module Chronic
     # Chronic's options for ambiguous text pick among acute's readings; acute's order stands where they don't
     def choose(result, text, zone)
       codes = result.assumptions.map(&:code)
+      clock = nil
       all = ([result] + result.alternatives).map do |r|
-        Reading.new(r.begin&.to_i, r.end&.to_i, r.time.to_i, r.span?, r.time.subsec)
+        # D47: chronic guesses inside every span but a clock time someone said ("4pm", "at 5:30"), so "next
+        # hour", one grain long and an instant to acute, is guessed too
+        long = !r.span? && r.end - r.begin > 1
+        clock = said_clock?(result.matched) if long && clock.nil?
+        span = r.span? || (long && !clock)
+        Reading.new(r.begin&.to_i, r.end&.to_i, r.time.to_i, span, r.time.subsec)
       end
       all = prefer(all) { |r| hour_window.include?(wall(r.point, zone) / 3600 % 24) } if codes.include?(:bare_hour_window)
       # only when given: without it the locale decides, as D10 says
@@ -89,6 +95,16 @@ module Chronic
         end
       end
       all.first
+    end
+
+    def said_clock?(text) = clock_in?(Acute::Grammar.parse(Acute::Lexer.lex(text)))
+
+    def clock_in?(node)
+      case node
+      when Acute::Grammar::Clock then true
+      when Struct, Array then node.each.any? { clock_in?(_1) }
+      else false
+      end
     end
 
     def prefer(all)

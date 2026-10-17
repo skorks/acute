@@ -293,35 +293,35 @@
   assert_line: 741
   phrase: next hr
   chronic: '2006-08-16 15:30:00'
-  acute: '2006-08-16 14:00:00'
+  acute: '2006-08-16 14:30:00'
   rule: D38
 - test: test_parse_guess_gr
   line: 743
   assert_line: 744
   phrase: next hrs
   chronic: '2006-08-16 15:30:00'
-  acute: '2006-08-16 14:00:00'
+  acute: '2006-08-16 14:30:00'
   rule: D38
 - test: test_parse_guess_gr
   line: 748
   assert_line: 749
   phrase: next min
   chronic: '2006-08-16 14:01:30'
-  acute: '2006-08-16 14:00:00'
+  acute: '2006-08-16 14:00:30'
   rule: D38
 - test: test_parse_guess_gr
   line: 751
   assert_line: 752
   phrase: next mins
   chronic: '2006-08-16 14:01:30'
-  acute: '2006-08-16 14:00:00'
+  acute: '2006-08-16 14:00:30'
   rule: D38
 - test: test_parse_guess_gr
   line: 754
   assert_line: 755
   phrase: next minute
   chronic: '2006-08-16 14:01:30'
-  acute: '2006-08-16 14:00:00'
+  acute: '2006-08-16 14:00:30'
   rule: D38
 - test: test_parse_guess_grr
   line: 803
