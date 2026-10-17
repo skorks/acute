@@ -2849,6 +2849,8 @@ duckling-0183
 duckling-0184
 duckling-0185
 duckling-0186
+duckling-0189
+duckling-0190
 duckling-0191
 duckling-0192
 duckling-0193
@@ -12622,6 +12624,7 @@ recognizers-0104
 recognizers-0105
 recognizers-0106
 recognizers-0107
+recognizers-0108
 recognizers-0109
 recognizers-0110
 recognizers-0111
@@ -12682,6 +12685,8 @@ recognizers-0170
 recognizers-0171
 recognizers-0175
 recognizers-0176
+recognizers-0177
+recognizers-0178
 recognizers-0179
 recognizers-0180
 recognizers-0181
@@ -12771,6 +12776,7 @@ recognizers-0270
 recognizers-0271
 recognizers-0272
 recognizers-0273
+recognizers-0274
 recognizers-0275
 recognizers-0276
 recognizers-0277
@@ -12950,6 +12956,7 @@ recognizers-0456
 recognizers-0457
 recognizers-0458
 recognizers-0459
+recognizers-0460
 recognizers-0461
 recognizers-0462
 recognizers-0463
@@ -13007,6 +13014,7 @@ recognizers-0518
 recognizers-0519
 recognizers-0520
 recognizers-0521
+recognizers-0522
 recognizers-0523
 recognizers-0524
 recognizers-0525
@@ -13363,6 +13371,8 @@ recognizers-0884
 recognizers-0885
 recognizers-0886
 recognizers-0887
+recognizers-0888
+recognizers-0889
 recognizers-0890
 recognizers-0891
 recognizers-0892

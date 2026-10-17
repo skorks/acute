@@ -44,6 +44,7 @@ module Acute
     Range = Struct.new(:from, :to)
     Open = Struct.new(:dir, :node)              # :after, :before, :since, :until, :upto, :from, :through
     Lasting = Struct.new(:unit, :start)         # a counted Unit from the start's start: "3 days starting monday"
+    Holding = Struct.new(:unit, :node)          # the calendar unit that holds the node: "the week of the 18th"
     Approx = Struct.new(:node)
     Fuzzy = Struct.new(:pos, :node)             # :early, :mid, :late, :start, :end
     Zoned = Struct.new(:node, :offset, :numeric)
@@ -55,7 +56,7 @@ module Acute
              Holiday => :holiday, Weekend => :weekend, Fiscal => :fiscal, Unit => :unit, Rel => :rel, Shift => :shift,
              Nth => :nth, Within => :within, Range => :range, Open => :open, Approx => :approx, Fuzzy => :fuzzy,
              Zoned => :zoned, Now => :now, Years => :years, IsoWeek => :iso_week, Counted => :counted,
-             Lasting => :lasting }.freeze
+             Lasting => :lasting, Holding => :holding }.freeze
 
     L = Lexer
     S = Lexer::STRIDE

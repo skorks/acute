@@ -70,6 +70,12 @@ module Acute
           return shift_tail(Unit.new(v, 1))
         end
         return shift_tail(Unit.new(v, 1)) if starting?(i + S) && (@i += S) # "the week starting february 4"
+        # D44: "the week of october 6th", "the month of may": the one that holds it
+        if (v == :week || v == :month) && w == :of && t[i + S] == L::WORD
+          @i += 2 * S
+          node = item(true)
+          return Failure === node ? node : Holding.new(v, node)
+        end
         failure(:incomplete)
       elsif k == L::DECADE then decade_atom
       else failure(:conflict)

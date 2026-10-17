@@ -68,6 +68,7 @@ module Acute
       when :range then Ranges.spans(node, ctx)
       when :open then Ranges.open(node, ctx)
       when :lasting then Ranges.lasting(node, ctx)
+      when :holding then Resolve.spans(node.node, ctx).map { |s| Period.unit(node.unit, ctx, s.b) } # D19
       when :fuzzy then Fuzzy.spans(node, ctx)
       when :fiscal then Period.fiscal(node, ctx)
       when :years then Dates.years(node, ctx)
