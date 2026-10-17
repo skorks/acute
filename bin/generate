@@ -13,11 +13,14 @@ def words_rb
   misspellings = data.delete("misspellings")
   phrases = data.delete("phrases")
   english = data.delete("english")
+  plural = data.delete("plural")
   words = data.flat_map { |kind, entries| entries.map { |word, v| [word, kind, v] } }
   by_word = words.to_h { |word, kind, v| [word, [kind, v]] }
   misspellings.each { |wrong, right| words << [wrong, *by_word.fetch(right)] }
   unknown = english - by_word.keys
   abort "english: not in the word table: #{unknown.join(", ")}" unless unknown.empty?
+  unknown = plural - by_word.keys - phrases.keys
+  abort "plural: not in the word table: #{unknown.join(", ")}" unless unknown.empty?
   hints = data.values.flat_map(&:keys).select { |w| w.size >= 3 }.sort
 
   out = +header("data/words.yml")
@@ -29,6 +32,7 @@ def words_rb
   end
   out << "    }.freeze\n\n"
   out << "    ENGLISH = #{english.inspect}.freeze\n\n"
+  out << "    PLURAL = #{plural.inspect}.freeze\n\n"
   out << "    HINT_WORDS = #{hints.inspect}.freeze\n  end\nend\n"
 end
 

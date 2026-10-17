@@ -31,6 +31,25 @@ module Acute
           Span.new(ctx.local(ub), ctx.local(ub + size), grain, nil, ub, ub + size)
         end
       end
+
+      # D44: "3 fridays from now" is the third Friday after now, not counting today's; "2 weekends ago" the
+      # second whose end has passed. One a cycle, so the nth is n - 1 cycles on from the first.
+      def self.counted(node, ctx)
+        x = node.node
+        n = node.n
+        cyc = Periodic.cycle(x)
+        if node.anchor
+          a = Resolve.spans(node.anchor, ctx)
+          return [] if a.empty?
+          t = n > 0 ? a[0].e : a[0].b
+        else
+          t = ctx.now_local + (n > 0 ? 1 : 0)
+        end
+        i = Period.index(cyc, ctx, t)
+        first = n > 0 ? Periodic.first(x, ctx, i, cyc) { |s| s.b >= t } : Periodic.last(x, ctx, i, cyc) { |s| s.e <= t }
+        return first if first.empty? || n.abs == 1
+        Periodic.at(x, ctx, Period.index(cyc, ctx, first[0].b) + n - (n <=> 0), cyc)
+      end
     end
   end
 end

@@ -73,7 +73,8 @@ module Acute
         return counted(:past, 1, u, ctx) if word == :past
         k = word == :next || word == :coming ? 1 : word == :this ? 0 : -1
         if u == :business_day
-          b = Period.business(Period.day(now) * DAY, k)
+          # D44: "this weekday" on a weekend is Monday
+          b = k == 0 ? Period.business(Period.day(now) * DAY - DAY, 1) : Period.business(Period.day(now) * DAY, k)
           return [Span.new(b, b + DAY, :day, nil)]
         end
         cur = Period.unit(u, ctx, now)

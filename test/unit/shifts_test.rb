@@ -48,4 +48,28 @@ class ShiftsTest < Minitest::Test
     assert_at "first monday in 2 months", "2026-12-07 00:00:00 -05:00"
     assert_at "1 week ago Saturday", "2026-10-10 00:00:00 -04:00"
   end
+
+  def test_a_count_of_days_that_recur_is_the_nth_one_after_or_before
+    assert_at "3 fridays from now", "2026-11-06 00:00:00 -05:00"
+    assert_at "1 saturday from now", "2026-10-24 00:00:00 -04:00"
+    assert_at "2 saturdays ago", "2026-10-03 00:00:00 -04:00"
+    assert_at "2nd monday before christmas", "2026-12-14 00:00:00 -05:00"
+    assert_at "2 weekends from now", "2026-10-31 00:00:00 -04:00"
+    assert_at "2 black fridays ago", "2024-11-29 00:00:00 -05:00"
+    assert_at "11:59 on 3 sundays after next wed", "2026-11-08 11:59:00 -05:00"
+  end
+
+  def test_a_plural_day_without_a_count_recurs_and_is_no_time
+    assert_raises(Acute::ParseError) { parse("fridays") }
+    assert_raises(Acute::ParseError) { parse("next fridays") }
+  end
+
+  def test_weekdays_are_business_days
+    assert_at "this weekday", "2026-10-19 00:00:00 -04:00"
+    assert_at "last weekday", "2026-10-16 00:00:00 -04:00"
+    assert_at "next weekday", "2026-10-19 00:00:00 -04:00"
+    assert_at "last weekday of the month", "2026-10-30 00:00:00 -04:00"
+    assert_at "first weekday of november", "2026-11-02 00:00:00 -05:00"
+    assert_at "3 weekdays ago", "2026-10-14 14:00:00 -04:00"
+  end
 end

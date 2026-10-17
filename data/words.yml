@@ -46,6 +46,13 @@ weekday:        # value: 0 = Sunday
   fri: 5
   saturday: 6
   sat: 6
+  sundays: 0
+  mondays: 1
+  tuesdays: 2
+  wednesdays: 3
+  thursdays: 4
+  fridays: 5
+  saturdays: 6
 
 month:
   january: 1
@@ -112,6 +119,8 @@ unit:
   decades: decade
   century: century
   centuries: century
+  weekday: business_day
+  weekdays: business_day
 
 relative:       # "past" is also the clock word in "twenty past four"
   next: next
@@ -252,6 +261,7 @@ word:           # function words; the grammar gives them their meaning
   in: in
   within: within
   ago: ago
+  back: ago
   hence: hence
   later: later
   from: from
@@ -339,6 +349,7 @@ phrases:
   mothers' day: [holiday, mothers_day]
   mothering sunday: [holiday, mothering_sunday]
   memorial day: [holiday, memorial_day]
+  memorial days: [holiday, memorial_day]
   father's day: [holiday, fathers_day]
   fathers day: [holiday, fathers_day]
   fathers' day: [holiday, fathers_day]
@@ -346,6 +357,7 @@ phrases:
   labour day: [holiday, labor_day]
   columbus day: [holiday, columbus_day]
   black friday: [holiday, black_friday]
+  black fridays: [holiday, black_friday]
   cyber monday: [holiday, cyber_monday]
   easter sunday: [holiday, easter]
   easter day: [holiday, easter]
@@ -375,6 +387,9 @@ phrases:
 
 # Words that are also plain English. In extraction they need a neighbour that confirms the date reading.
 english: [may, march, following, sat, sun, second, fall, a, mon, wed, start, end, last, past, this, next, d, m, s, h, w, y, lunch]
+
+# D44: plurals, which only count ("3 fridays from now"); alone they recur, which is not a time
+plural: [sundays, mondays, tuesdays, wednesdays, thursdays, fridays, saturdays, black fridays, memorial days]
 
 # D18: a fixed table, only misspellings the corpus has. Each maps to the word it stands for.
 misspellings:

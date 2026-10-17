@@ -35,6 +35,7 @@ module Acute
     Unit = Struct.new(:unit, :count)
     Rel = Struct.new(:word, :node)              # next / this / last / past / coming
     Shift = Struct.new(:count, :unit, :anchor)  # signed count of units from the anchor, or from now
+    Counted = Struct.new(:n, :node, :anchor)    # the nth node after the anchor or now (n < 0: before)
     Nth = Struct.new(:n, :node)                 # the nth (n = -1: the last) node inside its outer period
     Within = Struct.new(:inner, :outer)
     Range = Struct.new(:from, :to)
@@ -49,7 +50,7 @@ module Acute
     KIND = { Clock => :clock, DayRef => :day_ref, Date => :date, Weekday => :weekday, Part => :part, Season => :season,
              Holiday => :holiday, Weekend => :weekend, Fiscal => :fiscal, Unit => :unit, Rel => :rel, Shift => :shift,
              Nth => :nth, Within => :within, Range => :range, Open => :open, Approx => :approx, Fuzzy => :fuzzy,
-             Zoned => :zoned, Now => :now, Years => :years, IsoWeek => :iso_week }.freeze
+             Zoned => :zoned, Now => :now, Years => :years, IsoWeek => :iso_week, Counted => :counted }.freeze
 
     L = Lexer
     S = Lexer::STRIDE

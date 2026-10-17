@@ -1,5 +1,5 @@
 module Acute
-  # Counts of units moved from now or from an anchor: "3 days ago", "2 years 4 months ago", "+2 days"
+  # Counts of units: "3 days", "a week"; moved from now or an anchor: "3 days ago", "2 years 4 months ago", "+2 days"
   class Grammar
     private
 
@@ -27,6 +27,25 @@ module Acute
         shifts(w == :before ? -1 : 1, q, more, Now === anchor ? nil : anchor)
       else q
       end
+    end
+
+    # D44: "3 fridays from now", "2nd monday before may 25", "two weekends ago": i is the day after the count
+    def counted?(i)
+      k = @t[i]
+      (k == L::WDAY || k == L::WEEKEND || k == L::HOLIDAY) && @t[i + S] == L::WORD && SHIFT_TAIL[@t[i + S + 1]]
+    end
+
+    def counted(n)
+      k = @t[@i]
+      v = @t[@i + 1]
+      node = k == L::WDAY ? Weekday.new(v) : k == L::HOLIDAY ? Holiday.new(v) : WEEKEND
+      w = @t[@i + S + 1]
+      @i += 2 * S
+      return Counted.new(-n, node, nil) if w == :ago
+      return Counted.new(n, node, nil) if w == :hence || w == :later
+      anchor = item(true)
+      return anchor if Failure === anchor
+      Counted.new(w == :before ? -n : n, node, Now === anchor ? nil : anchor)
     end
 
     def shifts(sign, q, more, anchor)
@@ -73,6 +92,41 @@ module Acute
         node = Shift.new(sign * q.count, q.unit, node)
       end
       node
+    end
+
+    # "a week", "3 days", "1/2 hour"; nil (nothing read) unless the tokens are a count and a unit
+    def quantity
+      i = @i
+      count = nil
+      if @t[i] == L::ART then count = 1
+      elsif @t[i] == L::NUM
+        count = @t[i + 1]
+        if @t[i + S] == L::SLASH && @t[i + 2 * S] == L::NUM && @t[i + 2 * S + 1] > 0
+          count = Rational(count, @t[i + 2 * S + 1])
+          i += 2 * S
+        elsif @t[i + S] == L::DOT && @t[i + 2 * S] == L::NUM && @t[i + 3 * S] == L::UNIT # "2.5 hours"
+          count += Rational(@t[i + 2 * S + 1], 10**(@t[i + 2 * S + 2] & L::DIGITS))
+          i += 2 * S
+        end
+      elsif @t[i + 1] == :half && @t[i + S] == L::ART # "half an hour"
+        count = Rational(1, 2)
+        i += S
+      elsif @t[i] == L::DECADE && @t[i + 2] == 2 # "30s": seconds, not the thirties
+        @i = i + S
+        return Unit.new(:second, @t[i + 1])
+      else return
+      end
+      unit = unit_at(i + S)
+      return unless unit
+      @i = i + 2 * S
+      Unit.new(unit, count)
+    end
+
+    # "second" is the ordinal unless it follows a count
+    def unit_at(i)
+      k = @t[i]
+      return @t[i + 1] if k == L::UNIT
+      :second if k == L::ORD && @t[i + 1] == 2 && @t[i + 2] & L::WORDY != 0
     end
   end
 end

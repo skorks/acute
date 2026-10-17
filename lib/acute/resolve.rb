@@ -55,6 +55,7 @@ module Acute
       when :within then within(node, ctx)
       when :rel then Rel.spans(node, ctx)
       when :shift then Shift.spans(node, ctx)
+      when :counted then Shift.counted(node, ctx)
       when :range then Ranges.spans(node, ctx)
       when :open then Ranges.open(node, ctx)
       when :fuzzy then Fuzzy.spans(node, ctx)
@@ -150,6 +151,7 @@ require_relative "resolve/day"
 require_relative "resolve/dates"
 require_relative "resolve/named"
 require_relative "resolve/periodic"
+require_relative "resolve/nth"
 require_relative "resolve/rel"
 require_relative "resolve/shift"
 require_relative "resolve/ranges"

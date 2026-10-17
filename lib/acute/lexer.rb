@@ -42,6 +42,7 @@ module Acute
     ENGLISH = 128  # also an ordinary English word ("may", "sat", "second"), for extraction
     CAP = 256      # written with a capital
     SHORT = 512    # two digits after an apostrophe: a year with its century left out, "'26"
+    PLURAL = 1024  # "fridays": only after a count
 
     KINDS = {
       day: DAY, meridiem: MER, named: NAMED, now: NOW, at: AT, weekday: WDAY, month: MONTH, unit: UNIT,
@@ -64,6 +65,7 @@ module Acute
       kind = KINDS.fetch(kind)
       flags = kind == NUM || kind == ORD || kind == DECADE ? WORDY : 0
       flags |= ENGLISH if Tables::ENGLISH.include?(word)
+      flags |= PLURAL if Tables::PLURAL.include?(word)
       [kind, value, flags, flags & WORDY != 0 && value < 10].freeze
     end
 

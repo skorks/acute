@@ -1,5 +1,5 @@
 module Acute
-  # Written forms with no words in them: compact ISO dates and dotted clocks
+  # Written forms with no words in them: ISO and compact ISO dates, dotted clocks
   class Grammar
     private
 
@@ -42,6 +42,35 @@ module Acute
         return written(v + @t[@i + 1], L::SECONDS)
       end
       written(v, 0)
+    end
+
+    def iso_date
+      t = @t
+      i = @i
+      y = t[i + 1]
+      m = t[i + 2 * S + 1]
+      if t[i + 2 * S + 2] & L::DIGITS == 3
+        # "2026-001": the day of the year
+        days = Calendar.days_from_civil(y, 1, 1) + m - 1
+        return failure(:invalid_date, i + 2 * S) unless m >= 1 && Calendar.year_of(days) == y
+        ymd = Calendar.civil_from_days(days)
+        m = ymd / 100 % 100
+        d = ymd % 100
+        @i += 3 * S
+      elsif @t[i + 3 * S] == L::DASH && @t[i + 4 * S] == L::NUM
+        d = t[i + 4 * S + 1]
+        @i += 5 * S
+      else
+        @i += 3 * S
+        return Date.new(y, m, nil, nil, false)
+      end
+      date = Date.new(y, m, d, nil, false)
+      @i += S if @t[@i + 1] == :t && @t[@i + S] == L::CLOCK
+      return date unless @t[@i] == L::CLOCK
+      c = written(@t[@i + 1], @t[@i + 2])
+      return c if Failure === c
+      c.h24 = true unless c.meridiem || c.named # D4, D29: after an ISO date the time is 24-hour
+      Within.new(c, date)
     end
   end
 end

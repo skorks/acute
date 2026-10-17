@@ -15,6 +15,7 @@ module Acute
         @i += S
         DayRef.new(v)
       elsif k == L::WDAY
+        return failure(:incomplete) if t[i + 2] & L::PLURAL != 0
         @i += S
         of(Weekday.new(v))
       elsif k == L::MONTH then month_atom
@@ -30,6 +31,7 @@ module Acute
         @i += S
         NOW
       elsif k == L::HOLIDAY
+        return failure(:incomplete) if t[i + 2] & L::PLURAL != 0
         @i += S
         of(Holiday.new(v))
       elsif k == L::WORD then word_atom(v)
@@ -101,41 +103,6 @@ module Acute
       end
     end
 
-    # "a week", "3 days", "1/2 hour"; nil (nothing read) unless the tokens are a count and a unit
-    def quantity
-      i = @i
-      count = nil
-      if @t[i] == L::ART then count = 1
-      elsif @t[i] == L::NUM
-        count = @t[i + 1]
-        if @t[i + S] == L::SLASH && @t[i + 2 * S] == L::NUM && @t[i + 2 * S + 1] > 0
-          count = Rational(count, @t[i + 2 * S + 1])
-          i += 2 * S
-        elsif @t[i + S] == L::DOT && @t[i + 2 * S] == L::NUM && @t[i + 3 * S] == L::UNIT # "2.5 hours"
-          count += Rational(@t[i + 2 * S + 1], 10**(@t[i + 2 * S + 2] & L::DIGITS))
-          i += 2 * S
-        end
-      elsif @t[i + 1] == :half && @t[i + S] == L::ART # "half an hour"
-        count = Rational(1, 2)
-        i += S
-      elsif @t[i] == L::DECADE && @t[i + 2] == 2 # "30s": seconds, not the thirties
-        @i = i + S
-        return Unit.new(:second, @t[i + 1])
-      else return
-      end
-      unit = unit_at(i + S)
-      return unless unit
-      @i = i + 2 * S
-      Unit.new(unit, count)
-    end
-
-    # "second" is the ordinal unless it follows a count
-    def unit_at(i)
-      k = @t[i]
-      return @t[i + 1] if k == L::UNIT
-      :second if k == L::ORD && @t[i + 1] == 2 && @t[i + 2] & L::WORDY != 0
-    end
-
     def article_atom
       i = @i
       return clock_words(15) if @t[i + S] == L::UNIT && @t[i + S + 1] == :quarter && clock_word?(i + 2 * S)
@@ -177,6 +144,7 @@ module Acute
         @i += S if @t[@i + 1] == :ad
         return Years.new(:century, (n - 1) * 100, false)
       end
+      return counted(n) if counted?(@i)
       if k == L::WDAY || k == L::UNIT || k == L::WEEKEND
         inner = k == L::WDAY ? Weekday.new(@t[@i + 1]) : k == L::UNIT ? Unit.new(@t[@i + 1], nil) : WEEKEND
         @i += S
@@ -258,6 +226,7 @@ module Acute
         k = L::UNIT
         v = :second
       end
+      return failure(:conflict) if k == L::WDAY && @t[@i + 2] & L::PLURAL != 0
       if k == L::WDAY || k == L::UNIT || k == L::WEEKEND
         node = k == L::WDAY ? Weekday.new(v) : k == L::UNIT ? Unit.new(v, nil) : WEEKEND
         @i += S
