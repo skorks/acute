@@ -18,6 +18,7 @@ module Acute
 
     APPROXIMATE = Assumption.for(:approximate)
     FIXED_OFFSET = Assumption.for(:fixed_offset)
+    AMBIGUOUS_ZONE = Assumption.for(:ambiguous_zone)
     WEEKDAY_MISMATCH = Assumption.for(:weekday_mismatch)
 
     # An empty Array when nothing fits ("feb 30")
@@ -110,8 +111,9 @@ module Acute
     # D18: an offset in the text wins over the zone, and fixes the instant; D29: a numeric one makes the time
     # machine-written
     def self.zoned(node, ctx)
-      ctx.note(FIXED_OFFSET)
       off = node.offset
+      return ambiguous_zone(node, off, ctx) unless Integer === off
+      ctx.note(FIXED_OFFSET)
       ctx.machine = node.numeric
       inner = ctx.in_zone(Zone.fixed(off)) { spans(node.node, ctx) }
       ctx.machine = false
@@ -125,6 +127,15 @@ module Acute
           Span.new(ub && ctx.local(ub), ue && ctx.local(ue), s.grain, s.point && ctx.local(s.point - off), ub, ue)
         end
       end
+    end
+
+    # D38: each of an ambiguous abbreviation's offsets in order; in the country it leads with, the first alone
+    def self.ambiguous_zone(node, offs, ctx)
+      home = offs[0]
+      offs = offs.drop(1) if String === home
+      return zoned(G::Zoned.new(node.node, offs[0], false), ctx) if home == ctx.locale.country
+      ctx.note(AMBIGUOUS_ZONE)
+      offs.flat_map { zoned(G::Zoned.new(node.node, _1, false), ctx) }
     end
 
     def self.readings(spans, ctx)

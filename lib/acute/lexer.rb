@@ -246,6 +246,15 @@ module Acute
           when 64
             t.push(AT, 0, 0, i, i + 1)
             i += 1
+          when 40, 41
+            # "9 am (BST)", "-0500 (CDT)": a zone in brackets is the zone
+            if c == 40 ? zone_in_brackets?(s, i + 1, n) : t[-5] == ZONE && t[-1] == i && s.getbyte(t[-2] - 1) == 40
+              i += 1
+              next
+            end
+            return Failure.new(:unknown_word, i, i + 1) unless unknown
+            unknown << i << i + 1
+            i += 1
           else
             st = i
             i += 1
@@ -284,6 +293,20 @@ module Acute
       i += 1 if i + 1 < n && s.getbyte(i) == 39
       return unless i < n && s.getbyte(i) | 32 == 115
       i + 1 >= n || !ALPHA[s.getbyte(i + 1)] ? i + 1 : nil
+    end
+
+    def self.zone_in_brackets?(s, i, n)
+      st = i
+      k = 0
+      while i < n && (x = CODE[s.getbyte(i)]) != 0
+        k = k * 32 + x
+        i += 1
+      end
+      return false unless i > st && (word = WORDS[k])
+      if word[4] && (match = phrase(s, i, n, word[4]))
+        i, word = match
+      end
+      i < n && s.getbyte(i) == 41 && word[0] == ZONE
     end
 
     # A malformed clock ("4:3", "123:00") is one unknown word, to the end of its digits, colons and letters

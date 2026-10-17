@@ -179,10 +179,11 @@ module Acute
           @i += S
           next
         elsif k == L::ZONE
-          zone = v
           @i += S
+          next if zone # D44: "GMT+0800 (CST)", "-0500 (CDT)": a second zone labels the first
+          zone = v
           # "GMT-1", "UTC +8"; with spaces both sides it is a range ("15:00 GMT - 18:00 GMT")
-          if @i + S < @n && (@t[@i] == L::PLUS || @t[@i] == L::DASH) &&
+          if Integer === zone && @i + S < @n && (@t[@i] == L::PLUS || @t[@i] == L::DASH) &&
              (@t[@i + 3] == @t[@i - 1] || @t[@i + S + 3] == @t[@i + 4]) && (off = offset(@i + S))
             zone += @t[@i] == L::PLUS ? off : -off
             numeric = true

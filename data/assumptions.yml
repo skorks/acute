@@ -37,6 +37,9 @@ approximate:
 fixed_offset:
   rule: D18
   message: "the text names a zone or offset, which wins over the zone given"
+ambiguous_zone:
+  rule: D38
+  message: "the zone abbreviation names more than one zone; each one's offset is a reading, in order"
 numeric_date_order:
   rule: D10
   message: "a numeric date is read in the locale's order; the other order is an alternative"

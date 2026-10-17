@@ -228,6 +228,7 @@ weekend:
   weekends: 0
 
 zone:           # value: the UTC offset in seconds (D18, D40: abbreviations are fixed offsets)
+                # D38: an ambiguous one lists its offsets in order; a leading country is where the first alone holds
   utc: 0
   gmt: 0
   z: 0
@@ -241,9 +242,11 @@ zone:           # value: the UTC offset in seconds (D18, D40: abbreviations are 
   pdt: -25200
   cet: 3600
   cest: 7200
-  bst: 3600
+  bst: [GB, 3600, 21600]
+  ist: [19800, 3600, 7200]
   aest: 36000
   aedt: 39600
+  jst: 32400
 
 fuzzy:          # D2
   early: early
@@ -326,6 +329,14 @@ phrases:
   groundhog's day: [holiday, groundhog_day]
   earth day: [holiday, earth_day]
   flag day: [holiday, flag_day]
+  eastern standard time: [zone, -18000]
+  eastern daylight time: [zone, -14400]
+  central standard time: [zone, -21600]
+  central daylight time: [zone, -18000]
+  mountain standard time: [zone, -25200]
+  mountain daylight time: [zone, -21600]
+  pacific standard time: [zone, -28800]
+  pacific daylight time: [zone, -25200]
   patriot day: [holiday, patriot_day]
   boss's day: [holiday, bosses_day]
   boss day: [holiday, bosses_day]

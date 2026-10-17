@@ -16,6 +16,7 @@ module Acute
       dst_skipped_time: ["D23", "that wall time doesn't exist as clocks go forward; it is moved forward by the gap"].freeze,
       approximate: ["D14", "the time was given as approximate; the exact time is returned"].freeze,
       fixed_offset: ["D18", "the text names a zone or offset, which wins over the zone given"].freeze,
+      ambiguous_zone: ["D38", "the zone abbreviation names more than one zone; each one's offset is a reading, in order"].freeze,
       numeric_date_order: ["D10", "a numeric date is read in the locale's order; the other order is an alternative"].freeze,
       part_of_day_point: ["D1", "a part of the day is a range; its time is a representative point"].freeze,
       weekend_friday_evening: ["D8", "the weekend is Saturday 00:00 to Monday 00:00; from Friday 18:00 is an alternative"].freeze,
