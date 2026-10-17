@@ -10655,6 +10655,7 @@ generated-phrasing-0001
 generated-phrasing-0002
 generated-phrasing-0003
 generated-phrasing-0004
+generated-phrasing-0005
 generated-phrasing-0006
 generated-phrasing-0007
 generated-phrasing-0008
@@ -12010,6 +12011,8 @@ natty-0023
 natty-0024
 natty-0025
 natty-0026
+natty-0027
+natty-0028
 natty-0029
 natty-0030
 natty-0031
@@ -12500,6 +12503,7 @@ natty-0526
 natty-0527
 natty-0528
 natty-0529
+natty-0530
 natty-0531
 natty-0532
 natty-0533

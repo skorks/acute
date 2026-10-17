@@ -291,6 +291,8 @@ module Acute
             st = i
             i += 1
             i += 1 while i < n && CLASS[s.getbyte(i)] == PUNCT
+            # D44: "tomorrow!", "at 5?": a sentence's end mark after the phrase says nothing of the time
+            next if (c == 33 || c == 63) && (i == n || s.byteslice(i, n - i).strip.empty?)
             return Failure.new(:unknown_word, st, i) unless unknown
             unknown << st << i
           end

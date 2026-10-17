@@ -93,4 +93,11 @@ class ShiftsTest < Minitest::Test
     assert_at "first weekday of november", "2026-11-02 00:00:00 -05:00"
     assert_at "3 weekdays ago", "2026-10-14 14:00:00 -04:00"
   end
+
+  def test_d44_final_is_the_last_one_of
+    assert_at "final thursday in april", "2027-04-29 00:00:00 -04:00"
+    assert_at "the final day of june", "2027-06-30 00:00:00 -04:00"
+    assert_raises(Acute::ParseError) { parse("final friday after christmas") }
+    assert_raises(Acute::ParseError) { parse("final 3 days") }
+  end
 end

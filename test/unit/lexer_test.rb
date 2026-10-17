@@ -22,7 +22,7 @@ class LexerTest < Minitest::Test
     assert_equal Acute::Failure.new(:unknown_word, 9, 14), L.lex("tomorrow foo's")
     assert_equal Acute::Failure.new(:unknown_word, 0, 2), L.lex("é")
     assert_equal :unknown_word, L.lex("tomorrowtomorrowtomorrow").code
-    assert_equal :unknown_word, L.lex("4pm!?").code
+    assert_equal :unknown_word, L.lex("4pm!? friday").code
   end
 
   def test_malformed_clocks
@@ -59,5 +59,10 @@ class LexerTest < Minitest::Test
     words = entries.select { |kind, _| kind == :word }.map(&:last)
     others = entries.reject { |kind, _| kind == :word }.map(&:last)
     assert_empty words & others
+  end
+
+  def test_d44_an_end_mark_after_the_phrase_is_dropped
+    assert_equal ['DAY(1) "tomorrow"'], tokens("tomorrow?! ")
+    assert_raises(Acute::ParseError) { Acute.parse!("tomorrow? 5pm") }
   end
 end

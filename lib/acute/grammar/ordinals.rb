@@ -18,7 +18,7 @@ module Acute
         @i += S if @t[@i + 1] == :ad
         return Years.new(:century, (n - 1) * 100, false)
       end
-      return counted(n) if counted?(@i)
+      return counted(n) if n >= 1 && counted?(@i)
       # D44: "the first half of 2027" is its January to June; "the first 9 months of 1997" its first nine
       if n <= 2 && k == L::WORD && @t[@i + 1] == :half && @t[@i + S + 1] == :of
         @i += S
