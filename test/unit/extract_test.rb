@@ -48,6 +48,16 @@ class ExtractTest < Minitest::Test
     assert_equal "25:99 is not a time", x.remainder
   end
 
+  def test_a_malformed_clock_does_not_hide_the_rest
+    assert_equal [[:time, "tomorrow at 5pm", 15...30]], mentions("meet at 4:3 or tomorrow at 5pm")
+  end
+
+  def test_the_longest_accepted_prefix_wins
+    assert_equal [[:time, "two days ago 00:00:00", 0...21]], mentions("two days ago 00:00:00 am")
+    assert_equal [[:time, "2004-05-05 12:00:00", 0...19], [:duration, "6 months", 20...28]],
+                 mentions("2004-05-05 12:00:00 6 months")
+  end
+
   def test_arguments_are_checked_once
     assert_raises(ArgumentError) { Acute.extract("tomorrow", now: "2026-10-17T14:00", zone: "Nowhere/Land") }
   end

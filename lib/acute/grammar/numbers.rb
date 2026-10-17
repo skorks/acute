@@ -9,28 +9,27 @@ module Acute
       v = t[i + 1]
       flags = t[i + 2]
       digits = flags & L::DIGITS
-      nk = kind_at(i + S)
-      case nk
-      when L::SLASH, L::DOT
-        return numeric_date(nk == L::SLASH ? :slash : :dot) if kind_at(i + 2 * S) == L::NUM
-      when L::DASH
-        if kind_at(i + 2 * S) == L::NUM
+      nk = @t[i + S]
+      if nk == L::SLASH || nk == L::DOT
+        return numeric_date(nk == L::SLASH ? :slash : :dot) if @t[i + 2 * S] == L::NUM
+      elsif nk == L::DASH
+        if @t[i + 2 * S] == L::NUM
           return iso_date if digits == 4
           w = t[i + 2 * S + 1]
-          return numeric_date(:dash) if kind_at(i + 3 * S) == L::DASH || (w > 12 && w <= 31 && v <= 12) || v > 12 && v <= 31 && w <= 12
+          return numeric_date(:dash) if @t[i + 3 * S] == L::DASH || (w > 12 && w <= 31 && v <= 12) || v > 12 && v <= 31 && w <= 12
         end
-      when L::MONTH
-        return day_month(v, i + S) if digits <= 2 && v.between?(1, 31)
-      when L::UNIT
+      elsif nk == L::MONTH
+        return day_month(v, i + S) if digits <= 2 && v >= 1 && v <= 31
+      elsif nk == L::UNIT
         # D5: "1530h", "1530 hrs" are times
-        if digits == 4 && t[i + S + 1] == :hour && kind_at(i + 2 * S) != L::WORD
+        if digits == 4 && t[i + S + 1] == :hour && @t[i + 2 * S] != L::WORD
           @i += 2 * S
           return four_digits(v, flags, i)
         end
-      when L::ORD
+      elsif nk == L::ORD
         q = quantity
         return shift_tail(q) if q
-      when L::WORD
+      elsif nk == L::WORD
         return clock_words(v) if minutes_to?(i)
         if t[i + S + 1] == :oclock
           @i += S
@@ -38,15 +37,15 @@ module Acute
           @i += S unless Failure === c
           return c
         end
-      when L::REL
-        return clock_words(v) if t[i + S + 1] == :past && flags & L::WORDY != 0 || (v <= 30 && kind_at(i + 2 * S) == L::NUM)
-      when L::NUM
+      elsif nk == L::REL
+        return clock_words(v) if t[i + S + 1] == :past && flags & L::WORDY != 0 || (v <= 30 && @t[i + 2 * S] == L::NUM)
+      elsif nk == L::NUM
         # "four twenty-three"
         if flags & L::WORDY != 0 && t[i + S + 2] & L::WORDY != 0 && v.between?(1, 12) && t[i + S + 1].between?(10, 59)
           @i += S
           c = Clock.new(v, t[i + S + 1], 0, nil, nil, false, false)
           @i += S
-          if kind_at(@i) == L::MER
+          if @t[@i] == L::MER
             c.meridiem = @t[@i + 1] == 0 ? :am : :pm
             @i += S
           end
@@ -63,7 +62,7 @@ module Acute
 
     # D42: "five to 9" is 8:55 when the minutes are a word; "5 to 9" and "from five to nine" are ranges
     def minutes_to?(i)
-      @t[i + S + 1] == :to && @t[i + 2] & L::WORDY != 0 && @t[i + 1].between?(1, 30) && kind_at(i + 2 * S) == L::NUM &&
+      @t[i + S + 1] == :to && @t[i + 2] & L::WORDY != 0 && @t[i + 1].between?(1, 30) && @t[i + 2 * S] == L::NUM &&
         @t[i + 2 * S + 1].between?(1, 12) && !(i >= S && @t[i - S] == L::WORD && (@t[i - S + 1] == :from || @t[i - S + 1] == :between))
     end
 
@@ -72,21 +71,28 @@ module Acute
       i = @i
       y = t[i + 1]
       m = t[i + 2 * S + 1]
-      if kind_at(i + 3 * S) == L::DASH && kind_at(i + 4 * S) == L::NUM
+      if t[i + 2 * S + 2] & L::DIGITS == 3
+        # "2026-001": the day of the year
+        days = Calendar.days_from_civil(y, 1, 1) + m - 1
+        return failure(:invalid_date, i + 2 * S) unless m >= 1 && Calendar.year_of(days) == y
+        ymd = Calendar.civil_from_days(days)
+        m = ymd / 100 % 100
+        d = ymd % 100
+        @i += 3 * S
+      elsif @t[i + 3 * S] == L::DASH && @t[i + 4 * S] == L::NUM
         d = t[i + 4 * S + 1]
         @i += 5 * S
-        date = Date.new(y, m, d, nil, false)
-        @i += S if word == :t && kind_at(@i + S) == L::CLOCK
-        if kind_at(@i) == L::CLOCK
-          c = written(@t[@i + 1], @t[@i + 2])
-          return c if Failure === c
-          c.h24 = true unless c.meridiem || c.named # D4, D29: after an ISO date the time is 24-hour
-          return Within.new(c, date)
-        end
-        return date
+      else
+        @i += 3 * S
+        return Date.new(y, m, nil, nil, false)
       end
-      @i += 3 * S
-      Date.new(y, m, nil, nil, false)
+      date = Date.new(y, m, d, nil, false)
+      @i += S if @t[@i + 1] == :t && @t[@i + S] == L::CLOCK
+      return date unless @t[@i] == L::CLOCK
+      c = written(@t[@i + 1], @t[@i + 2])
+      return c if Failure === c
+      c.h24 = true unless c.meridiem || c.named # D4, D29: after an ISO date the time is 24-hour
+      Within.new(c, date)
     end
 
     # "10/23", "23/10/2026", "11.9.2003", "8-15": the numbers as written; resolve picks the order
@@ -98,7 +104,7 @@ module Acute
       @i += 3 * S
       year = nil
       short = false
-      if kind_at(@i) == t[i + S] && kind_at(@i + S) == L::NUM
+      if @t[@i] == t[i + S] && @t[@i + S] == L::NUM
         digits = t[@i + S + 2] & L::DIGITS
         return failure(:invalid_date, @i + S) unless digits == 2 || digits == 4
         year = t[@i + S + 1]
@@ -121,9 +127,9 @@ module Acute
       m = @t[@i + 1]
       @i += S
       day = nil
-      k = kind_at(@i)
-      if (k == L::NUM || k == L::ORD) && @t[@i + 2] & L::DIGITS <= 2 && @t[@i + 1].between?(1, 31) &&
-         kind_at(@i + S) != L::MER && kind_at(@i + S) != L::UNIT
+      k = @t[@i]
+      if (k == L::NUM || k == L::ORD) && @t[@i + 2] & L::DIGITS <= 2 && @t[@i + 1] >= 1 && @t[@i + 1] <= 31 &&
+         @t[@i + S] != L::MER && @t[@i + S] != L::UNIT
         day = @t[@i + 1]
         @i += S
       end
@@ -132,8 +138,8 @@ module Acute
 
     # An optional year after a date: four digits, or "of 2026"
     def year
-      @i += S if word == :of && kind_at(@i + S) == L::NUM
-      return unless kind_at(@i) == L::NUM && @t[@i + 2] & L::DIGITS == 4 && @t[@i + 2] & L::ZERO == 0
+      @i += S if @t[@i + 1] == :of && @t[@i + S] == L::NUM
+      return unless @t[@i] == L::NUM && @t[@i + 2] & L::DIGITS == 4 && @t[@i + 2] & L::ZERO == 0
       @i += S
       @t[@i - S + 1]
     end
@@ -146,7 +152,7 @@ module Acute
       zero = flags & L::ZERO != 0
       at = @i
       @i += S
-      kind = kind_at(@i)
+      kind = @t[@i]
       if (kind == L::MER || (kind == L::ART && @t[at + 4] == @t[@i + 3])) && digits <= 2 # "8a"
         return failure(:invalid_date, at) if v < 1 || v > 12
         meridiem = kind == L::ART || @t[@i + 1] == 0 ? :am : :pm
@@ -167,7 +173,7 @@ module Acute
 
     # D5: a time with a leading zero, after "at", or with "h"/"hrs"; otherwise a year
     def four_digits(v, flags, at)
-      if flags & L::ZERO != 0 || (at >= S && @t[at - S] == L::AT) || kind_at(at + S) == L::UNIT
+      if flags & L::ZERO != 0 || (at >= S && @t[at - S] == L::AT) || @t[at + S] == L::UNIT
         return failure(:invalid_date, at) if v / 100 > 23 || v % 100 > 59
         Clock.new(v / 100, v % 100, 0, nil, nil, flags & L::ZERO != 0, false)
       else
@@ -182,7 +188,7 @@ module Acute
       at = @i
       @i += S
       return failure(:invalid_date, at) if hour > 23 || min > 59 || sec > 59
-      kind = kind_at(@i)
+      kind = @t[@i]
       if kind == L::MER || (kind == L::ART && @t[at + 4] == @t[@i + 3]) # "9:00a"
         return failure(:invalid_date, at) if hour < 1 || hour > 12
         meridiem = kind == L::ART || @t[@i + 1] == 0 ? :am : :pm

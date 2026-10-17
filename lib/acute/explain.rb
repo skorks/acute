@@ -31,7 +31,7 @@ module Acute
 
     def self.letters(bytes) = bytes.inject(0) { |m, c| m | 1 << (c & 63) }
 
-    HINTS = Tables::HINT_WORDS.map { |w| [w, w.bytes, letters(w.bytes)] }.freeze
+    HINTS = Ractor.make_shareable(Tables::HINT_WORDS.map { |w| [w, w.bytes, letters(w.bytes)] })
 
     # The closest known word within two edits, if it is close enough to be a likely typo
     def self.suggest(word)

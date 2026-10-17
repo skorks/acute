@@ -53,7 +53,10 @@ module Acute
 
       # The first reading of node from t on
       def self.after(node, ctx, t)
-        return Span.new(x = clock_after(node, ctx, t), x + Clock.length(node), Clock.grain(node), nil) if G::Clock === node
+        if G::Clock === node
+          grain, len = node.seconds ? Clock::SECOND : Clock::MINUTE
+          return Span.new(x = clock_after(node, ctx, t), x + len, grain, nil)
+        end
         if (cyc = Periodic.cycle(node))
           return Periodic.first(node, ctx, Period.index(cyc, ctx, t) - 1, cyc) { |s| s.b >= t }[0]
         end
@@ -81,10 +84,10 @@ module Acute
         list = current(node.node, ctx) || list if node.dir == :after && G::Holiday === node.node
         list.map do |s|
           case node.dir
-          when :since then Span.new(s.b, now, s.grain, nil)
-          when :until then Span.new(now, clock?(s) ? s.b : s.e, s.grain, nil)
-          when :before then Span.new(nil, s.b, s.grain, nil)
-          else Span.new(clock?(s) ? s.b : s.e, nil, s.grain, nil)
+          when :since then Span.new(s.b, now, s.grain, nil, s.ub, ctx.now)
+          when :until then clock?(s) ? Span.new(now, s.b, s.grain, nil, ctx.now, s.ub) : Span.new(now, s.e, s.grain, nil, ctx.now, s.ue)
+          when :before then Span.new(nil, s.b, s.grain, nil, nil, s.ub)
+          else clock?(s) ? Span.new(s.b, nil, s.grain, nil, s.ub) : Span.new(s.e, nil, s.grain, nil, s.ue)
           end
         end
       end

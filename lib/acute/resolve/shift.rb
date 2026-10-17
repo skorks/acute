@@ -9,10 +9,10 @@ module Acute
         unless node.anchor
           if (len = Period::SECONDS[u])
             utc = ctx.now + n * len
-            t = utc + ctx.zone.offset_at(utc)
-          else
-            t = Period.add(ctx.now_local, n, u)
+            t = ctx.local(utc)
+            return [Span.new(t, t + 1, :second, nil, utc, utc + 1)]
           end
+          t = Period.add(ctx.now_local, n, u)
           return [Span.new(t, t + 1, :second, nil)]
         end
         Resolve.spans(node.anchor, ctx).map do |s|

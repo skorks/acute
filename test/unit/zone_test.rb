@@ -55,6 +55,26 @@ class ZoneTest < Minitest::Test
     assert_equal 12_600, zone.local_to_utc(0, Notes.new)
   end
 
+  def test_local_mean_time_before_standard_time
+    ny = Acute::Zone.for("America/New_York")
+    assert_equal(-17_762, ny.offset_at(Time.utc(1530).to_i))
+    assert_equal(-18_000, ny.offset_at(Time.utc(1890).to_i))
+  end
+
+  def test_fixed_from_seconds_is_the_named_offset
+    assert_same Acute::Zone.for("+05:45"), Acute::Zone.fixed(20_700)
+    assert_equal "-03:30", Acute::Zone.fixed(-12_600).name
+  end
+
+  def test_steady_offset_is_nil_within_a_day_of_a_transition
+    zone = Acute::Zone.for("America/New_York")
+    fall_back = Time.utc(2026, 11, 1, 6).to_i
+    assert_equal(-14_400, zone.steady_offset(fall_back - 3 * 86_400, fall_back - 2 * 86_400))
+    assert_nil zone.steady_offset(fall_back - 3 * 86_400, fall_back - 3600)
+    assert_nil zone.steady_offset(fall_back + 3600, fall_back + 2 * 86_400)
+    assert_equal(-18_000, zone.steady_offset(fall_back + 2 * 86_400, fall_back + 3 * 86_400))
+  end
+
   def test_accepts_a_tzinfo_zone_and_shares_one_table
     assert_same Acute::Zone.for("Asia/Tokyo"), Acute::Zone.for(TZInfo::Timezone.get("Asia/Tokyo"))
     assert Acute::Zone.for("Asia/Tokyo").frozen?

@@ -8,12 +8,12 @@ module Acute
       SEASON = Assumption.for(:meteorological_season)
 
       # D1, D35: start and end in seconds from the day's start, and the point
-      PARTS = {
+      PARTS = Ractor.make_shareable({
         morning: [6 * 3600, 12 * 3600, 9 * 3600], afternoon: [12 * 3600, 17 * 3600, 15 * 3600],
         evening: [17 * 3600, 21 * 3600, 19 * 3600], night: [21 * 3600, 28 * 3600, 22 * 3600],
         tonight: [17 * 3600, 28 * 3600, 22 * 3600], lunch: [12 * 3600, 14 * 3600, 12 * 3600 + 1800],
         early_hours: [0, 4 * 3600, 2 * 3600] # D42
-      }.freeze
+      })
       # D3: meteorological, by the month each starts in; the south is six months on
       SEASONS = { spring: 3, summer: 6, autumn: 9, winter: 12 }.freeze
       FIXED_HOLIDAYS = { christmas: 1225, christmas_eve: 1224, new_years_eve: 1231, new_years_day: 101,
@@ -54,7 +54,7 @@ module Acute
       end
 
       # The day number of the nth wday on or after the day first
-      def self.nth_weekday(first, wday, n) = first + (wday - Calendar.weekday(first)) % 7 + 7 * (n - 1)
+      def self.nth_weekday(first, wday, n) = first + (wday - (first + 4) % 7) % 7 + 7 * (n - 1) # (first + 4) % 7: its weekday
     end
   end
 end

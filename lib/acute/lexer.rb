@@ -31,8 +31,8 @@ module Acute
     DASH = 21
     DOT = 22    # only between digits
     PLUS = 23
-    KIND_NAMES = %w[NUM CLOCK MER DAY NAMED NOW AT WDAY MONTH UNIT REL ORD PART SEASON HOLIDAY WEEKEND ZONE FUZZ ART
-                    WORD SLASH DASH DOT PLUS].freeze
+    KIND_NAMES = Ractor.make_shareable(%w[NUM CLOCK MER DAY NAMED NOW AT WDAY MONTH UNIT REL ORD PART SEASON HOLIDAY WEEKEND ZONE FUZZ ART
+                    WORD SLASH DASH DOT PLUS])
 
     DIGITS = 15
     ZERO = 16
@@ -40,7 +40,6 @@ module Acute
     WORDY = 64     # a number or ordinal written as a word
     ENGLISH = 128  # also an ordinary English word ("may", "sat", "second"), for extraction
     CAP = 256      # written with a capital
-    MAX_WORD = 12
 
     KINDS = {
       day: DAY, meridiem: MER, named: NAMED, now: NOW, at: AT, weekday: WDAY, month: MONTH, unit: UNIT,
@@ -58,20 +57,54 @@ module Acute
       end
     end
 
+    # [kind, value, flags, whether it is "one" to "nine" or "first" to "ninth", which join a "twenty" before them]
     def self.entry(word, kind, value)
       kind = KINDS.fetch(kind)
       flags = kind == NUM || kind == ORD ? WORDY : 0
       flags |= ENGLISH if Tables::ENGLISH.include?(word)
-      [kind, value, flags].freeze
+      [kind, value, flags, flags & WORDY != 0 && value < 10].freeze
     end
 
-    WORDS = Tables::WORDS.to_h { |word, (kind, value)| [pack(word), entry(word, kind, value)] }.freeze
-
-    # First word's key => [[keys of the following words], token entry], longest first
-    PHRASES = Tables::PHRASES.each_with_object({}) do |(text, (kind, value)), h|
+    # A phrase's first word => [[keys of the following words], token entry], longest first
+    phrases = Tables::PHRASES.each_with_object({}) do |(text, (kind, value)), h|
       first, *rest = text.split
       (h[pack(first)] ||= []) << [rest.map { pack(_1) }.freeze, entry(text, kind, value)].freeze
+    end
+
+    # Key => an entry and then the phrases it begins or nil, so a word needs one lookup; a phrase's first word
+    # that is no word alone has a nil kind
+    WORDS = Tables::WORDS.to_h { |word, (kind, value)| [pack(word), [*entry(word, kind, value), nil]] }
+    phrases.each { |k, list| WORDS[k] = [*(WORDS[k] || [nil, nil, 0, false]).first(4), list.freeze] }
+    WORDS.each_value(&:freeze).freeze
+
+    # Each byte's class, so the main loop tests one value a byte; the punctuation it keeps is its own byte
+    SPACE = 1
+    DIGIT = 2
+    LETTER = 3
+    PUNCT = 4
+    CLASS = Array.new(256) do |c|
+      if [32, 44, 9, 10, 13].include?(c) then SPACE
+      elsif c >= 48 && c <= 57 then DIGIT
+      elsif (c >= 97 && c <= 122) || (c >= 65 && c <= 90) || c == 39 || c >= 128 then LETTER
+      elsif [46, 45, 47, 43, 64].include?(c) then c
+      else PUNCT
+      end
     end.freeze
+    # A byte's 5-bit code inside a word: either case of a letter alike, the apostrophe 28, a byte of a UTF-8
+    # letter 31, which is in no word, other bytes 0. Keys are unique to their text, so a word too long or
+    # with such a letter simply matches nothing.
+    CODE = Array.new(256) do |c|
+      if c >= 97 && c <= 122 then c - 96
+      elsif c >= 65 && c <= 90 then c - 64
+      elsif c == 39 then 28
+      elsif c >= 128 then 31
+      else 0
+      end
+    end.freeze
+    # Whether a byte is an ASCII letter, a lookup rather than a call
+    ALPHA = Array.new(256) { |c| (c >= 97 && c <= 122) || (c >= 65 && c <= 90) }.freeze
+    # An ordinal's suffix ("3rd"), its two bytes lower-cased and packed
+    SUFFIX = %w[st nd rd th].to_h { |x| [x.getbyte(0) << 8 | x.getbyte(1), true] }.freeze
 
     # With an Array for unknown, unknown words and stray punctuation are appended to it as start, stop pairs
     # and lexing carries on; that is how the error path finds them all, and how extraction skips them.
@@ -81,105 +114,115 @@ module Acute
       i = 0
       while i < n
         c = s.getbyte(i)
-        if c == 32 || c == 44 || c == 9 || c == 10 || c == 13
+        cl = CLASS[c]
+        if cl == SPACE
           i += 1
-        elsif c >= 48 && c <= 57
-          st = i
-          v = 0
-          while i < n && (c = s.getbyte(i)) >= 48 && c <= 57
-            v = v * 10 + c - 48 if i - st < 9
-            i += 1
-          end
-          nd = i - st
-          flags = nd > DIGITS ? DIGITS : nd
-          flags |= ZERO if nd > 1 && s.getbyte(st) == 48
-          if i < n && c == 58
-            mi = two_digits(s, i + 1, n)
-            return Failure.new(:invalid_date, st, i + 3 < n ? i + 3 : n) if mi < 0 || nd > 2
-            i += 3
-            sec = 0
-            if i < n && s.getbyte(i) == 58
-              sec = two_digits(s, i + 1, n)
-              return Failure.new(:invalid_date, st, i + 3 < n ? i + 3 : n) if sec < 0
-              i += 3
-              flags |= SECONDS
-              if i + 1 < n && s.getbyte(i) == 46 && digit?(s.getbyte(i + 1)) # fractions of a second are dropped
-                i += 1
-                i += 1 while i < n && digit?(s.getbyte(i))
-              end
-            end
-            t << CLOCK << v * 10_000 + mi * 100 + sec << flags << st << i
-          elsif ordinal_suffix?(s, i, n)
-            i += 2
-            t << ORD << v << flags << st << i
-          else
-            t << NUM << v << flags << st << i
-          end
-        elsif c == 46
-          t << DOT << 0 << 0 << i << i + 1 if i > 0 && i + 1 < n && digit?(s.getbyte(i - 1)) && digit?(s.getbyte(i + 1))
-          i += 1
-        elsif c == 45
-          # A hyphen inside a word ("twenty-four", "mid-october") is a space
-          unless i > 0 && i + 1 < n && letter?(s.getbyte(i - 1)) && letter?(s.getbyte(i + 1))
-            t << DASH << 0 << 0 << i << i + 1
-          end
-          i += 1
-        elsif c == 47 || c == 43 || c == 64
-          t << (c == 47 ? SLASH : c == 43 ? PLUS : AT) << 0 << 0 << i << i + 1
-          i += 1
-        elsif letter?(c) || c == 39 || c >= 128
+        elsif cl == LETTER
           st = i
           k = 0
-          len = 0
-          plain = true
           while i < n
-            c = s.getbyte(i)
-            if c >= 97 && c <= 122 then x = c - 96
-            elsif c >= 65 && c <= 90 then x = c - 64
-            elsif c == 39 then x = 28
-            elsif c == 46 && i + 1 < n && ((c2 = s.getbyte(i + 1) | 32) >= 97 && c2 <= 122) then x = 27
-            elsif c >= 128
-              plain = false
-              x = 0
-            else break
+            x = CODE[s.getbyte(i)]
+            if x == 0
+              break unless s.getbyte(i) == 46 && i + 1 < n && (x = CODE[s.getbyte(i + 1)]) >= 1 && x <= 26
+              x = 27
             end
-            k = k * 32 + x if len < MAX_WORD
-            len += 1
+            k = k * 32 + x
             i += 1
           end
-          word = nil
-          if plain && len <= MAX_WORD
-            if (cands = PHRASES[k]) && (match = phrase(s, i, n, cands))
-              i, word = match
-            else
-              word = WORDS[k]
-            end
+          word = WORDS[k]
+          if word && word[4] && (match = phrase(s, i, n, word[4]))
+            i, word = match
           end
-          if word
+          if word && (kind = word[0])
             flags = word[2]
-            flags |= CAP if (b = s.getbyte(st)) >= 65 && b <= 90
-            kind = word[0]
+            flags |= CAP if c <= 90 && c >= 65
             value = word[1]
-            m = t.size - STRIDE
             # "twenty four", "twenty-fourth": one number
-            if (kind == NUM || kind == ORD) && flags & WORDY != 0 && value < 10 && m >= 0 && t[m] == NUM &&
-               t[m + 2] & WORDY != 0 && t[m + 1] >= 20 && t[m + 1] % 10 == 0 && only_gap?(s, t[m + 4], st)
+            if word[3] && (m = t.size - STRIDE) >= 0 && t[m] == NUM && t[m + 2] & WORDY != 0 && t[m + 1] >= 20 &&
+               t[m + 1] % 10 == 0 && only_gap?(s, t[m + 4], st)
               t[m] = kind
               t[m + 1] += value
               t[m + 4] = i
             else
-              t << kind << value << flags << st << i
+              t.push(kind, value, flags, st, i)
             end
           else
             return Failure.new(:unknown_word, st, i) unless unknown
             unknown << st << i
           end
-        else
+        elsif cl == DIGIT
           st = i
-          i += 1
-          i += 1 while i < n && punctuation?(s.getbyte(i))
-          return Failure.new(:unknown_word, st, i) unless unknown
-          unknown << st << i
+          v = 0
+          while i < n && CLASS[c = s.getbyte(i)] == DIGIT
+            v = v * 10 + c - 48
+            i += 1
+          end
+          nd = i - st
+          v /= 10**(nd - 9) if nd > 9 # the first nine digits
+          flags = nd > DIGITS ? DIGITS : nd
+          flags |= ZERO if nd > 1 && s.getbyte(st) == 48
+          if i < n && c == 58
+            # the minutes, and below the seconds: two digits, each byte less 48
+            unless nd <= 2 && i + 2 < n && CLASS[a = s.getbyte(i + 1)] == DIGIT && CLASS[b = s.getbyte(i + 2)] == DIGIT
+              return Failure.new(:invalid_date, st, i + 3 < n ? i + 3 : n) unless unknown
+              i = malformed(s, st, i, n, unknown)
+              next
+            end
+            mi = a * 10 + b - 528
+            i += 3
+            sec = 0
+            if i < n && s.getbyte(i) == 58
+              unless i + 2 < n && CLASS[a = s.getbyte(i + 1)] == DIGIT && CLASS[b = s.getbyte(i + 2)] == DIGIT
+                return Failure.new(:invalid_date, st, i + 3 < n ? i + 3 : n) unless unknown
+                i = malformed(s, st, i, n, unknown)
+                next
+              end
+              sec = a * 10 + b - 528
+              i += 3
+              flags |= SECONDS
+              if i + 1 < n && s.getbyte(i) == 46 && CLASS[s.getbyte(i + 1)] == DIGIT # fractions of a second are dropped
+                i += 1
+                i += 1 while i < n && CLASS[s.getbyte(i)] == DIGIT
+              end
+            end
+            t.push(CLOCK, v * 10_000 + mi * 100 + sec, flags, st, i)
+          elsif i + 1 < n && SUFFIX[(c | 32) << 8 | (s.getbyte(i + 1) | 32)] && (i + 2 >= n || !ALPHA[s.getbyte(i + 2)])
+            i += 2
+            t.push(ORD, v, flags, st, i)
+          else
+            t.push(NUM, v, flags, st, i)
+            # "2026-10-23": the hyphens and month of an ISO date at once, as the loop would lex them
+            if nd == 4 && c == 45 && i + 4 < n && CLASS[a = s.getbyte(i + 1)] == DIGIT &&
+               CLASS[b = s.getbyte(i + 2)] == DIGIT && s.getbyte(i + 3) == 45 && CLASS[s.getbyte(i + 4)] == DIGIT
+              t.push(DASH, 0, 0, i, i + 1, NUM, a * 10 + b - 528, a == 48 ? 2 | ZERO : 2, i + 1, i + 3, DASH, 0, 0, i + 3, i + 4)
+              i += 4
+            end
+          end
+        else
+          case c
+          when 46
+            t.push(DOT, 0, 0, i, i + 1) if i > 0 && i + 1 < n && CLASS[s.getbyte(i - 1)] == DIGIT && CLASS[s.getbyte(i + 1)] == DIGIT
+            i += 1
+          when 45
+            # A hyphen inside a word ("twenty-four", "mid-october") is a space
+            t.push(DASH, 0, 0, i, i + 1) unless i > 0 && i + 1 < n && ALPHA[s.getbyte(i - 1)] && ALPHA[s.getbyte(i + 1)]
+            i += 1
+          when 47
+            t.push(SLASH, 0, 0, i, i + 1)
+            i += 1
+          when 43
+            t.push(PLUS, 0, 0, i, i + 1)
+            i += 1
+          when 64
+            t.push(AT, 0, 0, i, i + 1)
+            i += 1
+          else
+            st = i
+            i += 1
+            i += 1 while i < n && CLASS[s.getbyte(i)] == PUNCT
+            return Failure.new(:unknown_word, st, i) unless unknown
+            unknown << st << i
+          end
         end
       end
       t
@@ -195,25 +238,22 @@ module Acute
           j += 1 while j < n && ((c = s.getbyte(j)) == 32 || c == 45)
           next false if j == gap
           k = 0
-          len = 0
-          while j < n && (letter?(c = s.getbyte(j)) || c == 39)
-            k = k * 32 + (c == 39 ? 28 : (c | 32) - 96) if len < MAX_WORD
-            len += 1
+          while j < n && (ALPHA[c = s.getbyte(j)] || c == 39)
+            k = k * 32 + CODE[c]
             j += 1
           end
-          k == want && len <= MAX_WORD
+          k == want
         end
-        return [j, entry] if ok && (j >= n || !letter?(s.getbyte(j)))
+        return [j, entry] if ok && (j >= n || !ALPHA[s.getbyte(j)])
       end
       nil
     end
 
-    def self.ordinal_suffix?(s, i, n)
-      return false if i + 1 >= n
-      a = s.getbyte(i) | 32
-      b = s.getbyte(i + 1) | 32
-      ((a == 115 && b == 116) || (a == 110 && b == 100) || (a == 114 && b == 100) || (a == 116 && b == 104)) &&
-        (i + 2 >= n || !letter?(s.getbyte(i + 2)))
+    # A malformed clock ("4:3", "123:00") is one unknown word, to the end of its digits, colons and letters
+    def self.malformed(s, st, i, n, unknown)
+      i += 1 while i < n && ((c = CLASS[s.getbyte(i)]) == DIGIT || c == LETTER || s.getbyte(i) == 58)
+      unknown << st << i
+      i
     end
 
     def self.only_gap?(s, from, to)
@@ -224,23 +264,6 @@ module Acute
         from += 1
       end
       true
-    end
-
-    def self.letter?(c) = (c >= 97 && c <= 122) || (c >= 65 && c <= 90)
-
-    def self.digit?(c) = c >= 48 && c <= 57
-
-    # 0-99, or -1 unless both bytes are digits
-    def self.two_digits(s, i, n)
-      return -1 if i + 1 >= n
-      a = s.getbyte(i) - 48
-      b = s.getbyte(i + 1) - 48
-      a >= 0 && a <= 9 && b >= 0 && b <= 9 ? a * 10 + b : -1
-    end
-
-    def self.punctuation?(c)
-      !(c == 32 || c == 44 || c == 46 || c == 45 || c == 47 || c == 43 || c == 9 || c == 10 || c == 13 ||
-        c == 64 || digit?(c) || letter?(c) || c == 39 || c >= 128)
     end
 
     def self.unknown_ranges(s)

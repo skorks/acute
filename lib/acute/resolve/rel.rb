@@ -80,7 +80,7 @@ module Acute
         # D42: not "next second", whose rolling reading would be this second
         return [calendar] unless (u == :hour || u == :minute) && k != 0
         ctx.note(ROLLING)
-        [k > 0 ? Span.new(now, Period.add(now, 1, u), u, nil) : Span.new(Period.add(now, -1, u), now, u, nil), calendar]
+        [k > 0 ? window(ctx, Period::SECONDS[u], u) : window(ctx, -Period::SECONDS[u], u), calendar]
       end
 
       # D7, D31: rolling from now first, then whole units: the next N, or the N ending with this one and the N
@@ -94,12 +94,12 @@ module Acute
         now = ctx.now_local
         ctx.note(ROLLING)
         if word == :next || word == :this
-          return [Span.new(now, absolute(ctx, n * Period::SECONDS[u]), u, nil)] if Period::SECONDS[u]
+          return [window(ctx, n * Period::SECONDS[u], u)] if Period::SECONDS[u]
           out = [Span.new(now, Period.add(now, n, u), u, nil)]
           b = Period.add(Period.unit(u, ctx, now).b, 1, u)
           out << Span.new(b, Period.add(b, n, u), u, nil)
         else
-          return [Span.new(absolute(ctx, -n * Period::SECONDS[u]), now, u, nil)] if Period::SECONDS[u]
+          return [window(ctx, -n * Period::SECONDS[u], u)] if Period::SECONDS[u]
           out = [Span.new(Period.add(now, -n, u), now, u, nil)]
           cur = Period.unit(u, ctx, now).b
           e = Period.add(cur, 1, u)
@@ -107,10 +107,12 @@ module Acute
         end
       end
 
-      # D23: hours and smaller are absolute time, so "the last 48 hours" across a DST change is still 48 hours
-      def self.absolute(ctx, secs)
+      # From now to secs away, either way. D23: hours and smaller are absolute time, so "the last 48 hours" across
+      # a DST change is still 48 hours
+      def self.window(ctx, secs, unit)
         utc = ctx.now + secs
-        utc + ctx.zone.offset_at(utc)
+        t = ctx.local(utc)
+        secs > 0 ? Span.new(ctx.now_local, t, unit, nil, ctx.now, utc) : Span.new(t, ctx.now_local, unit, nil, utc, ctx.now)
       end
 
       # D18: "next 3pm" is the nearest one after now, "last 3pm" the nearest before

@@ -21,14 +21,15 @@ module Acute
 
     SYSTEM_ZONE = system_zone.freeze
     ZONE_INFERRED = Assumption.for(:zone_inferred)
+    NO_NOTES = [].freeze
 
     WEEK_STARTS = { sunday: 0, monday: 1 }.freeze
     HEMISPHERES = { north: false, south: true }.freeze
 
-    attr_reader :now, :zone, :today, :now_secs, :notes, :fiscal_year_start
+    attr_reader :now, :now_local, :zone, :today, :now_secs, :notes, :fiscal_year_start
     attr_accessor :dst, :past, :machine
 
-    def initialize(now, zone, context, locale: nil, week_start: nil, hemisphere: nil, fiscal_year_start: nil)
+    def initialize(now, zone, context, locale = nil, week_start = nil, hemisphere = nil, fiscal_year_start = nil)
       @past = case context
               when :future then false
               when :past then true
@@ -40,9 +41,8 @@ module Acute
         @zone = Zone.for(carried_zone(now) || rails_zone || SYSTEM_ZONE)
         @inferred = true
       end
-      @now = epoch(now)
+      @now = Time === now ? now.to_i : epoch(now)
       self.zone = @zone
-      @dst = nil
       @locale = Locale.for(locale) if locale
       @locale_zone = @zone.name
       @week_start = week_start && WEEK_STARTS.fetch(week_start.to_sym) { raise ArgumentError, "week_start: must be :sunday or :monday" }
@@ -50,15 +50,28 @@ module Acute
       @fiscal_year_start = fiscal_year_start && Integer(fiscal_year_start)
     end
 
-    # Switching zone (a zone named in the text) moves today and now_secs with it
-    def zone=(zone)
+    # Under a zone named in the text, today and now_secs move with it; returns the block's value
+    def in_zone(zone)
+      home = @zone
+      now_local = @now_local
+      self.zone = zone
+      out = yield
+      @zone = home
+      @now_local = now_local
+      @today = now_local / 86_400
+      @now_secs = now_local - @today * 86_400
+      out
+    end
+
+    private def zone=(zone)
       @zone = zone
-      local = @now + zone.offset_at(@now)
-      @today = local.div(86_400)
+      @now_local = local = @now + zone.offset_at(@now)
+      @today = local / 86_400
       @now_secs = local - @today * 86_400
     end
 
-    def now_local = @today * 86_400 + @now_secs
+    # The wall time of an instant, in local seconds
+    def local(utc) = utc + @zone.offset_at(utc)
 
     # Found only when a phrase needs it, from the zone given rather than one named in the text
     def locale = @locale ||= Locale.for_zone(@locale_zone)
@@ -87,6 +100,7 @@ module Acute
 
     # The main reading's assumptions: the rules applied, then its DST adjustment, then the zone
     def assumptions(main)
+      return NO_NOTES unless @notes || main.dst || @inferred
       list = @notes || []
       list << Assumption.for(main.dst) if main.dst
       list << ZONE_INFERRED if @inferred

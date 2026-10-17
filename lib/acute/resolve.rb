@@ -12,36 +12,57 @@ module Acute
     # begin and end are epochs, end exclusive, either nil when open; dst is the code of a DST adjustment made
     # to begin, if any; point is the D1 point of a part of day
     Reading = Struct.new(:begin, :end, :grain, :dst, :point)
-    # The same in local wall seconds
-    Span = Struct.new(:b, :e, :grain, :point)
+    # The same in local wall seconds. An instant ("now", "in 3 hours", a time with an offset) also carries its
+    # UTC in ub and ue, so a wall time the clocks repeat keeps the side it is on
+    Span = Struct.new(:b, :e, :grain, :point, :ub, :ue)
 
     APPROXIMATE = Assumption.for(:approximate)
     FIXED_OFFSET = Assumption.for(:fixed_offset)
+    WEEKDAY_MISMATCH = Assumption.for(:weekday_mismatch)
 
-    # An empty Array when nothing fits ("feb 30", a weekday that matches no reading)
+    # An empty Array when nothing fits ("feb 30")
     def self.call(node, ctx)
-      readings(spans(node, ctx), ctx.zone, ctx)
+      list = spans(node, ctx)
+      if list.empty? && !(date = Periodic.unfiltered(node)).equal?(node)
+        list = mismatch(node, date, ctx)
+      end
+      readings(list, ctx)
+    end
+
+    # D37, D43: a weekday that fits none of a date's coming readings may fit the one just gone ("Thu Aug 10"
+    # said on 16 Aug 2006); failing that, the date wins ("Sat, Sep 21" when that is a Tuesday). No other
+    # year is searched for.
+    def self.mismatch(node, date, ctx)
+      unless ctx.past?
+        ctx.past = true
+        list = spans(node, ctx)
+        ctx.past = false
+        return list unless list.empty?
+      end
+      list = spans(date, ctx)
+      ctx.note(WEEKDAY_MISMATCH) unless list.empty?
+      list
     end
 
     def self.spans(node, ctx)
-      case node
-      when G::Clock then Clock.bare(node, ctx)
-      when G::DayRef then Day.whole(node, ctx)
-      when G::Now
+      case G::KIND[node.class]
+      when :clock then Clock.bare(node, ctx)
+      when :day_ref then Day.whole(node, ctx)
+      when :now
         t = ctx.now_local
-        [Span.new(t, t + 1, :second, nil)]
-      when G::Date then Dates.spans(node, ctx)
-      when G::Within then within(node, ctx)
-      when G::Rel then Rel.spans(node, ctx)
-      when G::Shift then Shift.spans(node, ctx)
-      when G::Range then Ranges.spans(node, ctx)
-      when G::Open then Ranges.open(node, ctx)
-      when G::Fuzzy then Fuzzy.spans(node, ctx)
-      when G::Fiscal then Period.fiscal(node, ctx)
-      when G::Approx
+        [Span.new(t, t + 1, :second, nil, ctx.now, ctx.now + 1)]
+      when :date then Dates.spans(node, ctx)
+      when :within then within(node, ctx)
+      when :rel then Rel.spans(node, ctx)
+      when :shift then Shift.spans(node, ctx)
+      when :range then Ranges.spans(node, ctx)
+      when :open then Ranges.open(node, ctx)
+      when :fuzzy then Fuzzy.spans(node, ctx)
+      when :fiscal then Period.fiscal(node, ctx)
+      when :approx
         ctx.note(APPROXIMATE) # D14: the exact time, flagged
         spans(node.node, ctx)
-      when G::Zoned then zoned(node, ctx)
+      when :zoned then zoned(node, ctx)
       else Periodic.bare(node, ctx)
       end
     end
@@ -49,40 +70,59 @@ module Acute
     # "friday 3pm" repeats weekly, so it is found like a weekday; "tomorrow 3pm" is 3pm inside each reading of
     # tomorrow
     def self.within(node, ctx)
-      return Periodic.bare(node, ctx) if Periodic.cycle(node.outer)
+      if (cyc = Periodic.cycle(node.outer))
+        return Periodic.bare(node, ctx, cyc)
+      end
+      outers = spans(node.outer, ctx)
+      return Periodic.inside(node.inner, node.outer, outers[0], ctx) if outers.size == 1
       out = []
-      spans(node.outer, ctx).each do |s|
+      outers.each do |s|
         Periodic.inside(node.inner, node.outer, s, ctx).each { |x| out << x unless out.any? { |o| o.b == x.b && o.e == x.e } }
       end
       out
     end
 
-    # D18: an offset in the text wins over the zone; D29: a numeric one makes the time machine-written
+    # D18: an offset in the text wins over the zone, and fixes the instant; D29: a numeric one makes the time
+    # machine-written
     def self.zoned(node, ctx)
       ctx.note(FIXED_OFFSET)
-      home = ctx.zone
       off = node.offset
-      ctx.zone = Zone.for(format("%s%02d:%02d", off < 0 ? "-" : "+", off.abs / 3600, off.abs / 60 % 60))
       ctx.machine = node.numeric
-      inner = spans(node.node, ctx)
-      there = ctx.zone
-      ctx.zone = home
+      inner = ctx.in_zone(Zone.fixed(off)) { spans(node.node, ctx) }
       ctx.machine = false
-      readings(inner, there, ctx).map do |r|
-        Span.new(r.begin && r.begin + home.offset_at(r.begin), r.end && r.end + home.offset_at(r.end), r.grain,
-                 r.point && r.point + home.offset_at(r.point))
+      zone = ctx.zone
+      inner.map do |s|
+        ub = s.b && s.b - off
+        ue = s.e && s.e - off
+        if ub && ue && !s.point && (home = zone.steady_offset(ub, ue))
+          Span.new(ub + home, ue + home, s.grain, nil, ub, ue)
+        else
+          Span.new(ub && ctx.local(ub), ue && ctx.local(ue), s.grain, s.point && ctx.local(s.point - off), ub, ue)
+        end
       end
     end
 
-    def self.readings(spans, zone, ctx)
+    def self.readings(spans, ctx)
+      zone = ctx.zone
       out = []
       spans.each do |s|
         ctx.dst = nil
-        b = s.b && zone.local_to_utc(s.b, ctx)
-        dst = ctx.dst
-        e = s.e && zone.local_to_utc(s.e, ctx)
-        point = s.point && zone.local_to_utc(s.point, ctx)
-        out << Reading.new(b, e, s.grain, dst, point) unless out.any? { |o| o.begin == b && o.end == e }
+        b = s.b
+        e = s.e
+        point = s.point
+        if !s.ub && !s.ue && b && e && (!point || (point >= b && point <= e)) && (off = zone.steady_offset(b, e))
+          b -= off
+          e -= off
+          point -= off if point
+          dst = nil
+        else
+          b = s.ub || (b && zone.local_to_utc(b, ctx))
+          dst = ctx.dst
+          e = s.ue || (e && zone.local_to_utc(e, ctx))
+          point &&= zone.local_to_utc(point, ctx)
+        end
+        next if !out.empty? && out.any? { |o| o.begin == b && o.end == e }
+        out << Reading.new(b, e, s.grain, dst, point)
       end
       out
     end

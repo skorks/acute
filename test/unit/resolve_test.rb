@@ -24,6 +24,12 @@ class ResolveTest < Minitest::Test
     assert_reads "5", "2026-10-17 17:00:00 -04:00", ["2026-10-18 05:00:00 -04:00"], [:bare_hour_window]
   end
 
+  def test_d20_next_weekday_gives_the_coming_one_then_the_one_after
+    assert_reads "next friday", "2026-10-23 00:00:00 -04:00", ["2026-10-30 00:00:00 -04:00"], [:next_two_readings],
+                 now: "2026-10-19T10:00"
+    assert_reads "next friday", "2026-10-23 00:00:00 -04:00" # said at the weekend, only the coming one
+  end
+
   def test_d4_leading_zero_is_24_hour
     assert_reads "09:30", "2026-10-18 09:30:00 -04:00", [], [:next_occurrence]
     assert_reads "at 0930", "2026-10-18 09:30:00 -04:00", [], [:next_occurrence]
@@ -96,6 +102,17 @@ class ResolveTest < Minitest::Test
     r = parse("tomorrow at 2:30am", now: "2027-03-13T12:00")
     assert_equal "2027-03-14 03:30:00 -04:00", wall(r.begin)
     assert_equal [:dst_skipped_time], codes(r)
+  end
+
+  # D43: an instant carries its UTC, so a shift across the fold lands on the second 1:30, not the first
+  def test_a_shift_across_the_fall_back_keeps_the_later_side
+    assert_equal "2026-11-01 01:30:00 -05:00", wall(parse("in 3 hours", now: "2026-10-31T23:30").begin)
+    assert_equal "2026-11-01 01:30:00 -05:00", wall(parse("in 1 hour", now: "2026-11-01T01:30").begin)
+  end
+
+  def test_a_zone_abbreviation_picks_the_side_of_a_repeated_hour
+    assert_equal "2026-11-01 01:30:00 -05:00", wall(parse("2026-11-01 01:30 EST").begin)
+    assert_equal "2026-11-01 01:30:00 -04:00", wall(parse("2026-11-01 01:30 EDT").begin)
   end
 
   def test_a_day_spans_its_real_length_across_dst

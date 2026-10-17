@@ -107,6 +107,7 @@ class BreadthTest < Minitest::Test
 
   def test_approx_fuzzy_business
     assert_reads "around noon", "2026-10-18 12:00:00 -04:00", [], %i[approximate next_occurrence]
+    assert_reads "approximately 3pm", "2026-10-17 15:00:00 -04:00", [], [:approximate] # a word over 12 letters
     assert_span "early next week", "2026-10-19 00:00:00 -04:00", "2026-10-21 00:00:00 -04:00"
     assert_reads "next business day", "2026-10-19 00:00:00 -04:00"
   end
@@ -127,5 +128,24 @@ class BreadthTest < Minitest::Test
 
   def test_d42_a_weekday_filter_passes_over_a_cycle_whose_date_is_passed
     assert_reads "Sat, Sep 21", "2013-09-21 00:00:00 -04:00", now: "2013-02-12T04:30"
+  end
+
+  def test_iso_ordinal_dates
+    assert_reads "2026-001", "2026-01-01 00:00:00 -05:00"
+    assert_reads "2024-366", "2024-12-31 00:00:00 -05:00"
+    assert_reads "2026-032T10:15", "2026-02-01 10:15:00 -05:00"
+    assert_nil Acute.parse("2026-366", now: "2026-10-17T14:00", zone: NY)
+  end
+
+  def test_d43_a_weekday_that_fits_no_reading_gives_way_to_the_date
+    assert_reads "Sat, Sep 21", "2027-09-21 00:00:00 -04:00", [], [:weekday_mismatch]
+    assert_reads "Saturday 2026-10-23 at 3pm", "2026-10-23 15:00:00 -04:00", [], [:weekday_mismatch]
+    assert_reads "saturday 7/6/2018", "2018-07-06 00:00:00 -04:00", ["2018-06-07 00:00:00 -04:00"], %i[numeric_date_order weekday_mismatch]
+    assert_nil Acute.parse("Sat feb 30", now: "2026-10-17T14:00", zone: NY)
+  end
+
+  def test_d43_a_weekday_may_fit_the_date_just_gone
+    assert_reads "Thu Aug 10 at 4pm", "2006-08-10 16:00:00 -04:00", now: "2006-08-16T14:00"
+    assert_reads "Fri Aug 10", "2006-08-10 00:00:00 -04:00", [], [:weekday_mismatch], now: "2006-08-16T14:00", context: :past
   end
 end

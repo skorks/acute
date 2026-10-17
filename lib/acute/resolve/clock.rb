@@ -40,15 +40,14 @@ module Acute
         end
       end
 
-      def self.grain(c) = c.seconds ? :second : :minute
-
-      def self.length(c) = c.seconds ? 1 : 60
+      # A clock's grain and length in seconds
+      SECOND = [:second, 1].freeze
+      MINUTE = [:minute, 60].freeze
 
       # D23: the next occurrence of each candidate (the previous one in past context); D36: now counts
       def self.bare(c, ctx)
         cands = candidates(c, ctx, false)
-        grain = grain(c)
-        len = length(c)
+        grain, len = c.seconds ? SECOND : MINUTE
         now_secs = ctx.now_secs
         out = []
         i = 0

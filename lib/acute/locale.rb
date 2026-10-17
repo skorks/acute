@@ -7,29 +7,20 @@ module Acute
   Locale = Struct.new(:country, :day_first, :week_start, :south)
 
   class Locale
-    SUNDAY_WEEKS = %w[US CA JP IN PK BR NP ZA PH MX IL KR TW HK].freeze  # D19, D39
-    MONTH_FIRST = %w[US CA JP CN PH NP].freeze                             # D10, D37
-    SOUTH = %w[AU NZ ZA BR AR CL UY PY BO PE].freeze                      # D3
-    CACHE = {}
-    ZONES = {}
-    LOCK = Mutex.new
+    SUNDAY_WEEKS = Ractor.make_shareable(%w[US CA JP IN PK BR NP ZA PH MX IL KR TW HK]) # D19, D39
+    MONTH_FIRST = Ractor.make_shareable(%w[US CA JP CN PH NP])                          # D10, D37
+    SOUTH = Ractor.make_shareable(%w[AU NZ ZA BR AR CL UY PY BO PE])                    # D3
+
+    def self.build(country) = new(country, !MONTH_FIRST.include?(country), SUNDAY_WEEKS.include?(country) ? 0 : 1,
+                                  SOUTH.include?(country)).freeze
+
+    # Built once at load, frozen and shareable, so any Ractor can read them
+    ALL = Ractor.make_shareable(TZInfo::Country.all_codes.to_h { [_1, build(_1)] })
+    US = ALL.fetch("US")
 
     def self.for(code)
       country = code.to_s.split(/[-_]/).last.upcase
-      CACHE[country] || LOCK.synchronize do
-        CACHE[country] ||= new(country, !MONTH_FIRST.include?(country), SUNDAY_WEEKS.include?(country) ? 0 : 1,
-                               SOUTH.include?(country)).freeze
-      end
-    end
-
-    US = self.for("US")
-
-    # D27: from the zone's country; UTC and zones with no country fall back to en-US
-    def self.for_zone(name)
-      ZONES[name] || begin
-        locale = (country = zone_countries[name]) ? self.for(country) : US
-        LOCK.synchronize { ZONES[name] ||= locale }
-      end
+      ALL[country] || build(country)
     end
 
     # tzinfo lists a zone under every country that uses it (America/Toronto under BS and CA); these are the
@@ -46,12 +37,12 @@ module Acute
       "Pacific/Port_Moresby" => "PG", "Pacific/Tarawa" => "KI", "Pacific/Pago_Pago" => "AS"
     }.freeze
 
-    def self.zone_countries
-      @zone_countries || LOCK.synchronize do
-        @zone_countries ||= TZInfo::Country.all.each_with_object(SHARED.dup) do |c, h|
-          c.zone_identifiers.each { |z| h[z] ||= c.code }
-        end.freeze
-      end
-    end
+    # Zone name => its country's code
+    ZONE_COUNTRIES = Ractor.make_shareable(TZInfo::Country.all.each_with_object(SHARED.dup) do |c, h|
+      c.zone_identifiers.each { |z| h[z] ||= c.code }
+    end)
+
+    # D27: from the zone's country; UTC and zones with no country fall back to en-US
+    def self.for_zone(name) = ALL[ZONE_COUNTRIES[name]] || US
   end
 end

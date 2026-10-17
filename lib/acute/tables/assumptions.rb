@@ -25,6 +25,7 @@ module Acute
       this_passed: ["D21", "that one has passed in the current period, so the next one comes first; the passed one is an alternative"].freeze,
       rolling_window: ["D31", "a span counted from now; whole calendar units are alternatives"].freeze,
       zone_inferred: [nil, "no zone was given; the zone comes from now, Time.zone or the system"].freeze,
+      weekday_mismatch: ["D37", "the weekday given doesn't fall on that date, so the date is used"].freeze,
     }.freeze
   end
 end

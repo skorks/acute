@@ -3,6 +3,7 @@ module Acute
     # Calendar dates: "2026-10-23", "oct 23", "10/23", "23.10.2026", "2015"
     module Dates
       ORDER = Assumption.for(:numeric_date_order)
+      DAY = Period::DAY
       LONGEST = [0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31].freeze
 
       def self.spans(d, ctx)
@@ -14,15 +15,17 @@ module Acute
         return Periodic.bare(d, ctx) unless d.year
         y = d.year
         return [] if y < 1 # D18
-        if d.day
-          return [] unless d.month.between?(1, 12) && d.day.between?(1, Calendar.days_in_month(y, d.month))
-          b = Period.civil(y, d.month, d.day)
-          [Span.new(b, b + Period::DAY, :day, nil)]
-        elsif d.month
-          return [] unless d.month.between?(1, 12)
-          [Span.new(Period.civil(y, d.month, 1), Period.add(Period.civil(y, d.month, 1), 1, :month), :month, nil)]
+        m = d.month
+        if (day = d.day)
+          return [] unless m >= 1 && m <= 12 && day >= 1 && (day <= 28 || day <= Calendar.days_in_month(y, m))
+          b = Calendar.days_from_civil(y, m, day) * DAY
+          [Span.new(b, b + DAY, :day, nil)]
+        elsif m
+          return [] unless m >= 1 && m <= 12
+          b = Calendar.days_from_civil(y, m, 1) * DAY
+          [Span.new(b, b + (m == 2 ? Calendar.days_in_month(y, m) : Calendar::MONTH_DAYS[m]) * DAY, :month, nil)]
         else
-          [Span.new(Period.civil(y, 1, 1), Period.civil(y + 1, 1, 1), :year, nil)]
+          [Span.new(Calendar.year_start(y) * DAY, Calendar.year_start(y + 1) * DAY, :year, nil)]
         end
       end
 
@@ -43,7 +46,7 @@ module Acute
 
       # D23: chronic's window, from 50 years before now to 49 after
       def self.two_digit_year(yy, ctx)
-        now = Period.ymd(ctx.now_local) / 10_000
+        now = Period.year(ctx.now_local)
         y = now - now % 100 + yy
         if y >= now + 50 then y - 100
         elsif y < now - 50 then y + 100

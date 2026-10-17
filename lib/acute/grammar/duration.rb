@@ -7,13 +7,13 @@ module Acute
     def duration
       parts = []
       while @i < @n
-        @i += S if parts.any? && (word == :and || kind_at(@i) == L::PLUS)
-        if parts.any? && kind_at(@i) == L::ART && word_at(@i + S) == :half && kind_at(@i + 2 * S) != L::UNIT
+        @i += S if parts.any? && (@t[@i + 1] == :and || @t[@i] == L::PLUS)
+        if parts.any? && @t[@i] == L::ART && @t[@i + S + 1] == :half && @t[@i + 2 * S] != L::UNIT
           @i += 2 * S
           parts << Unit.new(parts.last.unit, Rational(1, 2))
           next
         end
-        half = word == :half
+        half = @t[@i + 1] == :half
         @i += S if half
         q = quantity
         return failure(@i < @n ? :conflict : :incomplete) unless q && q.count.positive?

@@ -1,4 +1,5 @@
 require_relative "lexer"
+require_relative "calendar"
 
 module Acute
   # Tokens to a tree of what was said, by recursive descent. It knows nothing of now, the zone or the
@@ -11,6 +12,9 @@ module Acute
   #
   # An item's atoms are nested by size, the coarsest outside: "friday 3pm" is Within(Clock, Weekday) and
   # "christmas 2015" is Within(Holiday, Date 2015). Two atoms of the same size conflict.
+  #
+  # Tokens are read straight from the flat Array: @t[i] is a kind and @t[i + 1] a value, both nil past the
+  # end. A function word's Symbol is no other kind's value, so `@t[@i + 1] == :of` is the word "of".
   class Grammar
     # h24: written with a leading zero, a 24-hour form (D4); seconds: written with seconds
     Clock = Struct.new(:hour, :min, :sec, :meridiem, :named, :h24, :seconds)
@@ -38,6 +42,11 @@ module Acute
     Now = Struct.new
     NOW = Now.new.freeze
     WEEKEND = Weekend.new(nil).freeze
+    # Each node's class as a Symbol, to dispatch on in one step: a case over the classes tests them in turn
+    KIND = { Clock => :clock, DayRef => :day_ref, Date => :date, Weekday => :weekday, Part => :part, Season => :season,
+             Holiday => :holiday, Weekend => :weekend, Fiscal => :fiscal, Unit => :unit, Rel => :rel, Shift => :shift,
+             Nth => :nth, Within => :within, Range => :range, Open => :open, Approx => :approx, Fuzzy => :fuzzy,
+             Zoned => :zoned, Now => :now }.freeze
 
     L = Lexer
     S = Lexer::STRIDE
@@ -48,11 +57,27 @@ module Acute
 
     def self.parse(tokens) = new(tokens).phrase
 
+    # The longest prefix of the tokens that is a phrase (or with duration: true, a duration), as [tree, its
+    # length in Array entries], or nil. A failure says which token the parser stuck at; a longer prefix gets
+    # no further, so the next try ends before it. Each try is a new Array: a lookahead past the end must
+    # read nil.
+    def self.longest(tokens, duration: false)
+      while tokens.size > 0
+        g = new(tokens)
+        tree = duration ? g.duration : g.phrase
+        return [tree, tokens.size] unless Failure === tree
+        stop = g.stuck < tokens.size ? g.stuck : tokens.size - S
+        tokens = tokens[0, stop]
+      end
+    end
+
     def initialize(tokens)
       @t = tokens
       @n = tokens.size
       @i = 0
     end
+
+    attr_reader :stuck
 
     def phrase
       return failure(:incomplete) if @n == 0
@@ -66,7 +91,7 @@ module Acute
     private
 
     def top
-      w = word
+      w = @t[@i + 1]
       if (dir = OPEN[w]) && @i + S < @n
         @i += S
         node = body
@@ -80,18 +105,17 @@ module Acute
         node = body
         Failure === node ? node : Approx.new(node)
       else
-        body
+        body(w)
       end
     end
 
-    def body
-      w = word
+    def body(w = @t[@i + 1])
       if w == :between || w == :from
         start = @i
         @i += S
         from = item(true)
         return from if Failure === from
-        return @i = start && failure(:incomplete) unless separator?(word == :and)
+        return @i = start && failure(:incomplete) unless separator?(@t[@i + 1] == :and)
         @i += S
         to = item(true)
         return to if Failure === to
@@ -125,10 +149,14 @@ module Acute
       k == L::DASH || (k == L::WORD && (RANGE[@t[@i + 1]] || (and_ok && @t[@i + 1] == :and)))
     end
 
-    # One constituent after another, then nested by size
+    # One constituent after another, then nested by size. Most items are one or two atoms, so the lists of
+    # atoms and of where each starts are made only for a third.
     def item(loose)
-      atoms = []
-      starts = []
+      last = nil
+      a1 = s1 = a2 = s2 = nil
+      atoms = nil
+      starts = nil
+      dates = 0
       zone = nil
       numeric = false
       at = false
@@ -151,7 +179,7 @@ module Acute
             @i += 2 * S
           end
           next
-        elsif (k == L::PLUS || (k == L::DASH && (machine?(atoms) || dash_offset?(atoms)))) && @i + S < @n &&
+        elsif (k == L::PLUS || (k == L::DASH && (machine?(last) || dash_offset?(last)))) && @i + S < @n &&
               (off = offset(@i + S))
           zone = k == L::PLUS ? off : -off
           numeric = true
@@ -160,28 +188,49 @@ module Acute
         elsif k == L::DASH || (k == L::WORD && (RANGE[v] || v == :and))
           break
         end
-        starts << @i
-        a = atom(loose || at || !atoms.empty?)
+        start = @i
+        a = atom(loose || at || !last.nil?)
         return a if Failure === a
-        atoms << a
+        if atoms
+          atoms << a
+          starts << start
+        elsif a2
+          atoms = [a1, a2, a]
+          starts = [s1, s2, start]
+        elsif a1
+          a2 = a
+          s2 = start
+        else
+          a1 = a
+          s1 = start
+        end
+        last = a
+        dates += 1 if Date === a
         at = false
       end
-      return failure(:incomplete) if at || atoms.empty?
-      node = combine(atoms, starts)
+      return failure(:incomplete) if at || last.nil?
+      node = last
+      if a2 && !atoms && dates < 2
+        node = pair(a1, s1, a2, s2)
+      elsif a2
+        atoms ||= [a1, a2]
+        starts ||= [s1, s2]
+        merge_year(atoms, starts) if dates > 1
+        node = combine(atoms, starts)
+      end
       return node if Failure === node
       zone ? Zoned.new(node, zone, numeric) : node
     end
 
-    def machine?(atoms)
-      a = atoms.last
+    def machine?(a)
       a = a.inner if Within === a
       Clock === a && (a.seconds || a.h24)
     end
 
     # D42: "15:45 -0800", "11:00 -03:00": after a clock, a dash with a space before it and none after, then
     # four digits or hh:mm, is an offset; "3:00 - 5:00" and "9-5" stay ranges
-    def dash_offset?(atoms)
-      return false unless Clock === atoms.last && @i + S < @n && @t[@i + 3] > @t[@i - 1] && @t[@i + S + 3] == @t[@i + 4]
+    def dash_offset?(last)
+      return false unless Clock === last && @i + S < @n && @t[@i + 3] > @t[@i - 1] && @t[@i + S + 3] == @t[@i + 4]
       k = @t[@i + S]
       (k == L::NUM && @t[@i + S + 2] & L::DIGITS == 4) || (k == L::CLOCK && @t[@i + S + 2] & L::DIGITS == 2)
     end
@@ -196,74 +245,9 @@ module Acute
       end
     end
 
-    def combine(atoms, starts)
-      return atoms[0] if atoms.size == 1
-      merge_year(atoms, starts)
-      return atoms[0] if atoms.size == 1
-      sizes = atoms.map { size(_1) }
-      # coarsest first, in the order said among equals; an insertion sort, as there are only a few
-      order = []
-      j = 0
-      while j < sizes.size
-        k = order.size
-        k -= 1 while k > 0 && sizes[order[k - 1]] < sizes[j]
-        order.insert(k, j)
-        j += 1
-      end
-      node = atoms[order[0]]
-      o = 1
-      while o < order.size
-        j = order[o]
-        a = atoms[j]
-        if sizes[j] == sizes[order[o - 1]] && !(Weekday === a && Date === node && node.day) &&
-           !(Date === a && a.day && Weekday === node)
-          return failure(:conflict, starts[j])
-        end
-        return failure(:conflict, starts[j]) if Unit === a || Unit === node
-        # D37: a weekday with a date only picks among the date's readings
-        node = Weekday === node && Date === a ? Within.new(node, a) : Within.new(a, node)
-        o += 1
-      end
-      node
-    end
-
-    # "23 oct" + "2026", or "10/23" + "2026", is one date
-    def merge_year(atoms, starts)
-      y = atoms.index { |a| Date === a && a.year && a.month.nil? && a.sep.nil? }
-      return unless y
-      d = atoms.index { |a| Date === a && a.year.nil? && a.month }
-      return unless d
-      atoms[d] = Date.new(atoms[y].year, atoms[d].month, atoms[d].day, atoms[d].sep, false)
-      atoms.delete_at(y)
-      starts.delete_at(y)
-    end
-
-    # How coarse a constituent is, for nesting: clock 0, part 1, day 2, week 3, month 5, season 6, year 7
-    def size(a)
-      case a
-      when Clock, Approx then 0
-      when Part then 1
-      when DayRef, Weekday, Holiday then 2
-      when Weekend then 3
-      when Date then a.day ? 2 : a.month ? 5 : 7
-      when Season then 6
-      when Fiscal then 7
-      when Unit then UNIT_SIZE[a.unit]
-      when Rel, Fuzzy then size(a.node) - (Fuzzy === a ? 1 : 0)
-      when Nth then Unit === a.node ? UNIT_SIZE[a.node.unit] : size(a.node)
-      when Shift then UNIT_SIZE[a.unit] >= 2 ? 2 : 0
-      when Within then size(a.inner)
-      when Range then size(a.from)
-      else 2
-      end
-    end
-
-    def word = @i < @n && @t[@i] == L::WORD ? @t[@i + 1] : nil
-
-    def kind_at(i) = i < @n ? @t[i] : -1
-
     # Points at token index i, or at the end of the text when the tokens ran out
     def failure(code, i = @i)
+      @stuck = i > @i ? i : @i
       if i < @n
         Failure.new(code, @t[i + 3], @t[i + 4])
       else
@@ -274,6 +258,7 @@ module Acute
   end
 end
 
+require_relative "grammar/nesting"
 require_relative "grammar/words"
 require_relative "grammar/numbers"
 require_relative "grammar/duration"

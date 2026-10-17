@@ -12,13 +12,16 @@ require_relative "acute/extract"
 module Acute
   MAX_LENGTH = 512
 
-  def self.parse(text, now: nil, zone: nil, context: :future, **options)
-    out = run(text, Context.new(now, zone, context, **options))
+  # The options are spelled out rather than taken as **options, which would cost every parse a Hash
+  def self.parse(text, now: nil, zone: nil, context: :future, locale: nil, week_start: nil, hemisphere: nil,
+                 fiscal_year_start: nil)
+    out = run(text, Context.new(now, zone, context, locale, week_start, hemisphere, fiscal_year_start))
     Result === out ? out : nil
   end
 
-  def self.parse!(text, now: nil, zone: nil, context: :future, **options)
-    out = run(text, Context.new(now, zone, context, **options))
+  def self.parse!(text, now: nil, zone: nil, context: :future, locale: nil, week_start: nil, hemisphere: nil,
+                  fiscal_year_start: nil)
+    out = run(text, Context.new(now, zone, context, locale, week_start, hemisphere, fiscal_year_start))
     raise Explain.error(out, text) if Failure === out
     out
   end
@@ -33,10 +36,12 @@ module Acute
     Failure === units ? nil : Duration.from_units(units)
   end
 
-  def self.extract(text, now: nil, zone: nil, context: :future, **options)
+  def self.extract(text, now: nil, zone: nil, context: :future, locale: nil, week_start: nil, hemisphere: nil,
+                   fiscal_year_start: nil)
     raise ArgumentError, "text must be a String, got #{text.class}" unless String === text
-    Context.new(now, zone, context, **options) # bad options raise here, before any mention is found
-    Extract.call(text, -> { Context.new(now, zone, context, **options) })
+    options = [locale, week_start, hemisphere, fiscal_year_start]
+    Context.new(now, zone, context, *options) # bad options raise here, before any mention is found
+    Extract.call(text, -> { Context.new(now, zone, context, *options) })
   end
 
   def self.run(text, ctx)

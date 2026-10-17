@@ -7,16 +7,17 @@ module Acute
       DAY = Period::DAY
       LIMIT = 12 # cycles to search; enough for "feb 29"
       SAME_DAY = Assumption.for(:same_day_or_next)
+      SAME_OR_NEXT = [0, DAY].freeze
 
       def self.cycle(node)
-        case node
-        when G::Weekday, G::Weekend then :week
-        when G::Date then node.year || node.sep ? nil : node.month ? :year : :month
-        when G::Holiday, G::Season then :year
-        when G::Part, G::Clock then :day
-        when G::Nth then G::Unit === node.node && (node.node.unit == :quarter || node.node.unit == :month) ? :year : :month
-        when G::Within then cycle(node.outer)
-        when G::Fuzzy then cycle(node.node)
+        case G::KIND[node.class]
+        when :weekday, :weekend then :week
+        when :date then node.year || node.sep ? nil : node.month ? :year : :month
+        when :holiday, :season then :year
+        when :part, :clock then :day
+        when :nth then G::Unit === node.node && (node.node.unit == :quarter || node.node.unit == :month) ? :year : :month
+        when :within then cycle(node.outer)
+        when :fuzzy then cycle(node.node)
         end
       end
 
@@ -27,22 +28,14 @@ module Acute
       end
 
       # D11, D23: the current one if it isn't over, else the next; in past context the latest that has begun
-      def self.bare(node, ctx)
-        cyc = cycle(node)
+      def self.bare(node, ctx, cyc = cycle(node))
         return [] unless cyc
         now = ctx.now_local
         i = Period.index(cyc, ctx, now)
-        if ctx.past?
-          i += 1
-          LIMIT.times do
-            list = at(node, ctx, i, cyc)
-            return list if !list.empty? && list[0].b <= now
-            return [] if list.empty? && !skips?(node) && !passed_over?(node, ctx, i, cyc) { |s| s.b <= now }
-            i -= 1
-          end
-          return []
-        end
-        list = first(node, ctx, i - 1, cyc) { |s| s.e > now }
+        # The cycles either side of now's are looked at only when an occurrence there can reach into it
+        near = contained?(node) ? 0 : 1
+        return last(node, ctx, i + near, cyc) { |s| s.b <= now } if ctx.past?
+        list = first(node, ctx, i - near, cyc) { |s| s.e > now }
         # D40, D41: "tonight" said at exactly 00:00 is the rest of the night under way, then the coming one
         if now % DAY == 0 && G::Part === node && node.name == :tonight && list.size > 0 && list[0].b < now
           return [Span.new(now, list[0].e, list[0].grain, nil), *at(node, ctx, i, cyc)]
@@ -57,14 +50,26 @@ module Acute
       end
 
       # The first occurrence from cycle i on whose main reading passes the block
-      def self.first(node, ctx, i, cyc = cycle(node), &pass)
-        LIMIT.times do
+      # A while loop: a return from inside a block would unwind through it, which costs more than the search
+      def self.first(node, ctx, i, cyc = cycle(node))
+        stop = i + LIMIT
+        while i < stop
           list = at(node, ctx, i, cyc)
-          return list if !list.empty? && pass.(list[0])
-          return [] if list.empty? && !skips?(node) && !passed_over?(node, ctx, i, cyc, &pass)
+          return list if !list.empty? && yield(list[0])
+          return [] if list.empty? && !skips?(node) && !passed_over?(node, ctx, i, cyc) { |s| yield s }
           i += 1
         end
         []
+      end
+
+      # Whether every occurrence lies inside its own cycle
+      def self.contained?(node)
+        case G::KIND[node.class]
+        when :weekday, :date, :holiday, :nth then true
+        when :clock then node.named != :midnight
+        when :within then contained?(node.inner) && contained?(node.outer)
+        else false
+        end
       end
 
       # D42: only a date skips the cycles it doesn't exist in ("feb 29", "the 31st"); "5th tuesday in may" is
@@ -88,11 +93,12 @@ module Acute
       end
 
       # The latest occurrence at or before cycle i whose main reading passes the block
-      def self.last(node, ctx, i, cyc = cycle(node), &pass)
-        LIMIT.times do
+      def self.last(node, ctx, i, cyc = cycle(node))
+        stop = i - LIMIT
+        while i > stop
           list = at(node, ctx, i, cyc)
-          return list if !list.empty? && pass.(list[0])
-          return [] if list.empty? && !skips?(node) && !passed_over?(node, ctx, i, cyc, &pass)
+          return list if !list.empty? && yield(list[0])
+          return [] if list.empty? && !skips?(node) && !passed_over?(node, ctx, i, cyc) { |s| yield s }
           i -= 1
         end
         []
@@ -101,24 +107,26 @@ module Acute
       # The readings of node inside the span s; outer is the node s came from, which a clock needs to see a
       # part of day
       def self.inside(node, outer, s, ctx)
-        case node
-        when G::Clock then clock(node, outer, s, ctx)
-        when G::Weekday
-          d = Period.day(s.b)
-          d += (node.wday - Calendar.weekday(d)) % 7
+        case G::KIND[node.class]
+        when :within
+          outers = inside(node.outer, outer, s, ctx)
+          return inside(node.inner, node.outer, outers[0], ctx) if outers.size == 1
+          outers.flat_map { |o| inside(node.inner, node.outer, o, ctx) }
+        when :clock then clock(node, outer, s, ctx)
+        when :weekday
+          d = s.b / DAY
+          d += (node.wday - (d + 4) % 7) % 7 # (d + 4) % 7: d's weekday
           d * DAY < s.e ? [Span.new(d * DAY, d * DAY + DAY, :day, nil)] : []
-        when G::Date then date(node, s, ctx)
-        when G::Part then [Named.part(node.name, Period.day(s.b), ctx)]
-        when G::Weekend
+        when :date then date(node, s, ctx)
+        when :part then [Named.part(node.name, Period.day(s.b), ctx)]
+        when :weekend
           week = s.grain == :week ? s : Period.span(:week, ctx, Period.index(:week, ctx, s.b))
           Named.weekends(week, ctx)
-        when G::Holiday then within(Named.holiday(node.name, Period.ymd(s.b) / 10_000, ctx), s)
-        when G::Season then within(Named.season(node.name, Period.ymd(s.b) / 10_000, ctx), s)
-        when G::Nth then nth(node, s, ctx)
-        when G::Within
-          inside(node.outer, outer, s, ctx).flat_map { |o| inside(node.inner, node.outer, o, ctx) }
-        when G::Range then Ranges.inside(node, outer, s, ctx)
-        when G::Fuzzy then inside(node.node, outer, s, ctx).flat_map { |x| Fuzzy.apply(node.pos, x, node.node, ctx) }
+        when :holiday then within(Named.holiday(node.name, Period.year(s.b), ctx), s)
+        when :season then within(Named.season(node.name, Period.year(s.b), ctx), s)
+        when :nth then nth(node, s, ctx)
+        when :range then Ranges.inside(node, outer, s, ctx)
+        when :fuzzy then inside(node.node, outer, s, ctx).flat_map { |x| Fuzzy.apply(node.pos, x, node.node, ctx) }
         else Resolve.spans(node, ctx).select { |x| x.b >= s.b && x.b < s.e }
         end
       end
@@ -127,19 +135,25 @@ module Acute
 
       def self.date(node, s, ctx)
         return Dates.orders(node, ctx).flat_map { |d| date(d, s, ctx) } if node.sep
-        p = Period.ymd(s.b)
-        y = node.year || p / 10_000
-        m = node.month || p / 100 % 100
-        if node.day
-          return [] unless m.between?(1, 12) && node.day.between?(1, Calendar.days_in_month(y, m))
-          b = Period.civil(y, m, node.day)
-          within(Span.new(b, b + DAY, :day, nil), s)
-        elsif node.month
-          return [] unless m.between?(1, 12)
-          b = Period.civil(y, m, 1)
-          within(Span.new(b, Period.add(b, 1, :month), :month, nil), s)
+        # A year from January 1st (a cycle, not a fiscal year) needs no civil date
+        if s.grain == :year && (y = Calendar.year_if_first(s.b / DAY))
+          y = node.year || y
+          m = node.month || 1
         else
-          within(Span.new(Period.civil(y, 1, 1), Period.civil(y + 1, 1, 1), :year, nil), s)
+          p = Period.ymd(s.b)
+          y = node.year || p / 10_000
+          m = node.month || p / 100 % 100
+        end
+        if node.day
+          return [] unless m >= 1 && m <= 12 && node.day >= 1 && (node.day <= 28 || node.day <= Calendar.days_in_month(y, m))
+          b = Calendar.days_from_civil(y, m, node.day) * DAY
+          b >= s.b && b < s.e ? [Span.new(b, b + DAY, :day, nil)] : []
+        elsif node.month
+          return [] unless m >= 1 && m <= 12
+          b = Calendar.days_from_civil(y, m, 1) * DAY
+          b >= s.b && b < s.e ? [Span.new(b, b + (m == 2 ? Calendar.days_in_month(y, m) : Calendar::MONTH_DAYS[m]) * DAY, :month, nil)] : []
+        else
+          within(Span.new(Calendar.year_start(y) * DAY, Calendar.year_start(y + 1) * DAY, :year, nil), s)
         end
       end
 
@@ -149,10 +163,16 @@ module Acute
         x = node.node
         out = case x
               when G::Weekday
-                first = Period.day(s.b)
-                last = Period.day(s.e) - 1
-                d = n > 0 ? Named.nth_weekday(first, x.wday, n) : last - (Calendar.weekday(last) - x.wday) % 7
-                [Span.new(d * DAY, d * DAY + DAY, :day, nil)]
+                # the nth wday from the first day, or the last one back from the last day; (d + 4) % 7 is d's weekday
+                if n > 0
+                  d = s.b / DAY
+                  d += (x.wday - (d + 4) % 7) % 7 + 7 * (n - 1)
+                else
+                  d = s.e / DAY - 1
+                  d -= (d + 4 - x.wday) % 7
+                end
+                b = d * DAY
+                return b >= s.b && b + DAY <= s.e ? [Span.new(b, b + DAY, :day, nil)] : []
               when G::Weekend
                 sat = Named.nth_weekday(Period.day(s.b), 6, n > 0 ? n : 1)
                 Named.weekends(Period.span(:week, ctx, Period.index(:week, ctx, sat * DAY)), ctx)
@@ -173,9 +193,8 @@ module Acute
       # D4, D6 for a clock inside a day; D35, D40 inside a part of the day
       def self.clock(c, outer, s, ctx)
         cands = Clock.candidates(c, ctx, true)
-        len = Clock.length(c)
-        grain = Clock.grain(c)
-        day = Period.day(s.b) * DAY
+        grain, len = c.seconds ? Clock::SECOND : Clock::MINUTE
+        day = s.b - s.b % DAY
         part = part_name(outer)
         return cands.map { |secs| Span.new(day + secs, day + secs + len, grain, nil) } unless part
         if c.hour == 12 && !c.meridiem && !c.named # D30, D40: 12 in the morning, 12 at night
@@ -188,7 +207,8 @@ module Acute
         best = nil
         best_gap = nil
         cands.each do |secs|
-          [day + secs, day + DAY + secs].each do |t|
+          SAME_OR_NEXT.each do |k| # the next day too, for a part that runs past midnight
+            t = day + k + secs
             gap = t < s.b ? s.b - t : t >= s.e ? t - s.e : -1
             next if best_gap && gap >= best_gap
             best = t

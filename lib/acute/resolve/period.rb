@@ -7,9 +7,11 @@ module Acute
       MONTHS = { month: 1, quarter: 3, year: 12, decade: 120, century: 1200 }.freeze
       DAYS = { day: 1, week: 7, fortnight: 14 }.freeze
 
-      def self.day(t) = t.div(DAY)
+      def self.day(t) = t / DAY
 
-      def self.ymd(t) = Calendar.civil_from_days(t.div(DAY))
+      def self.ymd(t) = Calendar.civil_from_days(t / DAY)
+
+      def self.year(t) = Calendar.year_of(t / DAY)
 
       def self.civil(y, m, d) = Calendar.days_from_civil(y, m, d) * DAY
 
@@ -19,7 +21,7 @@ module Acute
         (p / 10_000) * 12 + p / 100 % 100 - 1
       end
 
-      def self.month_start(i) = civil(i.div(12), i % 12 + 1, 1)
+      def self.month_start(i) = civil(i / 12, i % 12 + 1, 1)
 
       # The first day (a day number) of the week holding day d, for a week starting on week_start
       def self.week_first(d, week_start) = d - (Calendar.weekday(d) - week_start) % 7
@@ -28,9 +30,9 @@ module Acute
       def self.index(cycle, ctx, t)
         case cycle
         when :day then day(t)
-        when :week then (day(t) - ctx.week_start + 4).div(7)
+        when :week then (day(t) - ctx.week_start + 4) / 7
         when :month then month_index(t)
-        else ymd(t) / 10_000
+        else Calendar.year_of(t / DAY)
         end
       end
 
@@ -41,7 +43,10 @@ module Acute
           b = (i * 7 + ctx.week_start - 4) * DAY
           Span.new(b, b + 7 * DAY, :week, nil)
         when :month then Span.new(month_start(i), month_start(i + 1), :month, nil)
-        else Span.new(civil(i, 1, 1), civil(i + 1, 1, 1), :year, nil)
+        else
+          y = i - 1 # Calendar.year_start, inline
+          b = 365 * y + y / 4 - y / 100 + y / 400 - 719_162
+          Span.new(b * DAY, (b + (i % 4 == 0 && (i % 100 != 0 || i % 400 == 0) ? 366 : 365)) * DAY, :year, nil)
         end
       end
 
@@ -73,26 +78,29 @@ module Acute
           y = p / 10_000
           m = p / 100 % 100
           i = y * 12 + m - 1 + n * MONTHS[unit]
-          y = i.div(12)
+          y = i / 12
           m = i % 12 + 1
-          d = [p % 100, Calendar.days_in_month(y, m)].min
-          civil(y, m, d) + t % DAY
+          d = p % 100
+          last = Calendar.days_in_month(y, m)
+          civil(y, m, d < last ? d : last) + t % DAY
         end
       end
 
       # D17: Monday to Friday; D38: the time of day is kept
       def self.business(t, n)
         step = n < 0 ? -1 : 1
-        n.abs.times do
+        n = n.abs
+        while n > 0
           t += step * DAY
-          t += step * DAY while Calendar.weekday(day(t)) % 6 == 0
+          t += step * DAY while (t / DAY + 4) % 7 % 6 == 0 # Saturday or Sunday
+          n -= 1
         end
         t
       end
 
       # D40: "half a year" is 6 months; a fraction becomes a whole count of the next smaller unit
-      SMALLER = { year: [:month, 12], quarter: [:month, 3], month: [:day, 30], fortnight: [:day, 14],
-                  week: [:day, 7], day: [:hour, 24], hour: [:minute, 60], minute: [:second, 60] }.freeze
+      SMALLER = Ractor.make_shareable({ year: [:month, 12], quarter: [:month, 3], month: [:day, 30], fortnight: [:day, 14],
+                                        week: [:day, 7], day: [:hour, 24], hour: [:minute, 60], minute: [:second, 60] })
 
       def self.whole(count, unit)
         while count.is_a?(Rational) && count.denominator != 1 && (smaller = SMALLER[unit])

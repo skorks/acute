@@ -39,10 +39,69 @@ class ContextTest < Minitest::Test
 
   def test_parses_in_parallel_threads_without_interference
     zones = %w[America/New_York Asia/Kolkata Australia/Lord_Howe Europe/London UTC +05:45 Pacific/Auckland America/Sao_Paulo]
-    expected = zones.map { |z| Acute.parse!("tomorrow at 4pm", now: "2026-10-17T14:00", zone: z).iso8601 }
-    threads = zones.map do |z|
-      Thread.new { Array.new(200) { Acute.parse!("tomorrow at 4pm", now: "2026-10-17T14:00", zone: z).iso8601 }.uniq }
+    nows = zones.each_index.map { |i| "2026-#{format("%02d", i + 3)}-1#{i}T0#{i}:30" }
+    phrases = ["tomorrow at 4pm", "next friday", "in 3 hours", "march 3", "tonight", "last week", "christmas", "3/4"]
+    jobs = zones.zip(nows).flat_map { |z, now| phrases.map { |text| [text, now, z] } }
+    run = ->((text, now, zone)) { Acute.parse!(text, now: now, zone: zone).iso8601 }
+    expected = jobs.map(&run)
+    threads = jobs.each_slice(phrases.size).map do |slice|
+      Thread.new { Array.new(100) { slice.map(&run) }.uniq }
     end
-    assert_equal expected.map { [_1] }, threads.map(&:value)
+    assert_equal expected.each_slice(phrases.size).map { [_1] }, threads.map(&:value)
+  end
+
+  # Ruby warns once that Ractors are experimental
+  def quietly
+    was = Warning[:experimental]
+    Warning[:experimental] = false
+    yield
+  ensure
+    Warning[:experimental] = was
+  end
+
+  # D43: a zone from tzinfo is built in the main Ractor, then any Ractor can parse with it
+  def test_parses_inside_a_ractor
+    texts = ["tomorrow at 4pm", "3/4", "next friday 3pm EST", "in 3 hours"]
+    expected = texts.map { Acute.parse!(_1, now: "2026-10-17T14:00", zone: "Europe/London").iso8601 }
+    expected << Acute.parse!("today", now: "2026-10-17T14:00", zone: "+05:45").iso8601
+    out = quietly do
+      Ractor.new(texts) do |list|
+        list.map { Acute.parse!(_1, now: "2026-10-17T14:00", zone: "Europe/London").iso8601 } <<
+          Acute.parse!("today", now: "2026-10-17T14:00", zone: "+05:45").iso8601
+      end.value
+    end
+    assert_equal expected, out
+  end
+
+  def test_a_ractor_cannot_load_a_zone_from_tzinfo
+    message = quietly do
+      Ractor.new do
+        Acute.parse("today", zone: "Africa/Windhoek")
+      rescue ArgumentError => e
+        e.message
+      end.value
+    end
+    assert_match(/only the main Ractor/, message)
+  end
+
+  def test_rails_time_zone_when_no_zone_is_given
+    zone = Struct.new(:tzinfo).new(TZInfo::Timezone.get("Asia/Tokyo"))
+    Object.const_set(:ActiveSupport, Module.new)
+    ActiveSupport.const_set(:TimeZone, Class.new)
+    Time.singleton_class.define_method(:zone) { zone }
+    r = Acute.parse!("today", now: "2026-10-17T14:00")
+    assert_equal ["Asia/Tokyo", [:zone_inferred]], [r.zone, codes(r)]
+    assert_equal "Asia/Kolkata", Acute.parse!("today", zone: "Asia/Kolkata").zone
+  ensure
+    Time.singleton_class.remove_method(:zone) if Time.singleton_class.method_defined?(:zone, false)
+    Object.send(:remove_const, :ActiveSupport) if defined?(ActiveSupport)
+  end
+
+  def test_locale_follows_the_given_zone_not_one_in_the_text
+    assert_equal "2027-04-03 00:00:00 +01:00", wall(parse("3/4/2027", zone: "Europe/London").begin)
+    assert_equal "2027-03-04 00:00:00 -05:00", wall(parse("3/4/2027").begin)
+    assert_equal "2027-04-03 00:00:00 -04:00", wall(parse("3/4/2027", locale: "en-GB").begin)
+    assert_equal Acute::Locale::US, Acute::Locale.for_zone("UTC")
+    assert Ractor.shareable?(Acute::Locale.for("en-AU"))
   end
 end

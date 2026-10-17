@@ -1,11 +1,13 @@
-# Fastest-of-N thread CPU time per parse, so a busy machine slows the check down rather than failing it.
+# The speed budget, as a ratio to a fixed reference workload timed in the same rounds (test/reference.rb), so
+# the verdict is the same on a busy machine as on a quiet one. Quiet µs are that ratio times the reference's
+# quiet cost; absolute µs, as timed here and now, are printed alongside.
 #   ruby test/speed.rb [--verbose]
 require_relative "../lib/acute"
+require_relative "reference"
 
 module Speed
-  BUDGET_NS = 10_000
-  BATCH = 500
-  ROUNDS = 15
+  SLOWEST_US = 10.0
+  MEAN_US = 6.65 # 2x the 11.1 slice (0.665 of a reference run, 3.3 quiet µs)
   NOW = Time.utc(2026, 10, 17, 18)
   PHRASES = ["tomorrow", "tomorrow at 4pm", "noon", "4:30 p.m.", "16:30", "now", "yesterday at noon",
              "4pm tomorrow", "today 9:30", "4:30:15",
@@ -17,31 +19,28 @@ module Speed
 
   module_function
 
-  def clock = Process.clock_gettime(Process::CLOCK_THREAD_CPUTIME_ID)
-
-  def ns_per_parse(text)
-    best = Float::INFINITY
-    ROUNDS.times do
-      t0 = clock
-      i = 0
-      while i < BATCH
-        Acute.parse(text, now: NOW, zone: "America/New_York")
-        i += 1
-      end
-      dt = clock - t0
-      best = dt if dt < best
-    end
-    best / BATCH * 1e9
+  # [quiet µs, absolute µs]
+  def time(text)
+    ratio, ns = Reference.measure { Acute.parse(text, now: NOW, zone: "America/New_York") }
+    [Reference.quiet_us(ratio), ns / 1000]
   end
 
+  # A phrase over budget is timed twice more and keeps the median, so one disturbed pass can't fail it
   def main(argv)
-    times = PHRASES.to_h { |text| [text, ns_per_parse(text)] }
-    slow = times.select { |_, ns| ns > BUDGET_NS }
-    times.each { |text, ns| printf("  %-20s %6.0f ns\n", text, ns) } if argv.include?("--verbose")
-    slow.each { |text, ns| printf("SLOW %s: %.0f ns, budget %d ns\n", text.inspect, ns, BUDGET_NS) }
-    printf("speed: %d phrases, slowest %.1f µs (%s), budget %d µs\n", times.size, times.values.max / 1000,
-           times.max_by { _2 }[0], BUDGET_NS / 1000)
-    slow.empty?
+    times = PHRASES.to_h { |text| [text, time(text)] }
+    times.each do |text, t|
+      times[text] = [t, time(text), time(text)].sort[1] if t[0] > SLOWEST_US
+    end
+    quiet = times.values.map(&:first)
+    mean = quiet.sum / quiet.size
+    slow = times.select { |_, (us, _)| us > SLOWEST_US }
+    times.each { |text, (us, abs)| printf("  %-26s %5.1f µs quiet %5.1f µs here\n", text, us, abs) } if argv.include?("--verbose")
+    slow.each { |text, (us, abs)| printf("SLOW %s: %.1f µs quiet (%.1f here), budget %.0f µs\n", text.inspect, us, abs, SLOWEST_US) }
+    puts format("MEAN %.1f µs quiet, budget %.2f µs", mean, MEAN_US) if mean > MEAN_US
+    name, (us, abs) = times.max_by { _2[0] }
+    printf("speed: %d phrases, mean %.1f µs, slowest %.1f µs (%s) as on a quiet machine; here %.1f µs and %.1f µs, load %s\n",
+           times.size, mean, us, name, times.values.sum { _2 } / times.size, abs, File.read("/proc/loadavg").split[0])
+    slow.empty? && mean <= MEAN_US
   end
 end
 

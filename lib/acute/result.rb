@@ -6,8 +6,8 @@ module Acute
   # A parsed time or span. Epochs are kept as Integers; Time objects are built on first use.
   class Result
     DAY_GRAINS = %i[day weekend week month quarter season year decade century].freeze
-    MONTHS = %w[Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec].freeze
-    WEEKDAYS = %w[Sun Mon Tue Wed Thu Fri Sat].freeze
+    MONTHS = Ractor.make_shareable(%w[Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec])
+    WEEKDAYS = Ractor.make_shareable(%w[Sun Mon Tue Wed Thu Fri Sat])
     NO_ASSUMPTIONS = [].freeze
     GRAIN_SECONDS = { second: 1, minute: 60, hour: 3600 }.freeze
 

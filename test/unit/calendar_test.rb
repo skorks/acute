@@ -20,4 +20,19 @@ class CalendarTest < Minitest::Test
     assert_equal 29, C.days_in_month(2000, 2)
     assert_equal 31, C.days_in_month(2026, 12)
   end
+
+  def test_year_of_year_start_and_year_if_first_against_ruby_date
+    (Date.new(-401, 12, 25, Date::GREGORIAN)..Date.new(2401, 1, 7, Date::GREGORIAN)).step(11).each do |date|
+      days = (date - Date.new(1970, 1, 1)).to_i
+      assert_equal date.year, C.year_of(days), date.to_s
+      if date.yday == 1
+        assert_equal date.year, C.year_if_first(days), date.to_s
+      else
+        assert_nil C.year_if_first(days), date.to_s
+      end
+    end
+    [-400, 0, 1, 1900, 1970, 2000, 2026, 2100].each do |y|
+      assert_equal (Date.new(y, 1, 1, Date::GREGORIAN) - Date.new(1970, 1, 1)).to_i, C.year_start(y)
+    end
+  end
 end

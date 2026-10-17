@@ -64,3 +64,6 @@ rolling_window:
 zone_inferred:
   rule:
   message: "no zone was given; the zone comes from now, Time.zone or the system"
+weekday_mismatch:
+  rule: D37
+  message: "the weekday given doesn't fall on that date, so the date is used"

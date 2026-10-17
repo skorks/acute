@@ -20,7 +20,7 @@ module Acute
         when :week then [week(pos, s, ctx)]
         when :day then [day(pos, s)]
         when :decade
-          y = Period.ymd(s.b) / 10_000
+          y = Period.year(s.b)
           from, to = { early: [0, 4], mid: [4, 7], late: [7, 10], start: [0, 1], end: [9, 10] }.fetch(pos)
           [Span.new(Period.civil(y + from, 1, 1), Period.civil(y + to, 1, 1), :year, nil)]
         else [s]

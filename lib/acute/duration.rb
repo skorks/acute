@@ -1,15 +1,16 @@
 module Acute
   # A length of time as the parts said, so "1 month" stays a month rather than a guess at its seconds
   class Duration
-    UNIT_PART = { year: [:years, 1], decade: [:years, 10], century: [:years, 100], quarter: [:months, 3],
-                  month: [:months, 1], week: [:weeks, 1], fortnight: [:weeks, 2], day: [:days, 1],
-                  business_day: [:business_days, 1], hour: [:hours, 1], minute: [:minutes, 1],
-                  second: [:seconds, 1] }.freeze
+    UNIT_PART = Ractor.make_shareable(
+      { year: [:years, 1], decade: [:years, 10], century: [:years, 100], quarter: [:months, 3], month: [:months, 1],
+        week: [:weeks, 1], fortnight: [:weeks, 2], day: [:days, 1], business_day: [:business_days, 1],
+        hour: [:hours, 1], minute: [:minutes, 1], second: [:seconds, 1] }
+    )
     FIXED = { weeks: 604_800, days: 86_400, hours: 3600, minutes: 60, seconds: 1 }.freeze
-    SHORT = { years: "y", months: "mo", weeks: "w", business_days: " business days", days: "d", hours: "h",
-              minutes: "m", seconds: "s" }.freeze
-    LONG = { years: "year", months: "month", weeks: "week", business_days: "business day", days: "day",
-             hours: "hour", minutes: "minute", seconds: "second" }.freeze
+    SHORT = Ractor.make_shareable({ years: "y", months: "mo", weeks: "w", business_days: " business days", days: "d",
+                                    hours: "h", minutes: "m", seconds: "s" })
+    LONG = Ractor.make_shareable({ years: "year", months: "month", weeks: "week", business_days: "business day",
+                                   days: "day", hours: "hour", minutes: "minute", seconds: "second" })
     ORDER = SHORT.keys.freeze
 
     attr_reader :parts

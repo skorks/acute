@@ -5,17 +5,36 @@ module Acute
 
     def self.days_from_civil(y, m, d)
       y -= 1 if m <= 2
-      era = y.div(400)
+      era = y / 400
       yoe = y - era * 400
       doy = (153 * (m > 2 ? m - 3 : m + 9) + 2) / 5 + d - 1
       doe = yoe * 365 + yoe / 4 - yoe / 100 + doy
       era * 146_097 + doe - 719_468
     end
 
+    # The day number of January 1st of year y
+    def self.year_start(y)
+      y -= 1
+      365 * y + y / 4 - y / 100 + y / 400 - 719_162
+    end
+
+    # The year whose January 1st is day d, or nil when d is no January 1st. The guess counts average years
+    # to the year's middle, which is exact for every January 1st.
+    def self.year_if_first(d)
+      y = (d + 719_344) * 400 / 146_097
+      y + 1 if 365 * y + y / 4 - y / 100 + y / 400 - 719_162 == d
+    end
+
+    # The year holding day d. The guess counts average years from year 1 and is the year or the one before.
+    def self.year_of(d)
+      y = (d + 719_162) * 400 / 146_097 + 1
+      365 * y + y / 4 - y / 100 + y / 400 - 719_162 <= d ? y + 1 : y
+    end
+
     # Packed as y * 10000 + m * 100 + d, so the hot path allocates no Array
     def self.civil_from_days(z)
       z += 719_468
-      era = z.div(146_097)
+      era = z / 146_097
       doe = z - era * 146_097
       yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365
       y = yoe + era * 400
