@@ -37,6 +37,14 @@ class DepthOpenTest < Minitest::Test
     assert_raises(Acute::ParseError) { parse("9 but before 11") }
   end
 
+  def test_d44_an_open_span_that_would_run_backwards_is_no_time
+    %w[until\ 2014 until\ yesterday since\ 2030 since\ tomorrow].each do |text|
+      assert_equal :invalid_date, assert_raises(Acute::ParseError) { parse(text) }.code, text
+    end
+    assert_equal ["2026-10-17 14:00:00 -04:00", "2026-10-17 14:00:00 -04:00"], span("until now")
+    assert_equal ["2026-10-12 00:00:00 -04:00", "2026-10-17 14:00:00 -04:00"], span("since monday")
+  end
+
   def test_through_and_earlier
     assert_equal ["2026-10-17 14:00:00 -04:00", "2026-10-17 16:00:00 -04:00"], span("through 4pm")
     assert_equal ["2026-10-17 14:00:00 -04:00", "2028-01-01 00:00:00 -05:00"], span("thru 2027")

@@ -137,7 +137,7 @@ module Acute
           when :from then Span.new(s.b, nil, s.grain, nil, s.ub)
           else clock?(s) ? Span.new(s.b, nil, s.grain, nil, s.ub) : Span.new(s.e, nil, s.grain, nil, s.ue)
           end
-        end
+        end.reject { |s| s.b && s.e && s.e < s.b } # D44: "until 2014" said in 2026 runs backwards, so it is no time
       end
 
       # D44: "3 days starting next monday", "the week beginning february 4": that many units from its start
