@@ -43,6 +43,7 @@ module Acute
         Season.new(v)
       elsif k == L::UNIT
         return clock_words(15) if v == :quarter && @t[i + S] == L::REL || @t[i + S + 1] == :to
+        return iso_week if v == :week && week_number?(i + S)
         failure(:incomplete)
       elsif k == L::DECADE then decade_atom
       else failure(:conflict)
@@ -211,6 +212,24 @@ module Acute
       outer = @t[@i] == L::UNIT ? this_unit : atom(true)
       return outer if Failure === outer
       Within.new(node, outer)
+    end
+
+    # D13: "week 42", "W42", "W42-3", "week 53 of 2026"
+    def iso_week
+      w = @t[@i + S + 1]
+      @i += 2 * S
+      day = nil
+      if joined?(@i) && @t[@i + S] == L::NUM && @t[@i + S + 2] & L::DIGITS == 1 && @t[@i + S + 1].between?(1, 7)
+        day = @t[@i + S + 1]
+        @i += 2 * S
+      end
+      of(IsoWeek.new(w, day))
+    end
+
+    def week_number?(i)
+      return false unless @t[i] == L::NUM && @t[i + 2] & L::DIGITS <= 2 && @t[i + 1].between?(1, 53)
+      k = @t[i + S]
+      k != L::UNIT && k != L::MER && k != L::SLASH && k != L::DOT && k != L::MONTH
     end
 
     # "the month" in "the first monday of the month": the current one

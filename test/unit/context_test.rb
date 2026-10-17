@@ -103,5 +103,6 @@ class ContextTest < Minitest::Test
     assert_equal "2027-04-03 00:00:00 -04:00", wall(parse("3/4/2027", locale: "en-GB").begin)
     assert_equal Acute::Locale::US, Acute::Locale.for_zone("UTC")
     assert Ractor.shareable?(Acute::Locale.for("en-AU"))
+    assert_equal "NO", Acute::Locale.for_zone("Europe/Oslo").country # a tzdata link to Europe/Berlin
   end
 end

@@ -24,10 +24,13 @@ module Acute
           return iso_date if digits == 4
           w = t[i + 2 * S + 1]
           return numeric_date(:dash) if @t[i + 3 * S] == L::DASH || (w > 12 && w <= 31 && v <= 12) || v > 12 && v <= 31 && w <= 12
+        elsif digits == 4 && @t[i + 2 * S] == L::UNIT && joined?(i + S) && (y = week_year(v, i + S))
+          return y
         end
       elsif nk == L::MONTH
         return day_month(v, i + S) if digits <= 2 && v >= 1 && v <= 31
       elsif nk == L::UNIT
+        return y if digits == 4 && t[i + 4] == t[i + S + 3] && (y = week_year(v, i))
         # D5: "1530h", "1530 hrs" are times
         if digits == 4 && t[i + S + 1] == :hour && @t[i + 2 * S] != L::WORD
           @i += 2 * S
@@ -81,6 +84,13 @@ module Acute
       j += S
       j += S if @t[j + 1] == :the
       @t[j] == L::PART
+    end
+
+    # D13: the year of "2026-W42", "2026W01"; the week follows as its own atom
+    def week_year(v, j)
+      return unless @t[j + S] == L::UNIT && @t[j + S + 1] == :week && week_number?(j + 2 * S)
+      @i = j + S
+      Date.new(v, nil, nil, nil, false)
     end
 
     # D42: "five to 9" is 8:55 when the minutes are a word; "5 to 9" and "from five to nine" are ranges

@@ -28,6 +28,7 @@ module Acute
     Holiday = Struct.new(:name)
     Weekend = Struct.new(:count)
     Fiscal = Struct.new(:year)
+    IsoWeek = Struct.new(:week, :day)            # D13: ISO week 1-53, and its day 1-7 (Monday 1) or nil
     # A decade or century from its first year; short: a decade's two digits, for the 50-year window (D12)
     Years = Struct.new(:unit, :year, :short)
     # A unit, alone ("next week") or counted ("next 3 days", "3 days" in "3 days ago")
@@ -48,7 +49,7 @@ module Acute
     KIND = { Clock => :clock, DayRef => :day_ref, Date => :date, Weekday => :weekday, Part => :part, Season => :season,
              Holiday => :holiday, Weekend => :weekend, Fiscal => :fiscal, Unit => :unit, Rel => :rel, Shift => :shift,
              Nth => :nth, Within => :within, Range => :range, Open => :open, Approx => :approx, Fuzzy => :fuzzy,
-             Zoned => :zoned, Now => :now, Years => :years }.freeze
+             Zoned => :zoned, Now => :now, Years => :years, IsoWeek => :iso_week }.freeze
 
     L = Lexer
     S = Lexer::STRIDE

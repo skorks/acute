@@ -53,6 +53,12 @@ module Acute
     # 0 = Sunday
     def self.weekday(days) = (days + 4) % 7
 
+    # The Monday that starts ISO week 1 of year y: the week holding January 4th
+    def self.iso_week_one(y)
+      jan4 = days_from_civil(y, 1, 4)
+      jan4 - (jan4 + 3) % 7
+    end
+
     # The day number of Western Easter Sunday, by the anonymous Gregorian algorithm (Meeus, Jones, Butcher)
     def self.easter(y)
       a = y % 19

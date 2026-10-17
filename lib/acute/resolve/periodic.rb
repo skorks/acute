@@ -15,7 +15,7 @@ module Acute
         case G::KIND[node.class]
         when :weekday, :weekend then :week
         when :date then node.year || node.sep ? nil : node.month ? :year : :month
-        when :holiday, :season then :year
+        when :holiday, :season, :iso_week then :year
         when :part, :clock then :day
         when :nth then G::Unit === node.node && (node.node.unit == :quarter || node.node.unit == :month) ? :year : :month
         when :within then cycle(node.outer)
@@ -115,7 +115,7 @@ module Acute
 
       # D42: only a date skips the cycles it doesn't exist in ("feb 29", "the 31st"); "5th tuesday in may" is
       # nil, not a later May that has one
-      def self.skips?(node) = G::Date === node || (G::Within === node && skips?(node.inner))
+      def self.skips?(node) = G::Date === node || G::IsoWeek === node || (G::Within === node && skips?(node.inner))
 
       # D37: a weekday with a date filters the date's own occurrence, so a cycle whose date falls on another
       # weekday is passed over only when the date's occurrence there would be
@@ -174,10 +174,20 @@ module Acute
           ctx.note(SEASON_YEAR)
           list << before
         when :nth then nth(node, s, ctx)
+        when :iso_week then iso_week(node, Period.year(s.b))
         when :range then Ranges.inside(node, outer, s, ctx)
         when :fuzzy then inside(node.node, outer, s, ctx).flat_map { |x| Fuzzy.apply(node.pos, x, node.node, ctx) }
         else Resolve.spans(node, ctx).select { |x| x.b >= s.b && x.b < s.e }
         end
+      end
+
+      # D13: the ISO week of year y, which may start in December before it; week 53 only in a year that has one
+      def self.iso_week(node, y)
+        d = Calendar.iso_week_one(y) + 7 * (node.week - 1)
+        return [] if node.week == 53 && d == Calendar.iso_week_one(y + 1)
+        return [Span.new(d * DAY, d * DAY + 7 * DAY, :week, nil)] unless node.day
+        d += node.day - 1
+        [Span.new(d * DAY, d * DAY + DAY, :day, nil)]
       end
 
       def self.within(x, s) = x.b >= s.b && x.b < s.e ? [x] : []

@@ -60,7 +60,7 @@ module Acute
       when :clock, :approx then 0
       when :part then 1
       when :day_ref, :weekday, :holiday then 2
-      when :weekend then 3
+      when :weekend, :iso_week then 3
       when :date then a.day ? 2 : a.month ? 5 : 7
       when :season then 6
       when :fiscal then 7

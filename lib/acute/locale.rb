@@ -23,15 +23,16 @@ module Acute
       ALL[country] || build(country)
     end
 
-    # tzinfo lists a zone under every country that uses it (America/Toronto under BS and CA); these are the
-    # zone's own country, from zone.tab
+    # tzinfo lists a zone under every country that uses it (America/Toronto under BS and CA), and lists none
+    # for a zone tzdata made a link (Europe/Oslo to Europe/Berlin); these are the zone's own country, from zone.tab
     SHARED = {
       "Africa/Abidjan" => "CI", "Africa/Johannesburg" => "ZA", "Africa/Lagos" => "NG", "Africa/Maputo" => "MZ",
       "Africa/Nairobi" => "KE", "America/Panama" => "PA", "America/Phoenix" => "US", "America/Puerto_Rico" => "PR",
       "America/Toronto" => "CA", "Asia/Bangkok" => "TH", "Asia/Dubai" => "AE", "Asia/Kuching" => "MY",
       "Asia/Qatar" => "QA", "Asia/Riyadh" => "SA", "Asia/Singapore" => "SG", "Asia/Tokyo" => "JP",
       "Asia/Yangon" => "MM", "Europe/Belgrade" => "RS", "Europe/Berlin" => "DE", "Europe/Brussels" => "BE",
-      "Europe/Helsinki" => "FI", "Europe/London" => "GB", "Europe/Paris" => "FR", "Europe/Prague" => "CZ",
+      "Europe/Helsinki" => "FI", "Europe/Amsterdam" => "NL", "Europe/Copenhagen" => "DK", "Europe/Luxembourg" => "LU",
+      "Europe/Monaco" => "MC", "Europe/Oslo" => "NO", "Europe/Stockholm" => "SE", "Europe/London" => "GB", "Europe/Paris" => "FR", "Europe/Prague" => "CZ",
       "Europe/Rome" => "IT", "Europe/Simferopol" => "UA", "Europe/Zurich" => "CH", "Indian/Maldives" => "MV",
       "Pacific/Auckland" => "NZ", "Pacific/Guadalcanal" => "SB", "Pacific/Guam" => "GU",
       "Pacific/Port_Moresby" => "PG", "Pacific/Tarawa" => "KI", "Pacific/Pago_Pago" => "AS"
