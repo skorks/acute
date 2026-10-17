@@ -2,6 +2,7 @@ require "date"
 require_relative "calendar"
 require_relative "zone"
 require_relative "assumption"
+require_relative "locale"
 
 module Acute
   # Everything a parse depends on besides the text: now, the zone and the direction. It also collects the
@@ -21,10 +22,13 @@ module Acute
     SYSTEM_ZONE = system_zone.freeze
     ZONE_INFERRED = Assumption.for(:zone_inferred)
 
-    attr_reader :now, :zone, :today, :now_secs, :notes
-    attr_accessor :dst
+    WEEK_STARTS = { sunday: 0, monday: 1 }.freeze
+    HEMISPHERES = { north: false, south: true }.freeze
 
-    def initialize(now, zone, context)
+    attr_reader :now, :zone, :today, :now_secs, :notes, :fiscal_year_start
+    attr_accessor :dst, :past, :machine
+
+    def initialize(now, zone, context, locale: nil, week_start: nil, hemisphere: nil, fiscal_year_start: nil)
       @past = case context
               when :future then false
               when :past then true
@@ -37,13 +41,41 @@ module Acute
         @inferred = true
       end
       @now = epoch(now)
-      local = @now + @zone.offset_at(@now)
-      @today = local.div(86_400)
-      @now_secs = local - @today * 86_400
+      self.zone = @zone
       @dst = nil
+      @locale = Locale.for(locale) if locale
+      @locale_zone = @zone.name
+      @week_start = week_start && WEEK_STARTS.fetch(week_start.to_sym) { raise ArgumentError, "week_start: must be :sunday or :monday" }
+      @south = hemisphere && HEMISPHERES.fetch(hemisphere.to_sym) { raise ArgumentError, "hemisphere: must be :north or :south" }
+      @fiscal_year_start = fiscal_year_start && Integer(fiscal_year_start)
     end
 
+    # Switching zone (a zone named in the text) moves today and now_secs with it
+    def zone=(zone)
+      @zone = zone
+      local = @now + zone.offset_at(@now)
+      @today = local.div(86_400)
+      @now_secs = local - @today * 86_400
+    end
+
+    def now_local = @today * 86_400 + @now_secs
+
+    # Found only when a phrase needs it, from the zone given rather than one named in the text
+    def locale = @locale ||= Locale.for_zone(@locale_zone)
+
+    def week_start = @week_start ||= locale.week_start
+
+    def south = @south.nil? ? (@south = locale.south) : @south
+
     def past? = @past
+
+    # The occurrences of one periodic node already found, by cycle index: "next friday" looks at the same
+    # weeks several times
+    def occurrences(node)
+      return @occurrences if @occurrences_of.equal?(node)
+      @occurrences_of = node
+      @occurrences = {}
+    end
 
     def note(assumption)
       if @notes

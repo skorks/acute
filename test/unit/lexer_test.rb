@@ -15,7 +15,7 @@ class LexerTest < Minitest::Test
   end
 
   def test_case_insensitive_and_at_sign
-    assert_equal ['AT(0) "@"', 'NAMED(12) "NOON"', 'DAY(-1) "Yesterday"'], tokens("@NOON, Yesterday")
+    assert_equal ['AT(0) "@"', 'NAMED(12, flags=0x100) "NOON"', 'DAY(-1, flags=0x100) "Yesterday"'], tokens("@NOON, Yesterday")
   end
 
   def test_unknown_word_is_a_failure_with_byte_range

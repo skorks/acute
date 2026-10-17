@@ -1,5 +1,5 @@
 # Random bytes and mutated corpus phrases. parse may only give a Result or nil, parse! a Result or a
-# ParseError, and each must finish within LIMIT of CPU time (retried once, so a GC pause doesn't count).
+# ParseError, and each must finish within LIMIT of CPU time (retried once after a full GC, so a GC pause doesn't count).
 #   ruby test/fuzz.rb [--seed N] [--count N]
 require_relative "corpus"
 
@@ -58,6 +58,7 @@ module Fuzz
       slow = [t1 - t0, t2 - t1].max
       return [] if slow < LIMIT
       return [format("took %.2f ms", slow * 1000)] if attempt == 1
+      GC.start # a major GC that marks the loaded corpus takes milliseconds; don't let it land in the retry
     end
   rescue StandardError => e
     ["parse raised #{e.class}: #{e.message}"]

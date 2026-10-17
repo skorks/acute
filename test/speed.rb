@@ -8,7 +8,12 @@ module Speed
   ROUNDS = 15
   NOW = Time.utc(2026, 10, 17, 18)
   PHRASES = ["tomorrow", "tomorrow at 4pm", "noon", "4:30 p.m.", "16:30", "now", "yesterday at noon",
-             "4pm tomorrow", "today 9:30", "4:30:15"].freeze
+             "4pm tomorrow", "today 9:30", "4:30:15",
+             # one or two from each theme of the breadth pass
+             "next friday", "friday 3pm", "march 3", "10/23/2026", "2026-10-23T14:30:00Z", "3 days ago",
+             "in 2 hours", "next week", "Q3", "this evening", "second tuesday of march", "this weekend", "christmas",
+             "thanksgiving 2027", "between 9 and 5", "after christmas", "early next week", "past 3 business days",
+             "3pm EST", "jan 5 2027 at 9:30am", "sat", "the second monday of may"].freeze
 
   module_function
 

@@ -14,6 +14,16 @@ module Acute
       tomorrow_after_midnight: ["D40", "\"tomorrow\" said before 04:00 means the coming day first; the calendar tomorrow is an alternative"].freeze,
       dst_repeated_time: ["D23", "that wall time happens twice as clocks go back; the earlier one is used"].freeze,
       dst_skipped_time: ["D23", "that wall time doesn't exist as clocks go forward; it is moved forward by the gap"].freeze,
+      approximate: ["D14", "the time was given as approximate; the exact time is returned"].freeze,
+      fixed_offset: ["D18", "the text names a zone or offset, which wins over the zone given"].freeze,
+      numeric_date_order: ["D10", "a numeric date is read in the locale's order; the other order is an alternative"].freeze,
+      part_of_day_point: ["D1", "a part of the day is a range; its time is a representative point"].freeze,
+      weekend_friday_evening: ["D8", "the weekend is Saturday 00:00 to Monday 00:00; from Friday 18:00 is an alternative"].freeze,
+      meteorological_season: ["D3", "seasons are meteorological (three whole months) for the locale's hemisphere"].freeze,
+      same_day_or_next: ["D40", "that day is today, so it means today; the next one is an alternative"].freeze,
+      next_two_readings: ["D20", "\"next\" can mean the coming one or the one after; both are given, the coming one first"].freeze,
+      this_passed: ["D21", "that one has passed in the current period, so the next one comes first; the passed one is an alternative"].freeze,
+      rolling_window: ["D31", "a span counted from now; whole calendar units are alternatives"].freeze,
       zone_inferred: [nil, "no zone was given; the zone comes from now, Time.zone or the system"].freeze,
     }.freeze
   end

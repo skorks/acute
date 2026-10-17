@@ -11,7 +11,7 @@ text ──lex──▶ tokens ──grammar──▶ tree ──resolve(ctx)─
 | Stage | File | Knows | Doesn't know |
 |---|---|---|---|
 | lex | `lib/acute/lexer.rb` | bytes, the word table | meaning, now |
-| grammar | `lib/acute/grammar.rb` | what was said: Clock, DayRef, Moment, Now nodes | now, the zone, D-rules |
+| grammar | `lib/acute/grammar.rb`, `grammar/*.rb` | what was said: atoms (Clock, Date, Weekday, Unit, Holiday…) nested by size into Within, Range, Open, Shift… | now, the zone, D-rules |
 | resolve | `lib/acute/resolve/*.rb` | every D-rule, now, the zone | text |
 | result | `lib/acute/result.rb` | the public output | grammar |
 

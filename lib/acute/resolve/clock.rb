@@ -27,7 +27,7 @@ module Acute
           [((c.hour % 12) + (c.meridiem == :pm ? 12 : 0)) * 3600 + secs]
         elsif c.hour == 0 || c.hour >= 13 || c.h24
           [c.hour * 3600 + secs]
-        elsif c.seconds
+        elsif c.seconds || ctx.machine
           ctx.note(MACHINE) # D29
           [c.hour * 3600 + secs]
         elsif c.hour == 12
@@ -61,9 +61,8 @@ module Acute
             day += ctx.past? ? -1 : 1
             ctx.note(ctx.past? ? PREVIOUS : NEXT) if i == 0
           end
-          ctx.dst = nil
-          b = ctx.zone.local_to_utc(day * 86_400 + secs, ctx)
-          out << Reading.new(b, b + len, grain, ctx.dst)
+          b = day * 86_400 + secs
+          out << Span.new(b, b + len, grain, nil)
           i += 1
         end
         out

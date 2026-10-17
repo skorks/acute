@@ -6,19 +6,37 @@ require_relative "acute/grammar"
 require_relative "acute/resolve"
 require_relative "acute/result"
 require_relative "acute/explain"
+require_relative "acute/duration"
+require_relative "acute/extract"
 
 module Acute
   MAX_LENGTH = 512
 
-  def self.parse(text, now: nil, zone: nil, context: :future)
-    out = run(text, Context.new(now, zone, context))
+  def self.parse(text, now: nil, zone: nil, context: :future, **options)
+    out = run(text, Context.new(now, zone, context, **options))
     Result === out ? out : nil
   end
 
-  def self.parse!(text, now: nil, zone: nil, context: :future)
-    out = run(text, Context.new(now, zone, context))
+  def self.parse!(text, now: nil, zone: nil, context: :future, **options)
+    out = run(text, Context.new(now, zone, context, **options))
     raise Explain.error(out, text) if Failure === out
     out
+  end
+
+  # A length of time, or nil when the text is not one ("next friday" is a time)
+  def self.duration(text)
+    raise ArgumentError, "text must be a String, got #{text.class}" unless String === text
+    return if text.bytesize > MAX_LENGTH
+    tokens = Lexer.lex(text)
+    return if Failure === tokens
+    units = Grammar.duration(tokens)
+    Failure === units ? nil : Duration.from_units(units)
+  end
+
+  def self.extract(text, now: nil, zone: nil, context: :future, **options)
+    raise ArgumentError, "text must be a String, got #{text.class}" unless String === text
+    Context.new(now, zone, context, **options) # bad options raise here, before any mention is found
+    Extract.call(text, -> { Context.new(now, zone, context, **options) })
   end
 
   def self.run(text, ctx)
@@ -29,6 +47,7 @@ module Acute
     tree = Grammar.parse(tokens)
     return tree if Failure === tree
     readings = Resolve.call(tree, ctx)
+    return Failure.new(:invalid_date, 0, text.bytesize) if readings.empty?
     Result.new(text, readings, ctx.zone, ctx.assumptions(readings[0]))
   end
   private_class_method :run

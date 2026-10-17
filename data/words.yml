@@ -1,5 +1,6 @@
 # Words the lexer knows, grouped by token kind. bin/generate turns this into lib/acute/tables/words.rb.
 # Matching ignores ASCII case. A word may hold letters, apostrophes and inner dots ("p.m").
+# A value is an Integer, or a name that becomes a Symbol.
 
 day:            # value: days from today
   today: 0
@@ -11,7 +12,6 @@ day:            # value: days from today
 meridiem:       # value: hours added to 1-12
   am: 0
   a.m: 0
-  a: 0
   pm: 12
   p.m: 12
   p: 12
@@ -26,6 +26,258 @@ now:
 
 at:
   at: 0
+
+weekday:        # value: 0 = Sunday
+  sunday: 0
+  sun: 0
+  monday: 1
+  mon: 1
+  tuesday: 2
+  tue: 2
+  tues: 2
+  wednesday: 3
+  wed: 3
+  thursday: 4
+  thu: 4
+  thur: 4
+  thurs: 4
+  friday: 5
+  fri: 5
+  saturday: 6
+  sat: 6
+
+month:
+  january: 1
+  jan: 1
+  february: 2
+  feb: 2
+  march: 3
+  mar: 3
+  april: 4
+  apr: 4
+  may: 5
+  june: 6
+  jun: 6
+  july: 7
+  jul: 7
+  august: 8
+  aug: 8
+  september: 9
+  sep: 9
+  sept: 9
+  october: 10
+  oct: 10
+  november: 11
+  nov: 11
+  december: 12
+  dec: 12
+
+unit:
+  s: second
+  sec: second
+  secs: second
+  seconds: second
+  m: minute
+  min: minute
+  mins: minute
+  minute: minute
+  minutes: minute
+  h: hour
+  hr: hour
+  hrs: hour
+  hour: hour
+  hours: hour
+  d: day
+  day: day
+  days: day
+  w: week
+  wk: week
+  wks: week
+  week: week
+  weeks: week
+  fortnight: fortnight
+  fortnights: fortnight
+  mo: month
+  month: month
+  months: month
+  quarter: quarter
+  quarters: quarter
+  y: year
+  yr: year
+  yrs: year
+  year: year
+  years: year
+  decade: decade
+  decades: decade
+  century: century
+  centuries: century
+
+relative:       # "past" is also the clock word in "twenty past four"
+  next: next
+  this: this
+  last: last
+  past: past
+  coming: next
+  upcoming: next
+  previous: last
+  prev: last
+
+number:
+  one: 1
+  two: 2
+  three: 3
+  four: 4
+  five: 5
+  six: 6
+  seven: 7
+  eight: 8
+  nine: 9
+  ten: 10
+  eleven: 11
+  twelve: 12
+  thirteen: 13
+  fourteen: 14
+  fifteen: 15
+  sixteen: 16
+  seventeen: 17
+  eighteen: 18
+  nineteen: 19
+  twenty: 20
+  thirty: 30
+  forty: 40
+  fifty: 50
+
+ordinal:        # "second" is also the unit, by context
+  first: 1
+  second: 2
+  third: 3
+  fourth: 4
+  fifth: 5
+  sixth: 6
+  seventh: 7
+  eighth: 8
+  ninth: 9
+  tenth: 10
+  eleventh: 11
+  twelfth: 12
+  thirteenth: 13
+  fourteenth: 14
+  fifteenth: 15
+  sixteenth: 16
+  seventeenth: 17
+  eighteenth: 18
+  nineteenth: 19
+  twentieth: 20
+  thirtieth: 30
+
+part:           # parts of the day (D1, D35)
+  morning: morning
+  afternoon: afternoon
+  evening: evening
+  night: night
+  tonight: tonight
+  lunch: lunch
+  lunchtime: lunch
+
+season:         # D3
+  spring: spring
+  summer: summer
+  autumn: autumn
+  fall: autumn
+  winter: winter
+
+holiday:        # D15, D28: formulas only
+  christmas: christmas
+  xmas: christmas
+  thanksgiving: thanksgiving
+  halloween: halloween
+
+weekend:
+  weekend: 0
+  weekends: 0
+
+zone:           # value: the UTC offset in seconds (D18, D40: abbreviations are fixed offsets)
+  utc: 0
+  gmt: 0
+  z: 0
+  est: -18000
+  edt: -14400
+  cst: -21600
+  cdt: -18000
+  mst: -25200
+  mdt: -21600
+  pst: -28800
+  pdt: -25200
+  cet: 3600
+  cest: 7200
+  bst: 3600
+  aest: 36000
+  aedt: 39600
+
+fuzzy:          # D2
+  early: early
+  mid: mid
+  late: late
+  beginning: start
+  start: start
+  end: end
+
+article:        # "a" is also the meridiem in "8a"
+  a: 1
+  an: 1
+
+word:           # function words; the grammar gives them their meaning
+  in: in
+  within: within
+  ago: ago
+  hence: hence
+  later: later
+  from: from
+  to: to
+  and: and
+  of: of
+  the: the
+  "on": "on"
+  between: between
+  after: after
+  before: before
+  since: since
+  until: until
+  till: until
+  til: until
+  through: through
+  thru: through
+  by: by
+  around: around
+  about: around
+  approximately: around
+  roughly: around
+  o'clock: oclock
+  half: half
+  t: t
+  q: q
+  fy: fy
+
+# Several words read as one token, longest first. Spaces in a key stand for any run of spaces or hyphens.
+phrases:
+  christmas eve: [holiday, christmas_eve]
+  christmas day: [holiday, christmas]
+  thanksgiving day: [holiday, thanksgiving]
+  new year's eve: [holiday, new_years_eve]
+  new years eve: [holiday, new_years_eve]
+  new year's day: [holiday, new_years_day]
+  new years day: [holiday, new_years_day]
+  business day: [unit, business_day]
+  business days: [unit, business_day]
+  working day: [unit, business_day]
+  working days: [unit, business_day]
+  early hours: [part, early_hours]
+  small hours: [part, early_hours]
+  a m: [meridiem, 0]
+  p m: [meridiem, 12]
+
+# Words that are also plain English. In extraction they need a neighbour that confirms the date reading.
+english: [may, march, sat, sun, second, fall, a, mon, wed, start, end, last, past, this, next, d, m, s, h, w, y, lunch]
 
 # D18: a fixed table, only misspellings the corpus has. Each maps to the word it stands for.
 misspellings:

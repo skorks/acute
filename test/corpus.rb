@@ -73,7 +73,7 @@ module Corpus
     tz = TZS[c["tz"]]
     kwargs = opts.to_h { |k, v| [k.to_sym, k == "context" ? v.to_sym : v] }
     r = Acute.parse(c["text"], now: Time.at(epoch(c["now"], tz)), zone: c["tz"], **kwargs)
-    got = r && ([r] + r.alternatives).map { |x| [x.begin.to_i, x.end.to_i] }
+    got = r && ([r] + r.alternatives).map { |x| [x.begin&.to_i, x.end&.to_i] }
     return [r ? "garbage" : "pass", got] if exp["nil"]
     return ["nil", got] unless r
 
@@ -86,7 +86,8 @@ module Corpus
 
   def show(c, got)
     tz = TZS[c["tz"]]
-    fmt = ->(pairs) { pairs.map { |b, e| "#{tz.to_local(Time.at(b)).strftime("%F %T")}+#{e - b}s" }.join(" ; ") }
+    at = ->(t) { t ? tz.to_local(Time.at(t)).strftime("%F %T") : "open" }
+    fmt = ->(pairs) { pairs.map { |b, e| b && e ? "#{at.(b)}+#{e - b}s" : "#{at.(b)}..#{at.(e)}" }.join(" ; ") }
     exp = c["expect"]
     want = exp["nil"] ? "nil" : fmt.((exp["alternatives"] || [exp]).map { |e| interval(e, tz) })
     shown = got.is_a?(Array) ? fmt.(got) : got.inspect

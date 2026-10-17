@@ -31,6 +31,36 @@ dst_repeated_time:
 dst_skipped_time:
   rule: D23
   message: "that wall time doesn't exist as clocks go forward; it is moved forward by the gap"
+approximate:
+  rule: D14
+  message: "the time was given as approximate; the exact time is returned"
+fixed_offset:
+  rule: D18
+  message: "the text names a zone or offset, which wins over the zone given"
+numeric_date_order:
+  rule: D10
+  message: "a numeric date is read in the locale's order; the other order is an alternative"
+part_of_day_point:
+  rule: D1
+  message: "a part of the day is a range; its time is a representative point"
+weekend_friday_evening:
+  rule: D8
+  message: "the weekend is Saturday 00:00 to Monday 00:00; from Friday 18:00 is an alternative"
+meteorological_season:
+  rule: D3
+  message: "seasons are meteorological (three whole months) for the locale's hemisphere"
+same_day_or_next:
+  rule: D40
+  message: "that day is today, so it means today; the next one is an alternative"
+next_two_readings:
+  rule: D20
+  message: "\"next\" can mean the coming one or the one after; both are given, the coming one first"
+this_passed:
+  rule: D21
+  message: "that one has passed in the current period, so the next one comes first; the passed one is an alternative"
+rolling_window:
+  rule: D31
+  message: "a span counted from now; whole calendar units are alternatives"
 zone_inferred:
   rule:
   message: "no zone was given; the zone comes from now, Time.zone or the system"

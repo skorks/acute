@@ -1,6 +1,6 @@
 module Acute
   module Resolve
-    # Day words, alone or with a clock
+    # Day words: today, tomorrow, yesterday
     module Day
       TOMORROW_EARLY = Assumption.for(:tomorrow_after_midnight)
       NIGHT_ENDS = 4 * 3600
@@ -18,34 +18,7 @@ module Acute
         end
       end
 
-      def self.whole(d, ctx)
-        zone = ctx.zone
-        days(d, ctx).map do |day|
-          ctx.dst = nil
-          b = zone.local_to_utc(day * 86_400, ctx)
-          dst = ctx.dst
-          Reading.new(b, zone.local_to_utc(day * 86_400 + 86_400, ctx), :day, dst)
-        end
-      end
-
-      # Day-major: every reading of the first day before any of the next. Readings that land on the same
-      # instant ("today at midnight" and "tomorrow" at its start) are kept once.
-      def self.moment(m, ctx)
-        days = days(m.day, ctx)
-        cands = Clock.candidates(m.clock, ctx, true)
-        grain = Clock.grain(m.clock)
-        len = Clock.length(m.clock)
-        zone = ctx.zone
-        out = []
-        days.each do |day|
-          cands.each do |secs|
-            ctx.dst = nil
-            b = zone.local_to_utc(day * 86_400 + secs, ctx)
-            out << Reading.new(b, b + len, grain, ctx.dst) unless out.any? { |r| r.begin == b }
-          end
-        end
-        out
-      end
+      def self.whole(d, ctx) = days(d, ctx).map { |day| Span.new(day * 86_400, day * 86_400 + 86_400, :day, nil) }
     end
   end
 end

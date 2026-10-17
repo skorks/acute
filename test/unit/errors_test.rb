@@ -43,7 +43,7 @@ class ErrorsTest < Minitest::Test
   def test_incomplete_and_conflicting_phrases
     assert_equal :incomplete, error("").code
     assert_equal :incomplete, error("tomorrow at").code
-    assert_equal :incomplete, error("1030").code
+    assert_equal :incomplete, error("in 3").code
     e = error("4pm 5")
     assert_equal [:conflict, 4...5], [e.code, e.position]
     assert_equal :conflict, error("today tomorrow").code
