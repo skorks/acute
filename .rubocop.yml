@@ -1,0 +1,137 @@
+plugins:
+  - rubocop-performance
+  - rubocop-minitest
+
+AllCops:
+  TargetRubyVersion: 3.3
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - lib/acute/tables/*.rb
+    - test/chronic/test_*.rb
+    - vendor/**/*
+    - .claude/**/*
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: double_quotes
+Style/FormatStringToken:
+  EnforcedStyle: unannotated
+Style/NumberedParametersLimit:
+  Max: 2
+Style/EndlessMethod:
+  EnforcedStyle: allow_always
+Style/ArgumentsForwarding:
+  UseAnonymousForwarding: false
+Style/WordArray:
+  MinSize: 3
+Lint/UnusedMethodArgument:
+  AllowUnusedKeywordArguments: true
+Naming/PredicateMethod:
+  AllowedMethods: [call, main]
+Layout/FirstHashElementIndentation:
+  EnforcedStyle: consistent
+Layout/HashAlignment:
+  EnforcedLastArgumentHashStyle: ignore_implicit
+# Most lines keep to about 120; this is the longest there is
+Layout/LineLength:
+  Max: 170
+
+# The lexer, grammar and resolver are long, branchy and deeply nested on purpose, and Context takes its options
+# positionally to keep the hot path free of a Hash
+Metrics:
+  Enabled: false
+# No docstrings: comments only where something is not obvious
+Style/Documentation:
+  Enabled: false
+# Modules with a call method are called by name, lambdas with .()
+Style/LambdaCall:
+  Enabled: false
+# Class === x is the house type test, the same test case/when makes
+Style/CaseEquality:
+  Enabled: false
+# Ruby's precedence for * over + and && over || is relied on, not bracketed
+Lint/AmbiguousOperatorPrecedence:
+  Enabled: false
+# Compact methods: a guard clause needs no blank line after it
+Layout/EmptyLineAfterGuardClause:
+  Enabled: false
+# Short parameter names (t, i, c, ctx) are the house style in the lexer, grammar and resolver
+Naming/MethodParameterName:
+  Enabled: false
+# Names mirror data keys and rule ids (century_from_00, d47)
+Naming/VariableNumber:
+  Enabled: false
+# Tests check a table of phrases in one method
+Minitest/MultipleAssertions:
+  Enabled: false
+# Compact tests: no blank line before an assertion
+Minitest/EmptyLineBeforeAssertionMethods:
+  Enabled: false
+# No magic comments; strings are chilled from Ruby 3.4, and constants that matter are frozen explicitly
+Style/FrozenStringLiteralComment:
+  Enabled: false
+# x == 0 and f & MASK != 0 compile to specialised instructions on the hot path; zero? and anybits? are sends
+Style/NumericPredicate:
+  Enabled: false
+Style/BitwisePredicate:
+  Enabled: false
+# k == A || k == B on the hot path doesn't build an array or call include?
+Style/MultipleComparison:
+  Enabled: false
+# x >= a && x <= b on the hot path, rather than a between? send
+Style/ComparableBetween:
+  Enabled: false
+# Compact cond ? a : b, nested and over lines, is house style
+Style/NestedTernaryOperator:
+  Enabled: false
+Style/MultilineTernaryOperator:
+  Enabled: false
+# a, b = x, y is house style
+Style/ParallelAssignment:
+  Enabled: false
+# end.reject { ... } after a multi-line block is house style
+Style/MultilineBlockChain:
+  Enabled: false
+# `elsif x then a` / `else b` on one line is house style
+Lint/ElseLayout:
+  Enabled: false
+# Modifier if is used while the line stays near 120; the cop would stretch lines to the 170 ceiling
+Style/IfUnlessModifier:
+  Enabled: false
+# Each branch is its own rule, with its own comment, even when two bodies match
+Lint/DuplicateBranch:
+  Enabled: false
+# Tree nodes are Structs with the grammar's member names (min, count); they are never enumerated
+Lint/StructNewOverride:
+  Enabled: false
+# A Struct node with a count member is not a collection, so count.positive? is not any?
+Style/CollectionQuerying:
+  Enabled: false
+# k < n ? k : n on the hot path compiles to a compare and a branch
+Style/MinMaxComparison:
+  Enabled: false
+# They misread select/reject on an Array of pairs as a Hash
+Style/HashSlice:
+  Enabled: false
+Style/HashExcept:
+  Enabled: false
+# Continuation lines align under the expression they continue, which the cop misreads after an endless def's =
+Layout/MultilineOperationIndentation:
+  Enabled: false
+# Constants sit by the methods that use them; `private` scopes only the methods
+Lint/UselessConstantScoping:
+  Enabled: false
+# Both `private def x` and a grouped `private` are used
+Style/AccessModifierDeclarations:
+  Enabled: false
+# Internal positional booleans keep the hot path free of keyword Hashes
+Style/OptionalBooleanParameter:
+  Enabled: false
+# ENV["X"] || default is clear, and nil is a valid answer
+Style/FetchEnvVar:
+  Enabled: false
+# $1 inside a gsub block reads better than Regexp.last_match(1)
+Style/PerlBackrefs:
+  Enabled: false

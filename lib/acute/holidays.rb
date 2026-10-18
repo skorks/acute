@@ -20,7 +20,7 @@ module Acute
         begin
           require "holidays" unless defined?(::Holidays)
         rescue LoadError
-          raise ArgumentError, "holidays: #{regions.map(&:to_s).join(", ")} is a region of the holidays gem, " \
+          raise ArgumentError, "holidays: #{regions.join(", ")} is a region of the holidays gem, " \
                                "which is not installed"
         end
         @regions = regions

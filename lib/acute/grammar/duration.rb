@@ -23,7 +23,7 @@ module Acute
         else
           q = duration_quantity
         end
-        return failure(@i < @n ? :conflict : :incomplete) unless q && q.count.positive?
+        return failure(@i < @n ? :conflict : :incomplete) unless q&.count&.positive?
         q.count = Rational(q.count, 2) if half
         parts << q
       end

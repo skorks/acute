@@ -84,7 +84,7 @@ class CLITest < Minitest::Test
     out, err, status = Open3.capture3(RbConfig.ruby, EXE, "banana", *AT)
     assert_equal ["", "acute: unknown word \"banana\"\n", 1], [out, err, status.exitstatus]
     out, _, status = Open3.capture3(RbConfig.ruby, EXE, *AT, "--json", stdin_data: "tomorrow\nnoon\n")
-    assert status.success?
-    assert_equal %w[day minute], out.lines.map { JSON.parse(_1)["grain"] }
+    assert_predicate status, :success?
+    assert_equal(%w[day minute], out.lines.map { JSON.parse(_1)["grain"] })
   end
 end

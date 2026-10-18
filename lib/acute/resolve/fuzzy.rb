@@ -39,7 +39,7 @@ module Acute
       end
 
       # D2: a year in thirds of four months; a quarter or season in months
-      def self.months(pos, s, ctx)
+      def self.months(pos, s, _ctx)
         return days(pos, s, 0) if pos == :start || pos == :end
         n = s.grain == :year ? 4 : 1
         k = { early: 0, mid: 1, late: 2 }.fetch(pos)

@@ -13,7 +13,7 @@ require "test_span"
 
 module ChronicRun
   FILE = File.join(__dir__, "differences.yml")
-  SOURCE = "chronic-0.10.2:test_parsing.rb:"
+  SOURCE = "chronic-0.10.2:test_parsing.rb:".freeze
   # test_normalizing_day_portions calls pre_normalize, chronic's tokeniser, which acute has no counterpart for.
   # test_now_changes passes only when a second boundary falls between two parses 0.1 s apart, since acute
   # takes now to the whole second (D47).
@@ -76,7 +76,7 @@ module ChronicRun
     end.uniq
     if rules.empty? && entry["phrase"]
       r = Acute.parse(entry["phrase"], now: TestParsing::TIME_2006_08_16_14_00_00, zone: ENV["TZ"])
-      rules = r ? r.assumptions.map(&:rule).compact.uniq : []
+      rules = r ? r.assumptions.filter_map(&:rule).uniq : []
     end
     rules.empty? ? nil : rules.join(", ")
   end

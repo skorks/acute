@@ -118,8 +118,8 @@ class OptionsTest < Minitest::Test
     assert_raises(ArgumentError) { Acute.parse("today", business_days: Object.new) }
     o = Office.new
     p = Acute.with(**AT, holidays: o)
-    refute o.frozen?
-    assert p.frozen?
+    refute_predicate o, :frozen?
+    assert_predicate p, :frozen?
     refute Ractor.shareable?(p)
     assert_equal Date.new(2026, 11, 20), p.parse("thanksgiving").date
     assert Ractor.shareable?(Acute.with(**AT, dst: :later, strict: false, year_bias: 10))

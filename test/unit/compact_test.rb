@@ -81,7 +81,7 @@ class CompactTest < Minitest::Test
   def test_d44_at_an_hour_then_two_digits_is_its_minutes
     r = parse("at 3 15")
     assert_equal "2026-10-17 15:15:00 -04:00", wall(r.begin)
-    assert_equal ["2026-10-18 03:15:00 -04:00"], r.alternatives.map { wall(_1.begin) }
+    assert_equal(["2026-10-18 03:15:00 -04:00"], r.alternatives.map { wall(_1.begin) })
     assert_span "at 12 15", "2026-10-18 12:15:00 -04:00", 60
     assert_raises(Acute::ParseError) { parse("at 3 75") }
   end

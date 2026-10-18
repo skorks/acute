@@ -61,7 +61,7 @@ module Acute
           case f & L::DIGITS
           when 4 then year = v
           when 1, 2 then nums << v
-          else return
+          else return nil
           end
         end
       end
@@ -97,7 +97,7 @@ module Acute
 
     # The closest known word within two edits, if it is close enough to be a likely typo
     def self.suggest(word)
-      return unless word && word.ascii_only?
+      return unless word&.ascii_only?
       a = word.downcase.bytes
       mask = letters(a)
       best = nil

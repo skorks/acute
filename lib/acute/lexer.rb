@@ -33,7 +33,7 @@ module Acute
     PLUS = 23
     DECADE = 24 # value: the number as written, 90 or 1990; flags: digit count, WORDY
     KIND_NAMES = Ractor.make_shareable(%w[NUM CLOCK MER DAY NAMED NOW AT WDAY MONTH UNIT REL ORD PART SEASON HOLIDAY WEEKEND ZONE FUZZ ART
-                    WORD SLASH DASH DOT PLUS DECADE])
+                                          WORD SLASH DASH DOT PLUS DECADE])
 
     DIGITS = 15
     ZERO = 16
@@ -115,8 +115,8 @@ module Acute
     # Unicode spaces and dashes by their UTF-8 bytes as one Integer: no-break, thin and ideographic spaces;
     # hyphens, en and em dashes and the minus sign; and ½
     WIDE = [0xC2A0, *0xE28080..0xE2808A, 0xE280AF, 0xE2819F, 0xE38080].to_h { [_1, SPACE] }
-                                                                     .merge([*0xE28090..0xE28095, 0xE28892].to_h { [_1, DASH] })
-                                                                     .merge(0xC2BD => WORD).freeze
+                                                                      .merge([*0xE28090..0xE28095, 0xE28892].to_h { [_1, DASH] })
+                                                                      .merge(0xC2BD => WORD).freeze
     # Whether a byte is an ASCII letter, a lookup rather than a call
     ALPHA = Array.new(256) { |c| (c >= 97 && c <= 122) || (c >= 65 && c <= 90) }.freeze
     # An ordinal's suffix ("3rd"), its two bytes lower-cased and packed
@@ -460,7 +460,7 @@ module Acute
 
     def self.inspect_tokens(t, s)
       t.each_slice(STRIDE).map do |kind, value, flags, st, stop|
-        "#{KIND_NAMES[kind]}(#{value}#{flags == 0 ? "" : format(", flags=%#x", flags)}) #{s.byteslice(st, stop - st).inspect}"
+        "#{KIND_NAMES[kind]}(#{value}#{format(", flags=%#x", flags) unless flags == 0}) #{s.byteslice(st, stop - st).inspect}"
       end
     end
   end

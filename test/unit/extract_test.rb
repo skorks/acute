@@ -7,16 +7,16 @@ class ExtractTest < Minitest::Test
 
   def test_mentions_with_their_offsets
     x = extract("Dinner with Sam next Tuesday at 7pm, flight back on the 30th")
-    assert_equal [[:time, "next Tuesday at 7pm", 16...35], [:time, "the 30th", 52...60]],
-                 x.mentions.map { [_1.kind, _1.text, _1.offset] }
-    assert_equal ["2026-10-20 19:00:00 -04:00", "2026-10-30 00:00:00 -04:00"], x.mentions.map { wall(_1.value.begin) }
+    assert_equal([[:time, "next Tuesday at 7pm", 16...35], [:time, "the 30th", 52...60]],
+                 x.mentions.map { [_1.kind, _1.text, _1.offset] })
+    assert_equal(["2026-10-20 19:00:00 -04:00", "2026-10-30 00:00:00 -04:00"], x.mentions.map { wall(_1.value.begin) })
     assert_equal "Dinner with Sam, flight back", x.remainder
   end
 
   def test_e2_a_duration_takes_its_for
     x = extract("lunch with bob next tue at 1 for 2 hours")
-    assert_equal [[:time, "next tue at 1", 15...28], [:duration, "for 2 hours", 29...40]],
-                 x.mentions.map { [_1.kind, _1.text, _1.offset] }
+    assert_equal([[:time, "next tue at 1", 15...28], [:duration, "for 2 hours", 29...40]],
+                 x.mentions.map { [_1.kind, _1.text, _1.offset] })
     assert_equal({ hours: 2 }, x.mentions[1].value.parts)
     assert_equal "lunch with bob", x.remainder
     assert_equal [[:time, "a week starting tomorrow", 12...36]], mentions("set ooo for a week starting tomorrow")

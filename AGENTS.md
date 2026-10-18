@@ -24,8 +24,10 @@ text ──lex──▶ tokens ──grammar──▶ tree ──resolve(ctx)─
 
 `bin/check` runs:
 - tables up to date;
+- lint: RuboCop with `.rubocop.yml`, which records why each house-style cop is off;
 - unit tests;
 - the corpus against the ratchet in `test/corpus/passing.txt`;
+- chronic's own tests, against the differences in `test/chronic/differences.yml`;
 - fuzz;
 - speed, on the interpreter and under YJIT (set `YJIT_RUBY` to a Ruby built with YJIT if the default one lacks it).
 

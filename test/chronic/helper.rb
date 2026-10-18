@@ -30,7 +30,7 @@ module ChronicRun
   module Recorder
     def parse(text, options = {})
       got = super
-      loc = caller_locations.find { _1.path.start_with?(__dir__) && _1.label.match?(/#test_/) }
+      loc = caller_locations.find { _1.path.start_with?(__dir__) && _1.label.include?("#test_") }
       ChronicRun.call(ChronicRun::Call.new(loc&.lineno, text, options.except(:now), got))
       got
     end

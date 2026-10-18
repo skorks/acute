@@ -30,7 +30,7 @@ module Corpus
   def all_rules = File.read(File.join(ROOT, "docs/rules.md")).scan(/^### (D\d+)\.|\*\*(D\d+)\.\*\*/).flatten.compact.uniq
 
   def load(file: nil, grep: nil)
-    Dir[File.join(CASES, "*.jsonl")].sort.flat_map do |path|
+    Dir[File.join(CASES, "*.jsonl")].flat_map do |path|
       next [] if file && !File.basename(path, ".jsonl").include?(file)
       File.foreach(path).filter_map do |line|
         next if line.strip.empty?
@@ -159,7 +159,7 @@ module Corpus
     if record
       abort "not recording: fix the regressions first" unless regressions.empty? && misread.empty?
       abort "not recording: --grep/--file/--rule run only part of the corpus" if grep || file || rule
-      File.write(RATCHET, passing.join("\n") + "\n")
+      File.write(RATCHET, "#{passing.join("\n")}\n")
       puts "recorded #{passing.size} passing ids in test/corpus/passing.txt"
     end
     regressions.empty? && misread.empty?

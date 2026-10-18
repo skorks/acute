@@ -39,7 +39,7 @@ module Acute
       runs(text, tokens, unknown).each do |a, b|
         i = a
         while i < b
-          found = starts_mention?(tokens, i) && longest(text, tokens[i * S...b * S], make_context, whole)
+          found = starts_mention?(tokens, i) && longest(text, tokens[(i * S)...(b * S)], make_context, whole)
           if found
             mentions << found[0]
             i += found[1] / S
@@ -55,7 +55,7 @@ module Acute
     # the grammar accepts are tried, longest first: a phrase's, then a duration's.
     def self.longest(text, all, make_context, whole)
       tokens = all
-      while tokens.size > 0
+      until tokens.empty?
         tree, t = Grammar.longest(tokens)
         units, d = Grammar.longest(tokens, duration: true)
         return unless tree || units

@@ -8,7 +8,7 @@ class ToolsTest < Minitest::Test
 
   def record(*args, to:)
     out, status = Open3.capture2e(RbConfig.ruby, File.join(ROOT, "bin/case"), *args, "--to", to)
-    assert status.success?, out
+    assert_predicate status, :success?, out
     JSON.parse(out)
   end
 
@@ -18,7 +18,7 @@ class ToolsTest < Minitest::Test
       first = record("at 9", "--now", "2026-10-17T14:00", to: to)
       fold = record("2026-11-01 01:30 EST", to: to)
       none = record("last friday", "--context", "past", to: to)
-      assert_equal %w[new-0001 new-0002 new-0003], [first, fold, none].map { _1["id"] }
+      assert_equal(%w[new-0001 new-0002 new-0003], [first, fold, none].map { _1["id"] })
       assert_equal 2, first["expect"]["alternatives"].size
       assert_equal "2026-11-01T01:30:00-05:00", fold["expect"]["time"]
       assert_equal({ "context" => "past" }, none["options"])

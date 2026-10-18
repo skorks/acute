@@ -109,8 +109,8 @@ module Acute
         end
       end
 
-      # The day number of the nth wday on or after the day first
-      def self.nth_weekday(first, wday, n) = first + (wday - (first + 4) % 7) % 7 + 7 * (n - 1) # (first + 4) % 7: its weekday
+      # The day number of the nth wday on or after the day first; (first + 4) % 7 is its weekday
+      def self.nth_weekday(first, wday, n) = first + (wday - (first + 4) % 7) % 7 + 7 * (n - 1)
     end
   end
 end

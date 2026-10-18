@@ -11,4 +11,5 @@ Gem::Specification.new do |s|
   s.executables = ["acute"]
   s.required_ruby_version = ">= 3.3"
   s.add_dependency "tzinfo", "~> 2.0"
+  s.metadata["rubygems_mfa_required"] = "true"
 end

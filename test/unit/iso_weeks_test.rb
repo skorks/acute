@@ -4,7 +4,7 @@ require_relative "../test_helper"
 class IsoWeeksTest < Minitest::Test
   def span(text, **opts)
     r = parse(text, **opts)
-    "#{r.begin.strftime('%F')}..#{r.end.strftime('%F')}"
+    "#{r.begin.strftime("%F")}..#{r.end.strftime("%F")}"
   end
 
   def test_week_one_against_ruby_date

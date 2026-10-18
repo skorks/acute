@@ -60,7 +60,7 @@ module Acute
         if ctx.past?
           list = last(node, ctx, i + near, cyc) { |s| s.b <= now }
           # D44: in past context, a period under way is the current one, then the one before
-          if ctx.past == true && list.size > 0 && list[0].e > now
+          if ctx.past == true && !list.empty? && list[0].e > now
             b = list[0].b
             list += last(node, ctx, Period.index(cyc, ctx, b) - 1, cyc) { |s| s.b < b }.take(1)
           end
@@ -68,7 +68,7 @@ module Acute
         end
         list = first(node, ctx, i - near, cyc) { |s| s.e > now }
         # D40, D41: "tonight" said at exactly 00:00 is the rest of the night under way, then the coming one
-        if now % DAY == 0 && G::Part === node && node.name == :tonight && list.size > 0 && list[0].b < now
+        if now % DAY == 0 && G::Part === node && node.name == :tonight && !list.empty? && list[0].b < now
           return [Span.new(now, list[0].e, list[0].grain, nil), *at(node, ctx, i, cyc)]
         end
         list
@@ -91,12 +91,12 @@ module Acute
 
       # The first occurrence from cycle i on whose main reading passes the block
       # A while loop: a return from inside a block would unwind through it, which costs more than the search
-      def self.first(node, ctx, i, cyc = cycle(node))
+      def self.first(node, ctx, i, cyc = cycle(node), &)
         stop = i + LIMIT
         while i < stop
           list = at(node, ctx, i, cyc)
           return list if !list.empty? && yield(list[0])
-          return [] if list.empty? && !skips?(node) && !passed_over?(node, ctx, i, cyc) { |s| yield s }
+          return [] if list.empty? && !skips?(node) && !passed_over?(node, ctx, i, cyc, &)
           i += 1
         end
         []
@@ -135,12 +135,12 @@ module Acute
       end
 
       # The latest occurrence at or before cycle i whose main reading passes the block
-      def self.last(node, ctx, i, cyc = cycle(node))
+      def self.last(node, ctx, i, cyc = cycle(node), &)
         stop = i - LIMIT
         while i > stop
           list = at(node, ctx, i, cyc)
           return list if !list.empty? && yield(list[0])
-          return [] if list.empty? && !skips?(node) && !passed_over?(node, ctx, i, cyc) { |s| yield s }
+          return [] if list.empty? && !skips?(node) && !passed_over?(node, ctx, i, cyc, &)
           i -= 1
         end
         []

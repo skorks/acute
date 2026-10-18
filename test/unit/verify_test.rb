@@ -13,13 +13,13 @@ class VerifyTest < Minitest::Test
 
     v = verify("this friday", "2026-10-16")
     assert_equal :alternative, v.status
-    assert v.ok?
+    assert_predicate v, :ok?
     assert_equal "2026-10-16 is the second reading of \"this friday\"; the first is Fri 23 Oct. Ask the user which they meant.", v.message
     assert_equal "2026-10-23", v.expected.date.iso8601
 
     v = verify("in two weeks", "2026-10-30")
     assert_equal :mismatch, v.status
-    refute v.ok?
+    refute_predicate v, :ok?
     assert_equal "\"in two weeks\" is Sat 31 Oct, not Fri 30 Oct.", v.message
   end
 
@@ -74,7 +74,7 @@ class VerifyTest < Minitest::Test
   def test_unparsed
     v = verify("a banana", "2026-10-30")
     assert_equal :unparsed, v.status
-    refute v.ok?
+    refute_predicate v, :ok?
     assert_nil v.expected
     assert_equal "\"a banana\" can't be read as a time: unknown word \"banana\". Ask the user to say it another way.", v.message
   end
@@ -94,7 +94,7 @@ class VerifyTest < Minitest::Test
     assert_equal({ "kind" => "verdict", "text" => "tomorrow", "status" => "match", "ok" => true,
                    "message" => "2026-10-18 matches \"tomorrow\": Sun 18 Oct." }, v.as_json.except("expected"))
     assert_equal "2026-10-18T00:00:00-04:00", v.to_h[:expected][:begin]
-    assert v.frozen?
+    assert_predicate v, :frozen?
     assert_equal "#<Acute::Verdict match \"2026-10-18 matches \\\"tomorrow\\\": Sun 18 Oct.\">", v.inspect
   end
 

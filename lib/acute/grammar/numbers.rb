@@ -361,7 +361,7 @@ module Acute
       elsif kind == L::NAMED && v == 12 && digits <= 2
         @i += S
         named(@t[@i - S + 1])
-      elsif (digits == 3 && (at >= S && (@t[at - S] == L::AT || @t[at - S] == L::PART))) || ((digits == 3 || digits == 4) && kind == L::MER)
+      elsif (digits == 3 && at >= S && (@t[at - S] == L::AT || @t[at - S] == L::PART)) || ((digits == 3 || digits == 4) && kind == L::MER)
         three_digits(v, at)
       elsif digits == 4
         four_digits(v, flags, at)

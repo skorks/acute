@@ -21,7 +21,7 @@ if trace
   if Acute::Failure === tokens
     puts "lex:      #{tokens.to_a.inspect}"
   else
-    puts "tokens:", Acute::Lexer.inspect_tokens(tokens, text).map { |t| "  #{t}" }
+    puts("tokens:", Acute::Lexer.inspect_tokens(tokens, text).map { |t| "  #{t}" })
     tree = Acute::Grammar.parse(tokens)
     puts "tree:"
     PP.pp(tree, $stdout, 100)
@@ -32,7 +32,7 @@ if trace
         b = Time.at(r.begin, in: ctx.zone.offset_at(r.begin))
         puts "  #{b} +#{r.end - r.begin}s #{r.grain}#{r.dst && " #{r.dst}"}"
       end
-      puts "rules:", (ctx.notes || []).map { |a| "  #{a.rule || "-"} #{a.code}: #{a.message}" }
+      puts("rules:", (ctx.notes || []).map { |a| "  #{a.rule || "-"} #{a.code}: #{a.message}" })
     end
   end
 end

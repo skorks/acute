@@ -65,7 +65,7 @@ module Acute
         return [] if !cyc || a.empty?
         t = a[0].b
         i = Period.index(cyc, ctx, t)
-        all = (i - node.n..i + node.n).flat_map { |j| Periodic.at(node.node, ctx, j, cyc) }
+        all = ((i - node.n)..(i + node.n)).flat_map { |j| Periodic.at(node.node, ctx, j, cyc) }
         all.sort_by { |s| [(s.b - t).abs, s.b] }[node.n - 1, 1] || []
       end
 

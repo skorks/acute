@@ -13,7 +13,7 @@ module CorpusSpeed
 
   module_function
 
-  def quiet(**rounds, &block) = Reference.quiet_us(Reference.measure(**rounds, &block)[0])
+  def quiet(**rounds, &) = Reference.quiet_us(Reference.measure(**rounds, &)[0])
 
   def allocations
     before = GC.stat(:total_allocated_objects)
@@ -35,7 +35,7 @@ module CorpusSpeed
     passing = File.readlines(Corpus::RATCHET, chomp: true).to_h { [_1, true] }
     all = Corpus.load
     cases = all.select { |c| passing[c["id"]] && !c["expect"].key?("duration") }
-                 .map { |c| [c["text"], Corpus.context(c)] }
+               .map { |c| [c["text"], Corpus.context(c)] }
     times = cases.map do |text, ctx|
       Acute.parse(text, **ctx)
       [quiet(**QUICK) { Acute.parse(text, **ctx) }, text, ctx]

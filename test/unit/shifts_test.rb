@@ -21,12 +21,12 @@ class ShiftsTest < Minitest::Test
     assert_at "-2hr5min", "2026-10-17 11:55:00 -04:00"
     assert_at "+1 decade -2 years", "2034-10-17 14:00:00 -04:00"
     assert_at "2023-12-29 -10days", "2023-12-19 00:00:00 -05:00"
-    assert_equal 86_400, parse("2023-12-29 -10days").then { _1.end - _1.begin }
+    assert_equal(86_400, parse("2023-12-29 -10days").then { _1.end - _1.begin })
   end
 
   def test_a_minus_that_is_an_offset_or_a_range_stays_one
     assert_at "15:45 -0800", "2026-10-17 19:45:00 -04:00"
-    assert_equal 2 * 3600, parse("3:00 - 5:00 pm").then { _1.end - _1.begin }
+    assert_equal(2 * 3600, parse("3:00 - 5:00 pm").then { _1.end - _1.begin })
   end
 
   def test_fractional_counts

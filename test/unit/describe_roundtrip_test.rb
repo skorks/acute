@@ -16,6 +16,7 @@ class DescribeRoundTripTest < Minitest::Test
              "next weekend", "jan 1 to jan 10", "december", "new year's eve", "easter", "the 15th",
              "2 weeks from now", "in 90 seconds", "45 minutes ago", "1:30am", "2:30am"].freeze
   STYLES = %i[relative calendar].freeze
+  LOCALES = %w[en-US en-GB].freeze
   DAY = 86_400
 
   def setup
@@ -26,7 +27,7 @@ class DescribeRoundTripTest < Minitest::Test
 
   def test_d45_describe_reads_back
     nows.each do |now, zone|
-      opts = { now: now, zone: zone, locale: %w[en-US en-GB].sample(random: @rng),
+      opts = { now: now, zone: zone, locale: LOCALES.sample(random: @rng),
                context: @rng.rand < 0.2 ? :past : :future }
       targets(now, zone, opts).each { |x| STYLES.each { check(x, opts.merge(style: _1)) } }
     end
@@ -42,7 +43,7 @@ class DescribeRoundTripTest < Minitest::Test
     ZONES.flat_map do |zone|
       changes = transitions(zone)
       Array.new(NOWS) do |i|
-        at = i.even? && changes.any? ? changes.sample(random: @rng) + @rng.rand(-2 * DAY..2 * DAY) : epoch(1960, 2090)
+        at = i.even? && changes.any? ? changes.sample(random: @rng) + @rng.rand((-2 * DAY)..(2 * DAY)) : epoch(1960, 2090)
         [Time.at(at - at % 60), zone]
       end
     end
@@ -51,7 +52,7 @@ class DescribeRoundTripTest < Minitest::Test
   def targets(now, zone, opts)
     n = now.to_i
     changes = transitions(zone).select { (_1 - n).abs < 400 * DAY }
-    near = -> { @rng.rand < 0.5 && changes.any? ? changes.sample(random: @rng) + @rng.rand(-3 * 3600..3 * 3600) : n + @rng.rand(-400 * DAY..400 * DAY) }
+    near = -> { @rng.rand < 0.5 && changes.any? ? changes.sample(random: @rng) + @rng.rand((-3 * 3600)..(3 * 3600)) : n + @rng.rand((-400 * DAY)..(400 * DAY)) }
     out = []
     6.times { out << Time.at(round(near.call)) }
     out << Time.at(near.call) << now << Time.at(epoch(1900, 2100) / 60 * 60)
@@ -62,7 +63,7 @@ class DescribeRoundTripTest < Minitest::Test
     end
     2.times do
       d = Time.at(near.call).getlocal(Acute::Zone.for(zone).offset_at(n)).to_date
-      out << d << (d..d + @rng.rand(1..40))
+      out << d << (d..(d + @rng.rand(1..40)))
     end
     since = round(near.call)
     out << (since < n ? Time.at(since)...now : now...Time.at(since)) if since != n
@@ -82,7 +83,7 @@ class DescribeRoundTripTest < Minitest::Test
     got = r && !r.ambiguous? && (want[:instant] ? [r.time.to_i] : [r.begin&.to_i, r.end&.to_i])
     return if got == want[:value]
     @misread << "#{show(x)} #{opts[:zone]} now=#{opts[:now].to_i} #{opts.values_at(:locale, :context, :style)} " \
-                 "→ #{text.inspect} → #{r ? [r.begin, r.end, r.alternatives.size].inspect : 'nil'}"
+                "→ #{text.inspect} → #{r ? [r.begin, r.end, r.alternatives.size].inspect : "nil"}"
   end
 
   # verify agrees: a reading checked against itself is a match

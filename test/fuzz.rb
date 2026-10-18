@@ -7,7 +7,7 @@ module Fuzz
   LIMIT = 0.001
   NOW = Time.utc(2026, 10, 17, 18)
   ALPHABET = ("a".."z").to_a + ("0".."9").to_a + [" ", ":", ".", ",", "@", "'", "-", "/", "\t", "é", " ", "\xff"].map(&:b)
-  WORDS = %w[tomorrow today yesterday at noon midnight midday now am pm a.m. p.m. 4 12 16:30 09:30 4:30:15 tmrw]
+  WORDS = %w[tomorrow today yesterday at noon midnight midday now am pm a.m. p.m. 4 12 16:30 09:30 4:30:15 tmrw].freeze
 
   module_function
 

@@ -21,10 +21,10 @@ class ResultTest < Minitest::Test
     assert_equal "America/New_York", r.zone
     assert_equal "4pm", r.text
     assert_nil r.date
-    assert r.instant?
-    refute r.span?
-    refute r.open?
-    refute r.ambiguous?
+    assert_predicate r, :instant?
+    refute_predicate r, :span?
+    refute_predicate r, :open?
+    refute_predicate r, :ambiguous?
     assert_empty r.alternatives
   end
 
@@ -32,25 +32,25 @@ class ResultTest < Minitest::Test
     r = parse("yesterday")
     assert_equal Date.new(2026, 10, 16), r.date
     assert_equal "2026-10-16T00:00:00-04:00/2026-10-17T00:00:00-04:00", r.iso8601
-    assert r.span?
-    refute r.instant?
+    assert_predicate r, :span?
+    refute_predicate r, :instant?
   end
 
   def test_alternatives_are_results_without_assumptions
     r = parse("at 4")
-    assert r.ambiguous?
+    assert_predicate r, :ambiguous?
     alt = r.alternatives.first
     assert_kind_of Acute::Result, alt
     assert_equal "2026-10-18T04:00:00-04:00", alt.iso8601
     assert_empty alt.assumptions
-    refute alt.ambiguous?
+    refute_predicate alt, :ambiguous?
   end
 
   def test_assumptions_carry_code_rule_and_message
     a = parse("at 4").assumptions.first
     assert_equal [:bare_hour_window, "D4"], [a.code, a.rule]
-    assert_match(/am\/pm/, a.message)
-    assert parse("at 4").assumptions.frozen?
+    assert_match(%r{am/pm}, a.message)
+    assert_predicate parse("at 4").assumptions, :frozen?
   end
 
   def test_to_h_and_to_json

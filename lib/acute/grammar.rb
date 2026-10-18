@@ -31,7 +31,7 @@ module Acute
     Holiday = Struct.new(:name)
     Weekend = Struct.new(:count)
     Fiscal = Struct.new(:year)
-    IsoWeek = Struct.new(:week, :day)            # D13: ISO week 1-53, and its day 1-7 (Monday 1) or nil
+    IsoWeek = Struct.new(:week, :day) # D13: ISO week 1-53, and its day 1-7 (Monday 1) or nil
     # A decade or century from its first year; short: a decade's two digits, for the 50-year window (D12)
     Years = Struct.new(:unit, :year, :short)
     # A unit, alone ("next week") or counted ("next 3 days", "3 days" in "3 days ago")
@@ -78,7 +78,7 @@ module Acute
     # no further, so the next try ends before it. Each try is a new Array: a lookahead past the end must
     # read nil.
     def self.longest(tokens, duration: false)
-      while tokens.size > 0
+      until tokens.empty?
         g = new(tokens)
         tree = duration ? g.duration : g.phrase
         return [tree, tokens.size] unless Failure === tree

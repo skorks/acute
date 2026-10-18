@@ -3,7 +3,7 @@ require_relative "../acute"
 # chronic 0.10.2's API on acute's parser, for code written against chronic. It takes chronic's options and
 # returns what chronic returns, but the answers follow acute's rules (D46).
 module Chronic
-  VERSION = "0.10.2"
+  VERSION = "0.10.2".freeze
 
   class << self
     attr_accessor :time_class, :debug
@@ -117,7 +117,7 @@ module Chronic
     def hour_window
       range = @options[:ambiguous_time_range]
       start = @options[:hours24] == true || range == :none ? 1 : Integer(range)
-      start...start + 12
+      start...(start + 12)
     end
 
     # Epochs, or a Range of them when guess is false, which in chronic always returns a Span; an instant keeps

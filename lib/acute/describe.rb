@@ -31,7 +31,7 @@ module Acute
     # Hours, minutes and seconds carried upward ("5400s" is "1h 30m"); never into days, which DST can stretch (D23)
     def self.duration(d)
       p = d.parts
-      return d.to_s unless (p.keys & %i[hours minutes seconds]).size > 0
+      return d.to_s unless p.keys.intersect?(%i[hours minutes seconds])
       total = p.fetch(:hours, 0) * 3600 + p.fetch(:minutes, 0) * 60 + p.fetch(:seconds, 0)
       h, rest = total.divmod(3600)
       m, s = rest.divmod(60)
@@ -125,7 +125,7 @@ module Acute
     end
 
     def instant(p)
-      if !@calendar
+      unless @calendar
         yield "now" if p == @ctx.now
         w = day_word(day_of(p))
         yield "#{w} at #{clock(secs_of(p))}" if w

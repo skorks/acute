@@ -151,7 +151,7 @@ class DepthMoreTest < Minitest::Test
   end
 
   def test_now_said_other_ways
-    %w[right\ now just\ now at\ the\ moment at\ present at\ this\ time].each do |text|
+    ["right now", "just now", "at the moment", "at present", "at this time"].each do |text|
       assert_equal "2026-10-17 14:00:00 -04:00", wall(parse(text).begin), text
     end
     assert_equal "2026-10-17 12:00:00 -04:00", wall(parse("now - 2 hours").begin)

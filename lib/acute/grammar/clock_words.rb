@@ -29,12 +29,12 @@ module Acute
         # clock, so from 13 to 23 the second must be past any minute
         if v.between?(13, 29) && w.between?(10, 99) && (v.between?(18, 20) || v > 23 || w > 59)
           @i += 2 * S
-          return Date.new(v * 100 + w, nil, nil, nil, false)
+          Date.new(v * 100 + w, nil, nil, nil, false)
         end
       elsif w == :oh # D44: "twelve oh three", "nine zero five"
         if v.between?(1, 12) && t[i + 2 * S] == L::NUM && t[i + 2 * S + 2] & L::WORDY != 0 && (m = t[i + 2 * S + 1]).between?(1, 9)
           @i += 3 * S
-          return said_clock(v, m)
+          said_clock(v, m)
         end
       elsif w == :thousand && v.between?(1, 2)
         thousands(v, i)

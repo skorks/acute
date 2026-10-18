@@ -9,7 +9,7 @@ class FractionTest < Minitest::Test
     assert_equal r.time, r.begin
     assert_equal "2013-08-01 22:30:00 -04:00", wall(r.time)
     assert_equal :second, r.grain
-    assert r.instant?
+    assert_predicate r, :instant?
     assert_equal Rational(1, 10), parse("2012-01-03 01:00:00.100").time.subsec
     assert_equal Rational(123_456_789, 10**9), parse("20080227T21:26:01.123456789").time.subsec
     assert_equal Rational(181, 500), parse("21:11:35.362 UTC").time.subsec

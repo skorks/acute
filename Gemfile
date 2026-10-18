@@ -6,6 +6,9 @@ gemspec
 gem "tzinfo-data", platforms: :windows
 
 group :development do
-  gem "minitest"
   gem "benchmark"
+  gem "minitest"
+  gem "rubocop", "1.92.0", require: false
+  gem "rubocop-minitest", "0.41.0", require: false
+  gem "rubocop-performance", "1.27.0", require: false
 end

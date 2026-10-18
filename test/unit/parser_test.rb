@@ -62,9 +62,9 @@ class ParserTest < Minitest::Test
   def test_frozen_and_shareable
     locale = +"en-GB"
     p = Acute.with(now: Time.new(2026, 10, 17, 14, 0, 0, "+01:00"), zone: "Europe/London", locale: locale)
-    assert p.frozen?
+    assert_predicate p, :frozen?
     assert Ractor.shareable?(p)
-    refute locale.frozen?
+    refute_predicate locale, :frozen?
     assert_equal '#<Acute::Parser now: 2026-10-17 13:00:00 UTC, zone: "Europe/London", context: :future, locale: "en-GB">', p.inspect
   end
 

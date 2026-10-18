@@ -101,7 +101,7 @@ module Acute
 
     def ==(other) = Duration === other && other.parts == @parts
 
-    def inspect = "#<Acute::Duration #{to_s}>"
+    def inspect = "#<Acute::Duration #{self}>"
 
     private
 

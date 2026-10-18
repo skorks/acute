@@ -77,7 +77,7 @@ class ZoneTest < Minitest::Test
 
   def test_accepts_a_tzinfo_zone_and_shares_one_table
     assert_same Acute::Zone.for("Asia/Tokyo"), Acute::Zone.for(TZInfo::Timezone.get("Asia/Tokyo"))
-    assert Acute::Zone.for("Asia/Tokyo").frozen?
+    assert_predicate Acute::Zone.for("Asia/Tokyo"), :frozen?
   end
 
   # The nth (or, with -1, last) Sunday of a month, at hour o'clock UTC
@@ -110,7 +110,8 @@ class ZoneTest < Minitest::Test
 
   def test_d47_a_zone_that_stopped_changing_its_clocks_stays_stopped
     mexico = Acute::Zone.for("America/Mexico_City")
-    assert_equal [-21_600], [2030, 2100, 2199].flat_map { |y| [1, 7].map { mexico.offset_at(Time.utc(y, _1).to_i) } }.uniq
+    months = [1, 7]
+    assert_equal [-21_600], [2030, 2100, 2199].flat_map { |y| months.map { mexico.offset_at(Time.utc(y, _1).to_i) } }.uniq
   end
 
   def test_rejects_unknown_zones

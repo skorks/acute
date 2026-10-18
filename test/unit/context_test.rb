@@ -47,7 +47,7 @@ class ContextTest < Minitest::Test
     threads = jobs.each_slice(phrases.size).map do |slice|
       Thread.new { Array.new(100) { slice.map(&run) }.uniq }
     end
-    assert_equal expected.each_slice(phrases.size).map { [_1] }, threads.map(&:value)
+    assert_equal expected.each_slice(phrases.size).zip, threads.map(&:value)
   end
 
   # Ruby warns once that Ractors are experimental

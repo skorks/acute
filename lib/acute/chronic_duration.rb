@@ -10,7 +10,7 @@ module ChronicDuration
   class DurationParseError < StandardError
   end
 
-  VERSION = "0.12.0"
+  VERSION = "0.12.0".freeze
   FULL_WEEKS_PER_MONTH = 4
   YEAR = 31_557_600
   UNITS = %w[seconds minutes hours days weeks months years].freeze
@@ -41,10 +41,8 @@ module ChronicDuration
 
   class << self
     attr_accessor :hours_per_day
-    attr_reader :days_per_month
+    attr_reader :days_per_month, :raise_exceptions
     attr_writer :days_per_week
-
-    def raise_exceptions = @raise_exceptions
 
     def raise_exceptions=(value)
       @raise_exceptions = !!value
@@ -137,7 +135,7 @@ module ChronicDuration
 
   def humanize_time_unit(number, unit, pluralize, keep_zero)
     return if number == 0 && !keep_zero
-    res = +"#{number}#{unit}"
+    res = "#{number}#{unit}"
     res << "s" if number != 1 && pluralize
     res
   end
@@ -166,7 +164,7 @@ module ChronicDuration
 
   def calculate_from_words(string, opts)
     seconds = lengths(opts)
-    words = string.split(" ")
+    words = string.split
     words.each_with_index.sum do |v, k|
       v.match?(FLOAT) ? convert_to_number(v) * seconds.fetch(words[k + 1] || opts[:default_unit] || "seconds", 0) : 0
     end
@@ -209,7 +207,7 @@ module ChronicDuration
   def filter_through_white_list(string)
     res = []
     skipped = []
-    string.split(" ").each do |word|
+    string.split.each do |word|
       next res << word.strip if word.match?(FLOAT)
       stripped = word.strip.delete_prefix(",").delete_suffix(",")
       if MAPPINGS.key?(stripped) then res << MAPPINGS[stripped]
@@ -279,7 +277,7 @@ module ChronicDuration
     def andition(string)
       sc = StringScanner.new(string)
       while sc.scan_until(/<num>(\d+)( | and )<num>(\d+)(?=[^\w]|$)/i)
-        next unless sc[2] =~ /and/ || sc[1].size > sc[3].size
+        next unless sc[2].include?("and") || sc[1].size > sc[3].size
         string[(sc.pos - sc.matched_size)..(sc.pos - 1)] = "<num>#{sc[1].to_i + sc[3].to_i}"
         sc.reset
       end

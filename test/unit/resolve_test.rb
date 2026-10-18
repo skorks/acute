@@ -116,7 +116,7 @@ class ResolveTest < Minitest::Test
   end
 
   def test_a_day_spans_its_real_length_across_dst
-    assert_equal 25 * 3600, parse("tomorrow", now: "2026-10-31T14:00").then { |r| r.end - r.begin }
-    assert_equal 23 * 3600, parse("tomorrow", now: "2027-03-13T14:00").then { |r| r.end - r.begin }
+    assert_equal(25 * 3600, parse("tomorrow", now: "2026-10-31T14:00").then { |r| r.end - r.begin })
+    assert_equal(23 * 3600, parse("tomorrow", now: "2027-03-13T14:00").then { |r| r.end - r.begin })
   end
 end

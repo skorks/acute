@@ -15,7 +15,7 @@ module Acute
       tz = ENV["TZ"]
       return tz if tz && !tz.empty? && TZInfo::Timezone.all_identifiers.include?(tz)
       target = File.readlink("/etc/localtime")
-      target[/zoneinfo\/(.+)\z/, 1] || "UTC"
+      target[%r{zoneinfo/(.+)\z}, 1] || "UTC"
     rescue SystemCallError
       "UTC"
     end
@@ -63,9 +63,8 @@ module Acute
       @strict = strict
       @year_bias = YEAR_BIAS
       # Most parses give none of the other options, and then skip their checks
-      if locale || week_start || hemisphere || fiscal_year_start || !strict || dst || holidays || business_days || year_bias
-        options(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays, business_days, year_bias)
-      end
+      return unless locale || week_start || hemisphere || fiscal_year_start || !strict || dst || holidays || business_days || year_bias
+      options(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays, business_days, year_bias)
     end
 
     def fresh = Context.new(*@args)

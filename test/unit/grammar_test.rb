@@ -9,7 +9,7 @@ class GrammarTest < Minitest::Test
   def test_longest_finds_the_longest_phrase_prefix
     tree, size = longest("tomorrow at 5pm 6 months")
     assert_equal 4 * S, size
-    assert_equal G::Within, tree.class
+    assert_instance_of G::Within, tree
   end
 
   def test_longest_is_nil_when_no_prefix_is_a_phrase
