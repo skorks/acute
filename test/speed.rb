@@ -7,7 +7,7 @@ require_relative "reference"
 
 module Speed
   # [slowest, mean] quiet µs by mode. The 10 µs slowest planned for 0.1 needs a native lexer; the user chose
-  # these instead on 2026-10-18 (idea.md, step 11.8)
+  # these instead on 2026-10-18
   BUDGET = { "interp" => [13.0, 8.0], "yjit" => [5.0, 3.0] }.freeze
   NOW = Time.utc(2026, 10, 17, 18)
   PHRASES = ["tomorrow", "tomorrow at 4pm", "noon", "4:30 p.m.", "16:30", "now", "yesterday at noon",

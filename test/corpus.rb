@@ -1,4 +1,4 @@
-# Runs research/cases against Acute.parse and compares with the ratchet in test/corpus/passing.txt.
+# Runs test/cases against Acute.parse and compares with the ratchet in test/corpus/passing.txt.
 # Expected values are worked out with the system zoneinfo through TZInfo, not Acute::Zone, so the two check each other.
 #   ruby test/corpus.rb [--record] [--grep TEXT] [--file NAME] [--rule D20] [--list STATUS]
 require "json"
@@ -9,7 +9,7 @@ require_relative "../lib/acute"
 
 module Corpus
   ROOT = File.expand_path("..", __dir__)
-  CASES = File.join(ROOT, "research/cases")
+  CASES = File.join(ROOT, "test/cases")
   RATCHET = File.join(ROOT, "test/corpus/passing.txt")
   WALL = /\A(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)(?::(\d\d))?(\.\d+)?\z/
   CHRONIC_ONLY = %w[endian_precedence hours24 ambiguous_time_range].freeze

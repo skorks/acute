@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # bin/case "tomorrow at 4pm" [--now 2026-10-17T14:00] [--zone America/New_York] [--context past] [--to FILE]
-# Appends acute's current answer as a case to research/cases/new.jsonl (or FILE) and prints it. The answer is
+# Appends acute's current answer as a case to test/cases/new.jsonl (or FILE) and prints it. The answer is
 # unreviewed: check it against the D-rules before moving the case to its theme's file.
 require "json"
 require_relative "../test/corpus"
