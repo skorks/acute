@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
-# The one command: tables, lint, unit tests, corpus ratchet, chronic compatibility, fuzz, speed on the
-# interpreter and under YJIT. Prints one line per stage, and the failures of a stage that failed.
-#   bin/check [--record] [--only tables|lint|unit|corpus|chronic|fuzz|speed|yjit] [--grep TEXT] [--file NAME] [--rule D20]
+# The one command: tables, lint, unit tests, corpus ratchet, chronic compatibility, fuzz, coverage, speed on
+# the interpreter and under YJIT. Prints one line per stage, and the failures of a stage that failed.
+#   bin/check [--record] [--only tables|lint|unit|corpus|chronic|fuzz|coverage|speed|yjit] [--grep TEXT] [--file NAME] [--rule D20]
 # --grep and --file narrow the corpus and imply --only corpus. --record updates test/corpus/passing.txt and
 # test/chronic/differences.yml.
 # The yjit stage runs YJIT_RUBY, or this ruby, with --yjit, and is skipped when that ruby has no YJIT.
@@ -47,6 +47,7 @@ STAGES = {
   "corpus" => [[RUBY, "test/corpus.rb", *corpus_args, *(["--rule", rule] if rule)], ->(out) { out }],
   "chronic" => [[RUBY, "test/chronic/run.rb", *(["--record"] if corpus_args.include?("--record"))], ->(out) { out.lines.first }],
   "fuzz" => [[RUBY, "test/fuzz.rb"], ->(out) { out }],
+  "coverage" => [[RUBY, "test/coverage.rb"], ->(out) { out }],
   "speed" => [[RUBY, "test/speed.rb"], ->(out) { out }],
   "yjit" => if system(YJIT_RUBY, "--yjit", "-e", "exit RubyVM::YJIT.enabled?", err: File::NULL)
               [[YJIT_RUBY, "--yjit", "test/speed.rb"], ->(out) { out }]
