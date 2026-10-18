@@ -190,7 +190,6 @@ module Acute
       frac = ctx.frac
       out = []
       spans.each do |s|
-        ctx.dst = nil
         b = s.b
         e = s.e
         point = s.point
@@ -200,6 +199,7 @@ module Acute
           point -= off if point
           dst = nil
         else
+          ctx.dst = nil
           b = s.ub || (b && zone.local_to_utc(b, ctx, ctx.dst_policy))
           dst = s.ub ? s.dst : ctx.dst
           e = s.ue || (e && zone.local_to_utc(e, ctx, ctx.dst_policy))

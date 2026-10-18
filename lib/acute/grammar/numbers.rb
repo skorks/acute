@@ -60,7 +60,9 @@ module Acute
       flags = t[i + 2]
       digits = flags & L::DIGITS
       nk = @t[i + S]
-      if nk == L::SLASH || nk == L::DOT
+      if nk.nil?
+        # the last token: none of the forms below
+      elsif nk == L::SLASH || nk == L::DOT
         return dotted_clock(i) if nk == L::DOT && dotted_clock?(i)
         return dashed_month(v, digits) if @t[i + 2 * S] == L::MONTH && joined?(i + S) # "25/Sep/2003"
         # "1/2 hour", "2.5 hours"; not "22/0 y"

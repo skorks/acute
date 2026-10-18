@@ -153,6 +153,7 @@ module Acute
           while i < n
             x = CODE[b = s.getbyte(i)]
             if x == 0
+              break if b < 46 # a space, comma or hyphen; only a dot or a UTF-8 byte may carry a word on
               if b == 46 && i + 1 < n && (x = CODE[s.getbyte(i + 1)]) >= 1 && x <= 26
                 x = 27
               elsif b >= 194 && (w = wide(s, i, b)) != SPACE && w != DASH
