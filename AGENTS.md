@@ -27,7 +27,7 @@ text ──lex──▶ tokens ──grammar──▶ tree ──resolve(ctx)─
 - unit tests;
 - the corpus against the ratchet in `test/corpus/passing.txt`;
 - fuzz;
-- speed.
+- speed, on the interpreter and under YJIT (set `YJIT_RUBY` to a Ruby built with YJIT if the default one lacks it).
 
 Options: `--only STAGE`, `--grep TEXT` / `--file NAME` (corpus only), `--rule D20` (the cases and unit tests about one rule, plus the rules no case covers), `--record`.
 

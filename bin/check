@@ -1,9 +1,10 @@
 #!/usr/bin/env ruby
-# The one command: tables, unit tests, corpus ratchet, chronic compatibility, fuzz, speed. Prints one line
-# per stage, and the failures of a stage that failed.
-#   bin/check [--record] [--only tables|unit|corpus|chronic|fuzz|speed] [--grep TEXT] [--file NAME] [--rule D20]
+# The one command: tables, unit tests, corpus ratchet, chronic compatibility, fuzz, speed on the interpreter
+# and under YJIT. Prints one line per stage, and the failures of a stage that failed.
+#   bin/check [--record] [--only tables|unit|corpus|chronic|fuzz|speed|yjit] [--grep TEXT] [--file NAME] [--rule D20]
 # --grep and --file narrow the corpus and imply --only corpus. --record updates test/corpus/passing.txt and
 # test/chronic/differences.yml.
+# The yjit stage runs YJIT_RUBY, or this ruby, with --yjit, and is skipped when that ruby has no YJIT.
 # --rule runs the cases tagged with or noting that rule and the unit tests that mention it, and lists the
 # rules no case covers.
 require "open3"
@@ -11,6 +12,7 @@ require "rbconfig"
 
 ROOT = File.expand_path("..", __dir__)
 RUBY = RbConfig.ruby
+YJIT_RUBY = ENV["YJIT_RUBY"] || RUBY
 UNIT = 'Dir["test/unit/*_test.rb"].sort.each { |f| require_relative File.expand_path(f) }'
 
 args = ARGV.dup
@@ -43,7 +45,12 @@ STAGES = {
   "corpus" => [[RUBY, "test/corpus.rb", *corpus_args, *(["--rule", rule] if rule)], ->(out) { out }],
   "chronic" => [[RUBY, "test/chronic/run.rb", *(["--record"] if corpus_args.include?("--record"))], ->(out) { out.lines.first }],
   "fuzz" => [[RUBY, "test/fuzz.rb"], ->(out) { out }],
-  "speed" => [[RUBY, "test/speed.rb"], ->(out) { out }]
+  "speed" => [[RUBY, "test/speed.rb"], ->(out) { out }],
+  "yjit" => if system(YJIT_RUBY, "--yjit", "-e", "exit RubyVM::YJIT.enabled?", err: File::NULL)
+              [[YJIT_RUBY, "--yjit", "test/speed.rb"], ->(out) { out }]
+            else
+              [[RUBY, "-e", "puts 'skipped: #{YJIT_RUBY} has no YJIT (set YJIT_RUBY)'"], ->(out) { out }]
+            end
 }.freeze
 abort "--only takes one of #{STAGES.keys.join(", ")}" if only && !STAGES.key?(only)
 abort "--rule runs the unit and corpus stages" if rule && only && !%w[unit corpus].include?(only)
