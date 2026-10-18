@@ -114,7 +114,9 @@ module Acute
 
       # D42: only a date skips the cycles it doesn't exist in ("feb 29", "the 31st"); "5th tuesday in may" is
       # nil, not a later May that has one
-      def self.skips?(node) = G::Date === node || G::IsoWeek === node || (G::Within === node && skips?(node.inner))
+      def self.skips?(node) = G::Date === node || G::IsoWeek === node || (G::Within === node && skips?(node.inner)) ||
+                              (G::Holiday === node && LEAP[node.name]) # D48
+      LEAP = { leap_day: true, leap_year: true }.freeze
 
       # D37: a weekday with a date filters the date's own occurrence, so a cycle whose date falls on another
       # weekday is passed over only when the date's occurrence there would be

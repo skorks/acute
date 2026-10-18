@@ -135,6 +135,11 @@ module Acute
           t.push(DASH, 0, 0, i, i + 3) if w == DASH
           i += c < 224 ? 2 : 3
         elsif cl == LETTER
+          if c == 0xC2 && i + 1 < n && s.getbyte(i + 1) == 0xBD # D48: "½ hour"
+            t.push(WORD, :half, 0, i, i + 2)
+            i += 2
+            next
+          end
           # the "T" between an ISO date and its time, or before a time alone: "T13:23:42"
           if c | 32 == 116 && i + 1 < n && CLASS[s.getbyte(i + 1)] == DIGIT &&
              (i > 0 && CLASS[p = s.getbyte(i - 1)] == DIGIT || ((i == 0 || CLASS[p] == SPACE) && i + 3 < n && s.getbyte(i + 3) == 58))
@@ -263,6 +268,10 @@ module Acute
             f = nd - 8
             f |= ZERO if s.getbyte(st + 8) == 48
             t.push(NUM, s.byteslice(st, 8).to_i, 8, st, st + 8, NUM, s.byteslice(st + 8, nd - 8).to_i, f, st + 8, i)
+          elsif (c == 39 || c == 34) && v < 60 && i < n && (i + 1 == n || CLASS[s.getbyte(i + 1)] == SPACE)
+            # D48: "2'", "1\"": prime notation, minutes and seconds; under 60, so "'TUNNEL 64'" is a quote
+            t.push(NUM, v, flags, st, i, UNIT, c == 39 ? :minute : :second, 0, i, i + 1)
+            i += 1
           else
             flags |= SHORT if nd == 2 && st > 0 && s.getbyte(st - 1) == 39
             t.push(NUM, v, flags, st, i)

@@ -57,6 +57,18 @@ module Acute
         a.flat_map { |s| nth_from(node.node, n, n > 0 ? s.e : s.b, ctx).first(1) }.uniq
       end
 
+      # D48: one a cycle, so the n nearest lie within n cycles of the anchor's; nearest by start, the earlier
+      # on a tie
+      def self.closest(node, ctx)
+        cyc = Periodic.cycle(node.node)
+        a = Resolve.spans(node.anchor, ctx)
+        return [] if !cyc || a.empty?
+        t = a[0].b
+        i = Period.index(cyc, ctx, t)
+        all = (i - node.n..i + node.n).flat_map { |j| Periodic.at(node.node, ctx, j, cyc) }
+        all.sort_by { |s| [(s.b - t).abs, s.b] }[node.n - 1, 1] || []
+      end
+
       def self.nth_from(x, n, t, ctx)
         cyc = Periodic.cycle(x)
         i = Period.index(cyc, ctx, t)

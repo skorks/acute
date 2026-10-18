@@ -66,6 +66,7 @@ module Acute
       when :rel then Rel.spans(node, ctx)
       when :shift then Shift.spans(node, ctx)
       when :counted then Shift.counted(node, ctx)
+      when :closest then Shift.closest(node, ctx)
       when :range then Ranges.spans(node, ctx)
       when :open then Ranges.open(node, ctx)
       when :lasting then Ranges.lasting(node, ctx)

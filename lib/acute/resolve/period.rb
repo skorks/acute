@@ -4,7 +4,7 @@ module Acute
     module Period
       DAY = 86_400
       SECONDS = { second: 1, minute: 60, hour: 3600 }.freeze
-      MONTHS = { month: 1, quarter: 3, year: 12, decade: 120, century: 1200 }.freeze
+      MONTHS = { month: 1, quarter: 3, season: 3, year: 12, decade: 120, century: 1200 }.freeze
       DAYS = { day: 1, week: 7, fortnight: 14 }.freeze
 
       def self.day(t) = t / DAY
@@ -63,7 +63,7 @@ module Acute
         else
           n = MONTHS[unit]
           i = month_index(t)
-          i -= i % n
+          i -= unit == :season ? (i + 1) % 3 : i % n # D33: seasons start in December, March, June and September
           Span.new(month_start(i), month_start(i + n), unit, nil)
         end
       end
@@ -104,7 +104,7 @@ module Acute
       end
 
       # D40: "half a year" is 6 months; a fraction becomes a whole count of the next smaller unit
-      SMALLER = Ractor.make_shareable({ year: [:month, 12], quarter: [:month, 3], month: [:day, 30], fortnight: [:day, 14],
+      SMALLER = Ractor.make_shareable({ year: [:month, 12], quarter: [:month, 3], season: [:month, 3], month: [:day, 30], fortnight: [:day, 14],
                                         week: [:day, 7], day: [:hour, 24], hour: [:minute, 60], minute: [:second, 60] })
 
       def self.whole(count, unit)

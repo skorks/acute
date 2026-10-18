@@ -39,6 +39,7 @@ module Acute
     Rel = Struct.new(:word, :node)              # next / this / last / past / coming
     Shift = Struct.new(:count, :unit, :anchor)  # signed count of units from the anchor, or from now
     Counted = Struct.new(:n, :node, :anchor)    # the nth node after the anchor or now (n < 0: before)
+    Closest = Struct.new(:n, :node, :anchor)    # the nth node nearest the anchor, either side
     Nth = Struct.new(:n, :node)                 # the nth (n = -1: the last) node inside its outer period
     Within = Struct.new(:inner, :outer)
     Range = Struct.new(:from, :to)
@@ -56,7 +57,7 @@ module Acute
              Holiday => :holiday, Weekend => :weekend, Fiscal => :fiscal, Unit => :unit, Rel => :rel, Shift => :shift,
              Nth => :nth, Within => :within, Range => :range, Open => :open, Approx => :approx, Fuzzy => :fuzzy,
              Zoned => :zoned, Now => :now, Years => :years, IsoWeek => :iso_week, Counted => :counted,
-             Lasting => :lasting, Holding => :holding }.freeze
+             Lasting => :lasting, Holding => :holding, Closest => :closest }.freeze
 
     L = Lexer
     S = Lexer::STRIDE
@@ -66,7 +67,7 @@ module Acute
     BEFORE_DAY = { the: true, from: true, between: true }.freeze # words that make "ninth" a day
     SHIFT_TAIL = { ago: true, hence: true, later: true, from: true, after: true, before: true }.freeze
     UNIT_SIZE = { second: 0, minute: 0, hour: 0, day: 2, business_day: 2, week: 3, fortnight: 3, month: 5,
-                  quarter: 6, year: 7, decade: 8, century: 9 }.freeze
+                  quarter: 6, season: 6, year: 7, decade: 8, century: 9 }.freeze
 
     def self.parse(tokens) = new(tokens).phrase
 

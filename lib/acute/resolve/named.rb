@@ -34,7 +34,7 @@ module Acute
         election_day: [11, 2, 2], admin_day: [4, 21, 3], grandparents_day: [:labor_day, 6],
         military_spouse_day: [:mothers_day, -2], lincolns_birthday: [2, 12], law_day: [5, 1], loyalty_day: [5, 1],
         may_day: [5, 1], workers_day: [5, 1], siblings_day: [4, 10], world_vegan_day: [11, 1], kwanzaa: [12, 26],
-        ides_of_march: [3, 15]
+        ides_of_march: [3, 15], leap_day: [2, 29]
       })
       # D48: a holiday of several days names its first, then all of them
       LASTS = { kwanzaa: 7 }.freeze
@@ -89,8 +89,13 @@ module Acute
           d = date.jd - 2_440_588
           return Span.new(d * DAY, d * DAY + DAY, :day, nil)
         end
+        if name == :leap_year # D48: named like a holiday, the whole of a year with a 29 February
+          return unless Calendar.leap?(year)
+          return Span.new(Period.civil(year, 1, 1), Period.civil(year + 1, 1, 1), :year, nil)
+        end
         f = (own = LOCAL[ctx.locale.country]) && own[name] || HOLIDAYS[name]
         return unless f
+        return if f[1] == 29 && f[0] == 2 && !Calendar.leap?(year) # D48: no leap day in a common year
         d = day_of(f, year)
         Span.new(d * DAY, d * DAY + DAY, :day, nil)
       end

@@ -10,8 +10,14 @@ module Acute
     # million straight after the first number
     def spoken(i)
       t = @t
-      return unless t[i + S] == L::WORD && MULTIPLIERS[t[i + S + 1]]
-      if t[i] == L::ART then group = 1
+      j = i + S
+      # D48: "hundred decades", as "a hundred"; not after a number, which would have read it ("two thousand
+      # three thousand days")
+      if t[i] == L::WORD && MULTIPLIERS[t[i + 1]] && (i == 0 || t[i - S] != L::NUM)
+        group = 1
+        j = i
+      elsif !(t[j] == L::WORD && MULTIPLIERS[t[j + 1]]) then return
+      elsif t[i] == L::ART then group = 1
       elsif t[i] == L::NUM && t[i + 1].between?(1, 99) then group = t[i + 1]
       else return
       end
@@ -19,7 +25,6 @@ module Acute
       hundred = false
       below = nil # each thousand or million is smaller than the one before
       last = i
-      j = i + S
       while j < @n
         k = t[j]
         m = k == L::WORD && MULTIPLIERS[t[j + 1]]
@@ -95,7 +100,7 @@ module Acute
            (c = h_clock(v, i, loose))
           return c
         end
-      elsif (nk == L::WDAY || nk == L::WEEKEND || nk == L::HOLIDAY || nk == L::PART) && counted?(i + S)
+      elsif (nk == L::WDAY || nk == L::WEEKEND || nk == L::HOLIDAY || nk == L::PART || nk == L::SEASON) && counted?(i + S)
         @i += S
         return counted(v)
       elsif nk == L::ORD
@@ -108,6 +113,7 @@ module Acute
           @i += 2 * S
           return Date.new(v, nil, nil, nil, false)
         end
+        return Date.new(buddhist(v), nil, nil, nil, false) if buddhist?(i)
         return w if flags & L::WORDY != 0 && (w = said(v, i))
         # D44: "15 of february", "20 of next month": a number of a month is its day, as an ordinal is; not
         # "5 to 6 of April 22", where the month has its own
@@ -285,6 +291,7 @@ module Acute
         @i += 2 * S
         return Date.new(@t[@i - 2 * S + 1], m, day, nil, false)
       end
+      return Date.new(buddhist(@t[@i + 1]), m, day, nil, false) if buddhist?(@i)
       # D44: "dec 79", "may 97": with no day, two digits past 31 are the year
       if @t[@i] == L::NUM && ((f & L::DIGITS == 4 && f & L::ZERO == 0) || f & L::SHORT != 0 ||
                               ((day || @t[@i + 1] > 31) && short_year?(f)))
@@ -292,6 +299,14 @@ module Acute
         return Date.new(@t[@i - S + 1], m, day, nil, f & L::DIGITS != 4)
       end
       Date.new(nil, m, day, nil, false)
+    end
+
+    # D48: "2555 BE", a year of the Buddhist era, 543 years ahead; only from 2400, so "by 2025 be ready" is not one
+    def buddhist?(i) = @t[i + S + 1] == :be && @t[i + S] == L::WORD && @t[i] == L::NUM && @t[i + 2] & L::DIGITS == 4 && @t[i + 1] >= 2400
+
+    def buddhist(v)
+      @i += 2 * S
+      v - 543
     end
 
     def short_year?(f)

@@ -143,10 +143,23 @@ module Acute
       when :half
         (q = quantity) ? shift_tail(q) : clock_words(30)
       when :sametime then same_time
+      when :closest then closest(1)
+      when :hundred, :thousand, :million then (q = quantity) ? shift_tail(q) : failure(:conflict)
       when :couple
         (q = quantity) ? shift_tail(q) : failure(@i + S < @n ? :conflict : :incomplete, @i + S)
       else failure(:conflict)
       end
+    end
+
+    # D48: "the closest monday to oct 5th", "the 3rd closest xmas to today"
+    def closest(n)
+      @i += S
+      node = atom(true)
+      return node if Failure === node
+      return failure(@i < @n ? :conflict : :incomplete) unless @t[@i + 1] == :to && @t[@i] == L::WORD
+      @i += S
+      anchor = atom(true)
+      Failure === anchor ? anchor : Closest.new(n, node, anchor)
     end
 
     def article_atom

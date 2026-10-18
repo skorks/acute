@@ -131,6 +131,8 @@ unit:
   decade: decade
   decades: decade
   century: century
+  season: season    # D48: three months from December, March, June or September
+  seasons: season
   centuries: century
   weekday: business_day
   weekdays: business_day
@@ -230,6 +232,11 @@ season:         # D3
   autumn: autumn
   fall: autumn
   winter: winter
+  springs: spring
+  summers: summer
+  autumns: autumn
+  falls: autumn
+  winters: winter
 
 holiday:        # D15, D28: formulas only
   christmas: christmas
@@ -322,6 +329,8 @@ word:           # function words; the grammar gives them their meaning
   earlier: ago
   from: from
   to: to
+  closest: closest  # D48
+  nearest: closest
   and: and
   or: or
   of: of
@@ -362,6 +371,8 @@ word:           # function words; the grammar gives them their meaning
   q: q
   fy: fy
   ad: ad
+  be: be            # D48: the Buddhist era
+  b.e: be
   a.d: ad
   ce: ad
   c.e: ad
@@ -538,6 +549,8 @@ phrases:
   admin day: [holiday, admin_day]
   world vegan day: [holiday, world_vegan_day]
   ides of march: [holiday, ides_of_march]
+  leap day: [holiday, leap_day]
+  leap year: [holiday, leap_year]
   guy fawkes day: [holiday, guy_fawkes]
   guy fawkes night: [holiday, guy_fawkes]
   bonfire night: [holiday, guy_fawkes]
@@ -627,7 +640,7 @@ english: [may, march, following, sat, sun, tu, fr, second, fall, a, mon, wed, st
 
 # D44: plurals, which only count ("3 fridays from now"); alone they recur, which is not a time. Plural units
 # let "2 upcoming weeks" be "next 2 weeks" while "3 next week" is not.
-plural: [thanksgivings, sundays, mondays, tuesdays, wednesdays, thursdays, fridays, saturdays, black fridays, memorial days,
+plural: [thanksgivings, springs, summers, autumns, falls, winters, seasons, sundays, mondays, tuesdays, wednesdays, thursdays, fridays, saturdays, black fridays, memorial days,
          secs, seconds, mins, minutes, hrs, hours, days, wks, weeks, fortnights, months, quarters, yrs, years,
          decades, centuries, mornings, afternoons, evenings, nights]
 
