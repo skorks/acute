@@ -36,8 +36,23 @@ class ErrorsTest < Minitest::Test
   def test_invalid_times
     assert_equal :invalid_date, error("13pm").code
     e = error("25:00")
-    assert_equal [:invalid_date, '"25:00" is not a valid time', 0...5], [e.code, e.message, e.position]
+    assert_equal [:invalid_date, "there is no hour 25", 0...5], [e.code, e.message, e.position]
     assert_equal :invalid_date, error("4:61").code
+  end
+
+  def test_d48_an_invalid_date_says_what_is_out_of_range
+    e = error("june 31")
+    assert_equal [:invalid_date, "June has 30 days", 0...7], [e.code, e.message, e.position]
+    assert_equal "June has 30 days", error("2026-06-31").message
+    assert_equal "April has 30 days", error("the 31st of april").message
+    assert_equal "2027 is not a leap year", error("feb 29 2027").message
+    assert_equal "2027 is not a leap year", error("leap day 2027").message
+    assert_equal "February 2028 has 29 days", error("feb 30 2028").message
+    assert_equal "February has 28 days, 29 in a leap year", error("february 30").message
+    assert_equal "there is no minute 61", error("10:61").message
+    assert_equal "there is no second 61", error("10:30:61").message
+    assert_equal "there is no hour 13 on a 12-hour clock", error("13pm").message
+    assert_equal '"4:3" is not a valid time', error("4:3").message
   end
 
   def test_incomplete_and_conflicting_phrases

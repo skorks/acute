@@ -1,5 +1,6 @@
 require_relative "errors"
 require_relative "lexer"
+require_relative "calendar"
 require_relative "tables/words"
 
 module Acute
@@ -17,7 +18,7 @@ module Acute
         ParseError.new("unknown #{noun} #{words.map(&:inspect).join(", ")}", code: :unknown_word, position: first,
                        unknown: words, hint: hint && "did you mean #{hint.inspect}?")
       when :invalid_date
-        ParseError.new("#{slice.inspect} is not a valid time", code: :invalid_date, position: first)
+        ParseError.new(invalid(text, failure) || "#{slice.inspect} is not a valid time", code: :invalid_date, position: first)
       when :incomplete
         ParseError.new("the phrase is incomplete", code: :incomplete, position: first)
       when :conflict
@@ -34,6 +35,61 @@ module Acute
     end
 
     def self.chars(text, byte) = text.byteslice(0, byte).length
+
+    L = Lexer
+    MONTHS = %w[_ January February March April May June July August September October November December].freeze
+
+    # D48: what is out of range in an invalid date or time ("June has 30 days"), or nil when it can't say
+    def self.invalid(text, failure)
+      all = Lexer.lex(text, []).each_slice(L::STRIDE).to_a
+      t = all.select { |_, _, _, st, e| st >= failure.start && e <= failure.stop }
+      mer = all[all.index(t.last) + 1]&.first == L::MER if t.any?
+      month = day = year = nil
+      nums = []
+      t.each_with_index do |(k, v, f), i|
+        case k
+        when L::CLOCK
+          hour = v / 10_000
+          return "there is no hour #{hour} on a 12-hour clock" if mer && hour > 12 && hour < 24
+          return clock(hour, v / 100 % 100, v % 100)
+        when L::MONTH
+          month = v
+          day ||= [i > 0 && t[i - 1], t[i + 1]].find { |x| x && x[0] == L::NUM && x[2] & L::DIGITS <= 2 }&.at(1)
+        when L::ORD then day = v
+        when L::HOLIDAY then (month, day = 2, 29) if v == :leap_day
+        when L::NUM
+          case f & L::DIGITS
+          when 4 then year = v
+          when 1, 2 then nums << v
+          else return
+          end
+        end
+      end
+      return "there is no hour #{nums[0]} on a 12-hour clock" if mer && t.size == 1 && nums[0].to_i > 12
+      month, day = numeric(nums, year && t[0][1] == year) unless month
+      return unless month && day && month.between?(1, 12) && day >= 1
+      return "#{year} is not a leap year" if month == 2 && day == 29 && year && !Calendar.leap?(year)
+      max = year ? Calendar.days_in_month(year, month) : month == 2 ? 29 : Calendar::MONTH_DAYS[month]
+      return if day <= max
+      return "February has 28 days, 29 in a leap year" if month == 2 && !year
+      "#{MONTHS[month]}#{" #{year}" if month == 2} has #{max} days"
+    end
+
+    def self.clock(hour, min, sec)
+      return "there is no hour #{hour}" if hour > 24 || (hour == 24 && min + sec > 0)
+      return "there is no minute #{min}" if min > 59
+      "there is no second #{sec}" if sec > 59
+    end
+
+    # A numeric date's month and day: year first, or the one order where only one number can be the month
+    def self.numeric(nums, year_first)
+      return unless nums.size == 2
+      return nums if year_first
+      a, b = nums
+      if a <= 12 && b > 12 then [a, b]
+      elsif b <= 12 && a > 12 then [b, a]
+      end
+    end
 
     def self.letters(bytes) = bytes.inject(0) { |m, c| m | 1 << (c & 63) }
 
