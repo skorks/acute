@@ -176,6 +176,7 @@ module Acute
       while @i < @n
         k = @t[@i]
         v = @t[@i + 1]
+        a = nil
         if k == L::AT
           @i += S
           at = true
@@ -213,16 +214,23 @@ module Acute
           numeric = true
           @i += 2 * S
           next
-        elsif k == L::DASH && Date === last && last.sep && last.day && @t[@i + S] == L::CLOCK &&
+        elsif (k == L::DASH || k == L::DOT) && Date === last && last.sep && last.day && @t[@i + S] == L::CLOCK &&
               @t[@i + 3] == @t[@i - 1] && @t[@i + 4] == @t[@i + S + 3]
-          @i += S # D44: "05/31/2024-14:15": a clock joined to a numeric date by a dash is its time, as after a T
+          @i += S # D44: "05/31/2024-14:15": a clock joined to a numeric date by a dash is its time, as after a T; D48: or a dot
           next
+        elsif k == L::DASH && Date === last && last.sep && last.year && glued_clock?(@i)
+          # D48: "05/31/2024:14:15": the colon after a year lexes as a dash, so the clock comes as two numbers
+          start = @i + S
+          a = Clock.new(@t[@i + S + 1], @t[@i + 3 * S + 1], 0, nil, nil, true, false)
+          @i += 4 * S
         elsif k == L::DASH || (k == L::WORD && (RANGE[v] || v == :and || v == :or || v == :orlater || v == :orearlier))
           break
         end
-        start = @i
-        a = atom(loose || at || !last.nil?)
-        return a if Failure === a
+        unless a
+          start = @i
+          a = atom(loose || at || !last.nil?)
+          return a if Failure === a
+        end
         if atoms
           atoms << a
           starts << start
@@ -254,6 +262,13 @@ module Acute
       return node if Failure === node
       node = Zoned.new(node, zone, numeric) if zone
       signed ? signed_shifts(node) : node
+    end
+
+    def glued_clock?(i)
+      t = @t
+      t[i + S] == L::NUM && t[i + 2 * S] == L::DASH && t[i + 3 * S] == L::NUM && t[i - 1] == t[i + 3] && t[i + 4] == t[i + S + 3] &&
+        t[i + S + 4] == t[i + 2 * S + 3] && t[i + 2 * S + 4] == t[i + 3 * S + 3] && t[i + S + 2] & L::DIGITS == 2 &&
+        t[i + 3 * S + 2] & L::DIGITS == 2 && t[i + S + 1] <= 23 && t[i + 3 * S + 1] <= 59
     end
 
     def machine?(a)

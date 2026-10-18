@@ -26,8 +26,13 @@ module Acute
         end
         return failure(:invalid_date, @i) unless digits == 6 || digits == 4
         n *= 100 if digits == 4
-        c = written(n, digits == 6 ? L::SECONDS : 0)
+        j = @i + S
+        # D48: "20030925T104941.5": a fraction of the second, as after "10:49:41"
+        frac = digits == 6 && @t[j] == L::DOT && @t[j + S] == L::NUM && @t[j - 1] == @t[j + 3] && @t[j + 4] == @t[j + S + 3]
+        f = frac ? (@t[j + S + 1] << 5 | @t[j + S + 2] & L::DIGITS) << L::FRACTION : 0
+        c = written(n, digits == 6 ? L::SECONDS | f : 0)
         return c if Failure === c
+        @i += 2 * S if frac
       end
       c.h24 = true unless c.meridiem
       Within.new(c, date)
@@ -77,8 +82,9 @@ module Acute
     def dotted_clock?(i)
       j = i + 2 * S
       return false unless @t[i + 2] & L::DIGITS <= 2 && @t[j] == L::NUM && @t[j + 2] & L::DIGITS == 2
-      if (i >= S && @t[i - S] == L::AT) || (i >= 2 * S && @t[i - S] == L::NUM && SEPARATOR[@t[i - 2 * S]]) ||
-         (@t[j + S] == L::NUM && SEPARATOR[@t[j + 2 * S]])
+      # D48: "18.20" makes no date either way round; "last fri 9.30" has its day already
+      if (i >= S && (@t[i - S] == L::AT || @t[i - S] == L::WDAY)) || (i >= 2 * S && @t[i - S] == L::NUM && SEPARATOR[@t[i - 2 * S]]) ||
+         (@t[j + S] == L::NUM && SEPARATOR[@t[j + 2 * S]]) || (@t[i + 1] > 12 && @t[j + 1] > 12)
         return @t[j + S] != L::DOT && @t[i + 1] <= 23 && @t[j + 1] <= 59
       end
       j += 2 * S if @t[j + S] == L::DOT && @t[j + 2 * S] == L::NUM && @t[j + 2 * S + 2] & L::DIGITS == 2

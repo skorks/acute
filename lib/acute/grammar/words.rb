@@ -69,6 +69,11 @@ module Acute
           @i += S
           return number_atom(true)
         end
+        # D48: "year 247": three digits after "year" are the year as written
+        if v == :year && t[i + S] == L::NUM && t[i + S + 2] & L::DIGITS == 3 && t[i + S + 2] & L::ZERO == 0 && i + 2 * S >= @n
+          @i += 2 * S
+          return Date.new(t[i + S + 1], nil, nil, nil, false)
+        end
         if (w = t[i + S + 1]) == :after || w == :before # "the day after tomorrow"
           @i += S
           # "the week after next", "the month after the next": the one after next week, when "next" has
@@ -90,8 +95,18 @@ module Acute
         end
         failure(:incomplete)
       elsif k == L::DECADE then decade_atom
+      elsif k == L::MER && t[i + S] == L::CLOCK && i >= S && t[i - S] == L::NUM then meridiem_first(v)
       else failure(:conflict)
       end
+    end
+
+    # D48: "2020/10/9 PM 2:26": a meridiem before the clock after a date, the East Asian order
+    def meridiem_first(v)
+      at = @i
+      @i += S
+      c = written(@t[@i + 1], @t[@i + 2])
+      return failure(:conflict, at) unless Clock === c && !c.meridiem && c.hour >= 1 && c.hour <= 12
+      Clock.new(c.hour, c.min, c.sec, v == 0 ? :am : :pm, nil, false, c.seconds, c.frac)
     end
 
     # "the 90s", "1990s"; "30s ago" is seconds
@@ -193,6 +208,11 @@ module Acute
         @i += S
         # "last friday of june"; "last sunday in march" when a month follows
         return of(Nth.new(-1, node)) if w == :last && (@t[@i + 1] == :of || (@t[@i + 1] == :in && @t[@i + S] == L::MONTH))
+        # D48: "last tuesday this month" is the last of that month
+        if w == :last && k == L::WDAY && @t[@i] == L::REL && @t[@i + S + 1] == :month && @t[@i + S] == L::UNIT
+          month = atom(true)
+          return Within.new(Nth.new(-1, node), month)
+        end
         Rel.new(w, node)
       elsif k == L::NUM && unit_at(@i + S)
         q = quantity
@@ -200,6 +220,9 @@ module Acute
       elsif k == L::MONTH && @t[@i + S] != L::NUM && @t[@i + S] != L::ORD
         @i += S
         Rel.new(w, Date.new(nil, v, nil, nil, false))
+      elsif k == L::NUM && @t[@i + S] == L::SLASH && @t[@i + 3 * S] != L::SLASH && @t[@i + 2 * S] == L::NUM
+        d = atom(true) # D48: "last 9/11": the latest one, as "last christmas"
+        Failure === d || !(Date === d) ? failure(:conflict, start) : Rel.new(w, d)
       elsif k == L::SEASON || k == L::HOLIDAY || k == L::PART
         @i += S
         Rel.new(w, k == L::SEASON ? Season.new(v) : k == L::HOLIDAY ? Holiday.new(v) : Part.new(v))

@@ -30,6 +30,17 @@ module Acute
         node = of(q)
         return Within === node ? Lasting.new(q, node.outer) : failure(:incomplete)
       end
+      # D48: "the fifth last day of may", "second last friday": counted from the end
+      if k == L::REL && @t[@i + 1] == :last && n >= 1 && ((k2 = @t[@i + S]) == L::WDAY || k2 == L::UNIT || k2 == L::WEEKEND)
+        @i += S
+        k = k2
+        n = -n
+      end
+      # D48: "the 29th day of November" is November 29th, so a weekday may stand beside it
+      if k == L::UNIT && @t[@i + 1] == :day && @t[@i + S + 1] == :of && @t[@i + 2 * S] == L::MONTH && n >= 1 && n <= 31
+        @i += 3 * S
+        return dated(@t[@i - S + 1], n)
+      end
       if k == L::WDAY || k == L::UNIT || k == L::WEEKEND
         inner = k == L::WDAY ? Weekday.new(@t[@i + 1]) : k == L::UNIT ? Unit.new(@t[@i + 1], nil) : WEEKEND
         @i += S
@@ -55,7 +66,7 @@ module Acute
 
     # "... of <period>": "second tuesday of march", "tuesday of next week", "morning of xmas", "labor day of 2012"
     def of(node)
-      return node unless @t[@i] == L::WORD && (@t[@i + 1] == :of || from_week?(node))
+      return node unless @t[@i] == L::WORD && (@t[@i + 1] == :of || from_week?(node) || in_the_unit?(node))
       @i += S
       @i += S if @t[@i] == L::WORD && @t[@i + 1] == :the
       # D42: "the first monday of the month" repeats monthly, so it is the coming one: next month's once passed
@@ -71,6 +82,9 @@ module Acute
 
     # D48: "sunday from last week" is "sunday of last week"
     def from_week?(node) = @t[@i + 1] == :from && Weekday === node && @t[@i + S] == L::REL && @t[@i + 2 * S] == L::UNIT
+
+    # D48: "first monday in the month" as "of the month" (D42)
+    def in_the_unit?(node) = @t[@i + 1] == :in && Nth === node && @t[@i + S + 1] == :the && @t[@i + 2 * S] == L::UNIT
 
     # "the month" in "the first monday of the month": the current one
     def this_unit

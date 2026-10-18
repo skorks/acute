@@ -8,7 +8,7 @@
 {"id":"dateutil-0008","text":"20030925T1049","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T10:49:00","grain":"minute"},"source":"dateutil:tests/test_parser.py:48"}
 {"id":"dateutil-0009","text":"20030925T10","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T10:00:00","grain":"hour"},"source":"dateutil:tests/test_parser.py:49"}
 {"id":"dateutil-0010","text":"20030925","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T00:00:00","grain":"day"},"source":"dateutil:tests/test_parser.py:50"}
-{"id":"dateutil-0011","text":"2003-09-25 10:49:41,502","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T10:49:41","grain":"second"},"source":"dateutil:tests/test_parser.py:51"}
+{"id":"dateutil-0011","text":"2003-09-25 10:49:41,502","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T10:49:41.502","grain":"second"},"source":"dateutil:tests/test_parser.py:51","note":"D47, D48: the decimal comma keeps the fraction, as dateutil does (microsecond 502000)"}
 {"id":"dateutil-0012","text":"199709020908","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"1997-09-02T09:08:00","grain":"minute"},"source":"dateutil:tests/test_parser.py:52"}
 {"id":"dateutil-0013","text":"19970902090807","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"1997-09-02T09:08:07","grain":"second"},"source":"dateutil:tests/test_parser.py:53"}
 {"id":"dateutil-0014","text":"09-25-2003","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T00:00:00","grain":"day"},"source":"dateutil:tests/test_parser.py:54"}
@@ -86,7 +86,7 @@
 {"id":"dateutil-0086","text":"Thu, 25 Sep 2003 10:49:41 -0300","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T10:49:41-03:00","grain":"second"},"source":"dateutil:tests/test_parser.py:211","tags":["timezone"]}
 {"id":"dateutil-0087","text":"2003-09-25T10:49:41.5-03:00","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T10:49:41.5-03:00","grain":"second"},"source":"dateutil:tests/test_parser.py:213","tags":["timezone"]}
 {"id":"dateutil-0088","text":"2003-09-25T10:49:41-03:00","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T10:49:41-03:00","grain":"second"},"source":"dateutil:tests/test_parser.py:215","tags":["timezone"]}
-{"id":"dateutil-0089","text":"20030925T104941.5-0300","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T10:49:41-03:00","grain":"second"},"source":"dateutil:tests/test_parser.py:217","tags":["timezone"]}
+{"id":"dateutil-0089","text":"20030925T104941.5-0300","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T10:49:41.5-03:00","grain":"second"},"source":"dateutil:tests/test_parser.py:217","tags":["timezone"],"note":"D47: the fraction is kept, as in dateutil-0087"}
 {"id":"dateutil-0090","text":"2003-09-25T10:49:41+03:00","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T10:49:41+03:00","grain":"second"},"source":"dateutil:tests/test_parser.py:473","tags":["timezone"]}
 {"id":"dateutil-0091","text":"20030925T104941+0300","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2003-09-25T10:49:41+03:00","grain":"second"},"source":"dateutil:tests/test_parser.py:478","tags":["timezone"]}
 {"id":"dateutil-0092","text":"2014 January 19 09:00 UTC","now":"2010-06-15T14:00:00","tz":"UTC","expect":{"time":"2014-01-19T09:00:00Z","grain":"minute"},"source":"dateutil:tests/test_parser.py:370","tags":["timezone"]}

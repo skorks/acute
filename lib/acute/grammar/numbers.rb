@@ -80,8 +80,14 @@ module Acute
           # D44: "2014-2018" is a range of years; "0900-1700" and "2010-2015-86" are not
           return iso_date if digits == 4 && (f & L::DIGITS != 4 || flags & L::ZERO != 0 || @t[i + 3 * S] == L::DASH)
           w = t[i + 2 * S + 1]
-          # D44: not before a month's name, where they are its days ("12-14 June")
-          if @t[i + 3 * S] == L::DASH || (@t[i + 3 * S] != L::MONTH && ((w > 12 && w <= 31 && v <= 12) || v > 12 && v <= 31 && w <= 12))
+          # D44: not before a month's name, where they are its days ("12-14 June"); D48: nor before a dotted
+          # month ("12-14.06.2021")
+          if @t[i + 3 * S] == L::DASH || (@t[i + 3 * S] != L::MONTH && @t[i + 3 * S] != L::DOT && ((w > 12 && w <= 31 && v <= 12) || v > 12 && v <= 31 && w <= 12))
+            return numeric_date(:dash)
+          end
+          # D48: "05-06 at noon": two padded numbers before a time are a date, not a range of hours
+          k = @t[i + 3 * S]
+          if (k == L::AT || k == L::CLOCK || k == L::NAMED) && digits == 2 && f & L::DIGITS == 2 && (flags | f) & L::ZERO != 0 && joined?(i + S)
             return numeric_date(:dash)
           end
         elsif digits == 4 && @t[i + 2 * S] == L::UNIT && joined?(i + S) && (y = week_year(v, i + S))
@@ -114,6 +120,12 @@ module Acute
           return Date.new(v, nil, nil, nil, false)
         end
         return Date.new(buddhist(v), nil, nil, nil, false) if buddhist?(i)
+        # D48: "18q4": a year's last two digits, then its quarter, all one word
+        if t[i + S + 1] == :q && digits == 2 && t[i + 2 * S] == L::NUM && t[i + 2 * S + 1].between?(1, 4) && t[i + 4] == t[i + S + 3] &&
+           t[i + S + 4] == t[i + 2 * S + 3]
+          @i += 3 * S
+          return Within.new(Nth.new(t[i + 2 * S + 1], Unit.new(:quarter, nil)), Date.new(v, nil, nil, nil, true))
+        end
         return w if flags & L::WORDY != 0 && (w = said(v, i))
         # D44: "15 of february", "20 of next month": a number of a month is its day, as an ordinal is; not
         # "5 to 6 of April 22", where the month has its own
@@ -286,6 +298,9 @@ module Acute
     # are not a clock ("3 jan 10", "may 27 79") (D23)
     def dated(m, day)
       @i += S if @t[@i + 1] == :of && @t[@i + S] == L::NUM
+      # D48: "march of next year" as "march next year"
+      @i += S if @t[@i + 1] == :of && @t[@i] == L::WORD && @t[@i + S] == L::REL && @t[@i + 2 * S + 1] == :year && @t[@i + 2 * S] == L::UNIT
+      @i += S if day && @t[@i] == L::DOT && @t[@i + S] == L::NUM && @t[@i + S + 2] & L::DIGITS == 4 # D48: "Sep.25.2003"
       f = @t[@i + 2]
       if @t[@i] == L::NUM && @t[@i + S + 1] == :ad && @t[@i + S] == L::WORD && f & L::WORDY == 0 # D44: "10 August 88 AD"
         @i += 2 * S
@@ -325,6 +340,11 @@ module Acute
       at = @i
       @i += S
       return Date.new(v, nil, nil, nil, true) if flags & L::SHORT != 0 # "halloween '11"
+      # D48: "the 24", "the 3 of next month": after "the", a bare number ending the phrase is a day of the month
+      if at >= S && @t[at - S + 1] == :the && @t[at - S] == L::WORD && digits <= 2 && !zero && v >= 1 && v <= 31 &&
+         (@i >= @n || (@t[@i + 1] == :of && @t[@i] == L::WORD))
+        return of(Date.new(nil, nil, v, nil, false))
+      end
       @i += 2 * S if in_the_meridiem?
       if @t[@i + 1] == :around && @t[@i + S] == L::MER && @t[@i] == L::WORD && @t[at + 4] == @t[@i + 3] # D48: "3ish pm"
         @approx = true

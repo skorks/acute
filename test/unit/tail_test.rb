@@ -101,4 +101,89 @@ class TailTest < Minitest::Test
     assert_equal "2011-12-25", day("the 3rd closest xmas to today", **opts)
     assert_equal "2013-10-07", day("the nearest monday to oct 5th", **opts)
   end
+
+  def test_d48_two_padded_numbers_before_a_time_are_a_date
+    assert_equal "2027-05-06 12:00:00", at("05-06 at noon")
+  end
+
+  def test_d48_the_nth_day_of_a_month_is_that_date
+    assert_equal "2011-11-29", day("Tuesday, the 29th day of November, 2011")
+  end
+
+  def test_d48_a_dotted_clock_where_no_date_fits
+    assert_equal "2026-10-17 18:20:00", at("18.20")
+    assert_equal "2026-10-16 09:30:00", at("last fri 9.30")
+  end
+
+  def test_d48_of_before_a_relative_year
+    assert_equal "2027-03-01", day("March of next year")
+  end
+
+  def test_d48_last_weekday_this_month_is_the_last_of_the_month
+    assert_equal "2026-10-27", day("last tuesday this month")
+  end
+
+  def test_d48_in_the_month_reads_as_of_the_month
+    assert_equal "2026-11-02", day("first monday in the month")
+  end
+
+  def test_d48_this_day_in_a_year_is_todays_date_then
+    assert_equal "1800-10-17", day("this day 1800")
+  end
+
+  def test_d48_a_clock_glued_to_a_date
+    assert_equal "2024-05-31 14:15:00", at("05/31/2024.14:15")
+    assert_equal "2024-05-31 14:15:00", at("05/31/2024:14:15")
+  end
+
+  def test_d48_brackets_around_a_word_are_dropped
+    assert_equal "2014-09-04", day("[Sept] 04, 2014.")
+  end
+
+  def test_d48_a_meridiem_before_the_clock_after_a_date
+    assert_equal "2020-10-09 14:26:00", at("2020/10/9 PM 2:26")
+    assert_equal "2020-10-09 02:26:00", at("2020/10/9 AM 02:26")
+  end
+
+  def test_d48_a_day_before_a_dotted_date_is_a_day_of_its_month
+    r = parse("12.-14.06.2021")
+    assert_equal ["2021-06-12", "2021-06-15"], [r.begin.strftime("%F"), r.end.strftime("%F")]
+  end
+
+  def test_d48_fractions_of_a_second
+    assert_equal 502, parse("2003-09-25T10:49:41,502").begin.strftime("%L").to_i
+    assert_equal 500, parse("20030925T104941.5").begin.strftime("%L").to_i
+  end
+
+  def test_d48_a_dot_between_day_and_year
+    assert_equal "2003-09-25", day("Sep.25.2003")
+  end
+
+  def test_d48_the_and_a_bare_number_is_a_day_of_the_month
+    assert_equal "2026-10-24", day("the 24")
+    assert_equal "2026-11-03", day("the 3 of next month")
+  end
+
+  def test_d48_a_short_year_and_quarter
+    r = parse("18q4")
+    assert_equal ["2018-10-01", :quarter], [r.begin.strftime("%F"), r.grain]
+  end
+
+  def test_d48_nth_last_counts_from_the_end
+    assert_equal "2027-05-27", day("the fifth last day of may")
+    assert_equal "2026-10-23", day("second last friday of october")
+    assert_equal "2026-10-30", day("second last day of the month")
+  end
+
+  def test_d48_three_digits_after_year_are_the_year
+    assert_equal "0247-01-01", day("year 247")
+  end
+
+  def test_d48_last_and_a_numeric_date_is_its_latest
+    assert_equal "2026-09-11", day("last 9/11")
+  end
+
+  def test_d48_a_length_after_a_date_is_not_a_shift
+    assert_nil Acute.parse("2004-05-05 12:00:00 CEST 6 months", now: "2026-10-17T14:00", zone: NY)
+  end
 end

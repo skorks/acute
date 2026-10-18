@@ -237,10 +237,10 @@ module Acute
               sec = a * 10 + b - 528
               i += 3
               flags |= SECONDS
-              # D47: ".345", or ":000536" (three digits or more, so not a fourth field)
+              # D47: ".345", or ":000536" (three digits or more, so not a fourth field); D48: ",502", the decimal comma
               fc = i + 1 < n ? s.getbyte(i) : 0
               if (fc == 46 && CLASS[s.getbyte(i + 1)] == DIGIT) ||
-                 (fc == 58 && i + 3 < n && CLASS[s.getbyte(i + 1)] == DIGIT && CLASS[s.getbyte(i + 2)] == DIGIT &&
+                 ((fc == 58 || fc == 44) && i + 3 < n && CLASS[s.getbyte(i + 1)] == DIGIT && CLASS[s.getbyte(i + 2)] == DIGIT &&
                   CLASS[s.getbyte(i + 3)] == DIGIT)
                 i += 1
                 f = 0
@@ -313,6 +313,15 @@ module Acute
             i += 1
           when 64
             t.push(AT, 0, 0, i, i + 1)
+            i += 1
+          when 91, 93
+            # D48: "[Sept] 04": brackets around a word, as in a citation, are dropped
+            if c == 91 ? i + 1 < n && ALPHA[s.getbyte(i + 1)] : i > 0 && ALPHA[s.getbyte(i - 1)]
+              i += 1
+              next
+            end
+            return Failure.new(:unknown_word, i, i + 1) unless unknown
+            unknown << i << i + 1
             i += 1
           when 40, 41
             # "9 am (BST)", "-0500 (CDT)": a zone in brackets is the zone

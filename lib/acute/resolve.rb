@@ -85,6 +85,7 @@ module Acute
     # "friday 3pm" repeats weekly, so it is found like a weekday; "tomorrow 3pm" is 3pm inside each reading of
     # tomorrow
     def self.within(node, ctx)
+      return today_in(node.outer.year, ctx) if G::Date === node.outer && node.outer.year && !node.outer.month && today?(node.inner)
       if (cyc = Periodic.cycle(node.outer))
         return Periodic.bare(node, ctx, cyc)
       end
@@ -115,6 +116,19 @@ module Acute
       unit = cyc unless ordinal?(node.inner) && G::UNIT_SIZE[unit] > G::UNIT_SIZE[cyc]
       t = Shift.spans(node.outer, ctx)[0].b
       Periodic.inside(node.inner, nil, Period.span(unit, ctx, Period.index(unit, ctx, t)), ctx)
+    end
+
+    def self.today?(node)
+      (G::DayRef === node && node.offset == 0) || (G::Rel === node && node.word == :this && G::Unit === node.node && node.node.unit == :day)
+    end
+
+    # D48: "this day 1800" is today's date in that year
+    def self.today_in(year, ctx)
+      md = Calendar.civil_from_days(ctx.today) % 10_000
+      m = md / 100
+      d = md % 100
+      return [] if d > Calendar.days_in_month(year, m)
+      [Day.day(Calendar.days_from_civil(year, m, d))]
     end
 
     def self.ordinal?(node)

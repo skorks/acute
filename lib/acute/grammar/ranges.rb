@@ -22,6 +22,10 @@ module Acute
       elsif Date === to && to.month && to.day && !to.sep && (Clock === from || (Date === from && !from.month)) &&
             (d = bare_day(fs, fe))
         from = Date.new(to.year, to.month, d, nil, to.short)
+      elsif Date === to && to.sep == :dot && to.year && to.month > 12 && to.day <= 12 && Clock === from && (d = bare_day(fs, fe))
+        # D48: "12.-14.06.2021": a day before a dotted date that can only be day first is a day of its month
+        to = Date.new(to.year, to.day, to.month, nil, to.short)
+        from = Date.new(to.year, to.month, d, nil, to.short)
       elsif Within === to && size(to.outer) == 5 && (d = bare_day(fs, fe) || (Date === from && !from.month && from.day)) &&
             (e = Date === to.inner && !to.inner.month ? to.inner.day : Clock === to.inner && bare_day(ts, ts + S))
         return Range.new(Within.new(Date.new(nil, nil, d, nil, false), to.outer),

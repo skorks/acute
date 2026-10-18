@@ -13,6 +13,7 @@ module Acute
         x = node.node
         word = node.word
         return Period.fiscal(x, ctx, word == :this ? 0 : word == :next || word == :coming ? 1 : -1) if G::Fiscal === x
+        return Dates.orders(x, ctx).flat_map { |d| periodic(word, d, ctx) } if G::Date === x && x.sep # D48: "last 9/11"
         return periodic(word, x, ctx) unless G::Unit === x || G::Clock === x
         return unit(word, x.unit, ctx) if G::Unit === x && !x.count
         word = :next if word == :coming

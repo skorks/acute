@@ -335,7 +335,7 @@
   assert_line: 827
   phrase: this day 1800
   chronic: '2006-08-16 18:00:00'
-  acute: nil
+  acute: '1800-08-16 12:00:00'
   rule: D5
 - test: test_parse_guess_rgr
   line: 850
