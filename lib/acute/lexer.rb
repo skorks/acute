@@ -72,16 +72,16 @@ module Acute
       [kind, value, flags, flags & WORDY != 0 && value < 10].freeze
     end
 
-    # A phrase's first word => [[keys of the following words], token entry], longest first
+    # A phrase's first word => its second word => [[keys of the words after], token entry], longest first
     phrases = Tables::PHRASES.each_with_object({}) do |(text, (kind, value)), h|
-      first, *rest = text.split
-      (h[pack(first)] ||= []) << [rest.map { pack(_1) }.freeze, entry(text, kind, value)].freeze
+      first, second, *rest = text.split
+      ((h[pack(first)] ||= {})[pack(second)] ||= []) << [rest.map { pack(_1) }.freeze, entry(text, kind, value)].freeze
     end
 
     # Key => an entry and then the phrases it begins or nil, so a word needs one lookup; a phrase's first word
     # that is no word alone has a nil kind
     WORDS = Tables::WORDS.to_h { |word, (kind, value)| [pack(word), [*entry(word, kind, value), nil]] }
-    phrases.each { |k, list| WORDS[k] = [*(WORDS[k] || [nil, nil, 0, false]).first(4), list.freeze] }
+    phrases.each { |k, by_second| WORDS[k] = [*(WORDS[k] || [nil, nil, 0, false]).first(4), by_second.each_value(&:freeze).freeze] }
     WORDS.each_value(&:freeze).freeze
     MID = pack("mid")
     ISH = pack("ish")
@@ -101,19 +101,22 @@ module Acute
     end.freeze
     # A byte's 5-bit code inside a word: either case of a letter alike, the apostrophe 28, a byte of a UTF-8
     # letter 31, which is in no word, other bytes 0. Keys are unique to their text, so a word too long or
-    # with such a letter simply matches nothing.
+    # with such a letter simply matches nothing. The lead bytes of WIDE are 0 too, so the word loop looks at
+    # them only when it stops.
     CODE = Array.new(256) do |c|
       if c >= 97 && c <= 122 then c - 96
       elsif c >= 65 && c <= 90 then c - 64
       elsif c == 39 then 28
+      elsif c == 0xC2 || c == 0xE2 || c == 0xE3 then 0
       elsif c >= 128 then 31
       else 0
       end
     end.freeze
     # Unicode spaces and dashes by their UTF-8 bytes as one Integer: no-break, thin and ideographic spaces;
-    # hyphens, en and em dashes and the minus sign
+    # hyphens, en and em dashes and the minus sign; and ½
     WIDE = [0xC2A0, *0xE28080..0xE2808A, 0xE280AF, 0xE2819F, 0xE38080].to_h { [_1, SPACE] }
-                                                                     .merge([*0xE28090..0xE28095, 0xE28892].to_h { [_1, DASH] }).freeze
+                                                                     .merge([*0xE28090..0xE28095, 0xE28892].to_h { [_1, DASH] })
+                                                                     .merge(0xC2BD => WORD).freeze
     # Whether a byte is an ASCII letter, a lookup rather than a call
     ALPHA = Array.new(256) { |c| (c >= 97 && c <= 122) || (c >= 65 && c <= 90) }.freeze
     # An ordinal's suffix ("3rd"), its two bytes lower-cased and packed
@@ -132,14 +135,13 @@ module Acute
           i += 1
         elsif c >= 194 && (w = wide(s, i, c))
           # "8\u202Fpm" as macOS writes it, "tue – thu"
-          t.push(DASH, 0, 0, i, i + 3) if w == DASH
+          if w == DASH
+            t.push(DASH, 0, 0, i, i + 3)
+          elsif w == WORD
+            t.push(WORD, :half, 0, i, i + 2) # D48: "½ hour"
+          end
           i += c < 224 ? 2 : 3
         elsif cl == LETTER
-          if c == 0xC2 && i + 1 < n && s.getbyte(i + 1) == 0xBD # D48: "½ hour"
-            t.push(WORD, :half, 0, i, i + 2)
-            i += 2
-            next
-          end
           # the "T" between an ISO date and its time, or before a time alone: "T13:23:42"
           if c | 32 == 116 && i + 1 < n && CLASS[s.getbyte(i + 1)] == DIGIT &&
              (i > 0 && CLASS[p = s.getbyte(i - 1)] == DIGIT || ((i == 0 || CLASS[p] == SPACE) && i + 3 < n && s.getbyte(i + 3) == 58))
@@ -151,22 +153,27 @@ module Acute
           while i < n
             x = CODE[b = s.getbyte(i)]
             if x == 0
-              break unless b == 46 && i + 1 < n && (x = CODE[s.getbyte(i + 1)]) >= 1 && x <= 26
-              x = 27
-            elsif x == 31 && b >= 194 && wide(s, i, b)
-              break # "10am–2pm": a Unicode dash or space ends the word
+              if b == 46 && i + 1 < n && (x = CODE[s.getbyte(i + 1)]) >= 1 && x <= 26
+                x = 27
+              elsif b >= 194 && (w = wide(s, i, b)) != SPACE && w != DASH
+                x = 31 # a UTF-8 letter, or "½"
+              else
+                break # "10am–2pm": a Unicode dash or space ends the word
+              end
             end
             k = k * 32 + x
             i += 1
           end
-          if i < n && s.getbyte(i) == 47 && (zone = iana(s, st, i, n))
-            t.push(ZONE, zone, 0, st, i = st + zone.size)
-            next
-          end
-          # D48: "w/c feb 4": "week commencing"
-          if k == 23 && i + 1 < n && s.getbyte(i) == 47 && s.getbyte(i + 1) | 32 == 99 && (i + 2 == n || !ALPHA[s.getbyte(i + 2)])
-            t.push(UNIT, :week, 0, st, i, WORD, :starting, 0, i, i += 2)
-            next
+          if i < n && s.getbyte(i) == 47
+            if (zone = iana(s, st, i, n))
+              t.push(ZONE, zone, 0, st, i = st + zone.size)
+              next
+            end
+            # D48: "w/c feb 4": "week commencing"
+            if k == 23 && i + 1 < n && s.getbyte(i + 1) | 32 == 99 && (i + 2 == n || !ALPHA[s.getbyte(i + 2)])
+              t.push(UNIT, :week, 0, st, i, WORD, :starting, 0, i, i += 2)
+              next
+            end
           end
           word = WORDS[k]
           if word && word[4] && (match = phrase(s, i, n, word[4]))
@@ -208,7 +215,11 @@ module Acute
           v /= 10**(nd - 9) if nd > 9 # the first nine digits
           flags = nd > DIGITS ? DIGITS : nd
           flags |= ZERO if nd > 1 && s.getbyte(st) == 48
-          if i < n && c == 58
+          if (i == n || CLASS[c] == SPACE) && nd < 12
+            # the commonest number, a plain one: none of the forms below
+            flags |= SHORT if nd == 2 && st > 0 && s.getbyte(st - 1) == 39
+            t.push(NUM, v, flags, st, i)
+          elsif i < n && c == 58
             # the minutes, and below the seconds: two digits, each byte less 48
             unless nd <= 2 && i + 2 < n && CLASS[a = s.getbyte(i + 1)] == DIGIT && CLASS[b = s.getbyte(i + 2)] == DIGIT
               # D46: "2012:05:25", EXIF's date, is the ISO date with colons for dashes
@@ -351,8 +362,8 @@ module Acute
       t
     end
 
-    # Tries each phrase starting with the word just read: [stop, token entry] on a match. Phrases are rare, so
-    # this path may rescan and allocate.
+    # Tries each phrase starting with the word just read and the next: [stop, token entry] on a match. Phrases
+    # are rare, so this path may rescan and allocate.
     def self.phrase(s, i, n, cands)
       j = i
       j += 1 while j < n && ((c = s.getbyte(j)) == 32 || c == 45 || c == 46)
@@ -362,9 +373,10 @@ module Acute
         first = first * 32 + CODE[c]
         j += 1
       end
+      return unless (cands = cands[first])
+      after = j
       cands.each do |rest, entry|
-        next unless rest[0] == first
-        j = i
+        j = after
         ok = rest.all? do |want|
           gap = j
           j += 1 while j < n && ((c = s.getbyte(j)) == 32 || c == 45 || c == 46) # "st. patrick's"

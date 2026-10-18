@@ -66,6 +66,18 @@ class LexerTest < Minitest::Test
     assert_raises(Acute::ParseError) { Acute.parse!("tomorrow? 5pm") }
   end
 
+  def test_unicode_inside_and_between_words
+    assert_equal ['WORD(half) "½"', 'UNIT(hour) "hour"'], tokens("½ hour")
+    assert_equal Acute::Failure.new(:unknown_word, 0, 6), L.lex("hour½")
+    assert_equal Acute::Failure.new(:unknown_word, 0, 5), L.lex("x’s")
+    assert_equal ['MER(0) "am"', 'DAY(1) "tomorrow"'], tokens("10am tomorrow")[1, 2]
+  end
+
+  def test_a_phrase_and_its_first_word_alone
+    assert_equal ['HOLIDAY(whit_monday) "monday of the holy spirit"'], tokens("monday of the holy spirit")
+    assert_equal ['WDAY(1) "monday"', 'WORD(of) "of"', 'MONTH(5, flags=0x80) "may"'], tokens("monday of may")
+  end
+
   def test_d45_a_unicode_dash_ends_a_word
     assert_equal ['MER(0) "am"', 'DASH(0) "–"'], tokens("10am–2pm")[1, 2]
     assert_equal "2026-10-17 22:00:00 -04:00/2026-10-18 00:00:00 -04:00",
