@@ -22,7 +22,7 @@
         "additionalProperties": false,
         "properties": {
           "code": { "type": "string" },
-          "rule": { "type": ["string", "null"], "description": "A D-number in acute's decisions" },
+          "rule": { "type": ["string", "null"], "description": "The rule in docs/rules.md that made the assumption, or null" },
           "message": { "type": "string" }
         }
       }

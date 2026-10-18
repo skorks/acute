@@ -11,7 +11,7 @@ module Acute
       twelve_oclock: ["D30", "a time in the 12 o'clock hour without am/pm is read as pm"].freeze,
       midnight_end_of_day: ["D6", "midnight with a day means the end of that day; its start is an alternative"].freeze,
       machine_time: ["D29", "seconds were given, so the time is read as 24-hour"].freeze,
-      tomorrow_after_midnight: ["D40", "\"tomorrow\" said before 04:00 means the coming day first; the calendar tomorrow is an alternative"].freeze,
+      tomorrow_after_midnight: ["D35", "\"tomorrow\" said before 04:00 means the coming day first; the calendar tomorrow is an alternative"].freeze,
       dst_repeated_time: ["D23", "that wall time happens twice as clocks go back; the earlier one is used"].freeze,
       dst_skipped_time: ["D23", "that wall time doesn't exist as clocks go forward; it is moved forward by the gap"].freeze,
       approximate: ["D14", "the time was given as approximate; the exact time is returned"].freeze,
@@ -24,15 +24,15 @@ module Acute
       century_from_00: ["D12", "a century runs from its 00 year, as most people count it; the 01-to-00 reading is an alternative"].freeze,
       decade_or_century: ["D12", "a decade at a century's start (\"the 2000s\") is the decade; the whole century is an alternative"].freeze,
       season_year: ["D3", "a season that runs over New Year belongs to the year it starts in; the one ending in that year is an alternative"].freeze,
-      range_under_way: ["D44", "the range is under way, so it means the current one; the coming one is an alternative"].freeze,
-      same_day_or_next: ["D40", "that day is today, so it means today; the next one is an alternative"].freeze,
+      range_under_way: ["D11", "the range is under way, so it means the current one; the coming one is an alternative"].freeze,
+      same_day_or_next: ["D11", "that day is today, so it means today; the next one is an alternative"].freeze,
       next_two_readings: ["D20", "\"next\" can mean the coming one or the one after; both are given, the coming one first"].freeze,
       this_passed: ["D21", "that one has passed in the current period, so the next one comes first; the passed one is an alternative"].freeze,
       rolling_window: ["D31", "a span counted from now; whole calendar units are alternatives"].freeze,
       zone_inferred: [nil, "no zone was given; the zone comes from now, Time.zone or the system"].freeze,
       weekday_mismatch: ["D37", "the weekday given doesn't fall on that date, so the date is used"].freeze,
       also_duration: ["D45", "the text also reads as a length of time, which Acute.duration gives; read takes the time"].freeze,
-      unknown_words_skipped: ["D47", "strict: false skipped words acute doesn't know; this is the first time in the rest of the text"].freeze,
+      unknown_words_skipped: ["D22", "strict: false skipped words acute doesn't know; this is the first time in the rest of the text"].freeze,
     }.freeze
   end
 end

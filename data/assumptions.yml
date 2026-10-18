@@ -1,5 +1,5 @@
 # Every assumption a result can carry. bin/generate turns this into lib/acute/tables/assumptions.rb.
-# The code is a stable public identifier; the rule points into research/decisions.md.
+# The code is a stable public identifier; the rule is a section of docs/rules.md.
 
 bare_hour_window:
   rule: D4
@@ -23,7 +23,7 @@ machine_time:
   rule: D29
   message: "seconds were given, so the time is read as 24-hour"
 tomorrow_after_midnight:
-  rule: D40
+  rule: D35
   message: "\"tomorrow\" said before 04:00 means the coming day first; the calendar tomorrow is an alternative"
 dst_repeated_time:
   rule: D23
@@ -62,10 +62,10 @@ season_year:
   rule: D3
   message: "a season that runs over New Year belongs to the year it starts in; the one ending in that year is an alternative"
 range_under_way:
-  rule: D44
+  rule: D11
   message: "the range is under way, so it means the current one; the coming one is an alternative"
 same_day_or_next:
-  rule: D40
+  rule: D11
   message: "that day is today, so it means today; the next one is an alternative"
 next_two_readings:
   rule: D20
@@ -86,5 +86,5 @@ also_duration:
   rule: D45
   message: "the text also reads as a length of time, which Acute.duration gives; read takes the time"
 unknown_words_skipped:
-  rule: D47
+  rule: D22
   message: "strict: false skipped words acute doesn't know; this is the first time in the rest of the text"

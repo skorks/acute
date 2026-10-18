@@ -26,7 +26,8 @@ module Corpus
   # D-rules a case is tagged with or names in its note
   def rules(c) = (c["tags"] || []).grep(/\AD\d+\z/) | c["note"].to_s.scan(/\bD\d+\b/)
 
-  def all_rules = File.read(File.join(ROOT, "research/decisions.md")).scan(/^### (D\d+)\./).flatten
+  # every rule docs/rules.md names, as a heading ("### D4.") or as a bullet tag ("**D44.**")
+  def all_rules = File.read(File.join(ROOT, "docs/rules.md")).scan(/^### (D\d+)\.|\*\*(D\d+)\.\*\*/).flatten.compact.uniq
 
   def load(file: nil, grep: nil)
     Dir[File.join(CASES, "*.jsonl")].sort.flat_map do |path|
