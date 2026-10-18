@@ -8,6 +8,10 @@ module Acute
     # 15 july", "4 to 22 this month"), and a year said only at the end is the start's too.
     def range(from, to, fs, fe, ts)
       return Range.new(from, to) if Clock === from && Clock === to
+      # D48: "previous week - Monday": a dash between a week and a weekday labels the day, it ends nothing
+      if Weekday === to && Rel === from && Unit === from.node && from.node.unit == :week && @t[fe] == L::DASH
+        return Within.new(to, from)
+      end
       # "9:30 - 11:00 CST": the zone is a trailing atom too
       if Zoned === to && Clock === to.node
         return Zoned.new(Range.new(from, to.node), to.offset, to.numeric) if Clock === from
@@ -35,7 +39,9 @@ module Acute
         later = !from.sep && (from.month > to.month || (from.month == to.month && (from.day || 0) > (to.day || 0)))
         from = Date.new(later ? to.year - 1 : to.year, from.month, from.day, from.sep, to.short)
       end
-      if Within === to && Clock === from && Clock === to.inner
+      # D48: "monday to friday last week" is within that week too; Sunday's place in it is the locale's (D19)
+      if Within === to && ((Clock === from && Clock === to.inner) ||
+                           (Weekday === from && Weekday === to.inner && from.wday >= 1 && from.wday <= to.inner.wday))
         return Within.new(Range.new(from, to.inner), to.outer)
       end
       return Within.new(Range.new(from.inner, to), from.outer) if Within === from && Clock === from.inner && Clock === to
@@ -51,13 +57,14 @@ module Acute
     end
 
     # D44: "2012 or later", "3 pm onwards": from X on; "2012 or earlier": until X's end, with no start. "or
-    # after" and "or before" only end the phrase: "before 2010 or after 2018" is two
+    # after" and "or before" only end the phrase: "before 2010 or after 2018" is two. D48: "and after" too
     def open_after(node)
       return node if Failure === node || Unit === node
       return failure(:conflict) if @but # "9 but before 11" says after nothing
       return node unless @t[@i] == L::WORD
       w = @t[@i + 1]
-      if w == :or && @i + 2 * S == @n && @t[@i + S] == L::WORD && ((x = @t[@i + S + 1]) == :after || x == :before)
+      return clipped(node, w) if w == :before || w == :after
+      if (w == :or || w == :and) && @i + 2 * S == @n && @t[@i + S] == L::WORD && ((x = @t[@i + S + 1]) == :after || x == :before)
         @i += S
         w = x == :after ? :orlater : :orearlier
       end
@@ -65,6 +72,19 @@ module Acute
       @i += S
       Open.new(w == :orlater ? :from : :through, node)
     end
+
+    # D48: "tomorrow before 4pm", "tuesday of next week after 2pm": an open end after a day stays inside it
+    def clipped(node, w)
+      return failure(:conflict) if size(node) != 2 || Clock === node
+      @i += S
+      at = @i
+      c = item(true)
+      return c if Failure === c
+      return failure(:conflict, at) unless Clock === c
+      w == :before ? Range.new(node, c) : Within.new(Range.new(c, MIDNIGHT), node)
+    end
+
+    MIDNIGHT = Clock.new(0, 0, 0, nil, :midnight, false, false)
 
     # D44: "june 12-14, 2021", "august 10 to 22 2012": a bare day and a year end a range begun with a month's
     # day, and the year is both ends'

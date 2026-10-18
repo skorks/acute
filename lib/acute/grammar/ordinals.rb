@@ -20,6 +20,12 @@ module Acute
       end
       return counted(n) if n >= 1 && counted?(@i)
       return closest(n) if n >= 1 && k == L::WORD && @t[@i + 1] == :closest
+      # D48: "first to last day of 2008" is the whole of it
+      if n == 1 && k == L::WORD && @t[@i + 1] == :to && @t[@i + S + 1] == :last && @t[@i + 2 * S + 1] == :day &&
+         @t[@i + 3 * S + 1] == :of && @t[@i + 3 * S] == L::WORD
+        @i += 4 * S
+        return atom(true)
+      end
       # D44: "the first half of 2027" is its January to June; "the first 9 months of 1997" its first nine
       if n <= 2 && k == L::WORD && @t[@i + 1] == :half && @t[@i + S + 1] == :of
         @i += S

@@ -186,4 +186,91 @@ class TailTest < Minitest::Test
   def test_d48_a_length_after_a_date_is_not_a_shift
     assert_nil Acute.parse("2004-05-05 12:00:00 CEST 6 months", now: "2026-10-17T14:00", zone: NY)
   end
+
+  def span(text, **opts)
+    r = parse(text, **opts)
+    [r.begin&.strftime("%F %R"), r.end&.strftime("%F %R")]
+  end
+
+  def test_d48_this_last_is_this_past
+    assert_equal ["2026-10-17 13:00", "2026-10-17 14:00"], span("this last hour")
+  end
+
+  def test_d48_the_working_week_is_monday_to_friday
+    assert_equal ["2026-10-19 00:00", "2026-10-24 00:00"], span("next working week")
+    assert_equal span("last working week"), span("monday to friday last week")
+  end
+
+  def test_d48_before_or_after_a_clock_clips_a_day
+    assert_equal ["2026-10-18 00:00", "2026-10-18 16:00"], span("tomorrow before 4pm")
+    assert_equal ["2026-10-18 16:00", "2026-10-19 00:00"], span("tomorrow after 4pm")
+    assert_equal ["2026-10-20 14:00", "2026-10-21 00:00"], span("Tuesday of next week after 2pm")
+  end
+
+  def test_d48_for_and_during_before_a_time_are_dropped
+    assert_equal "2026-09-17 14:00", span("for the past month")[0]
+    assert_equal "2027-03-01", day("during March")
+    assert_equal "15:15", clock("for a quarter past 3pm")
+    assert_equal "2026-10-24 09:00", span("on Saturday for 9am")[0]
+  end
+
+  def test_d48_from_a_time_for_a_length_lasts_that_long
+    assert_equal ["2026-12-18 00:00", "2026-12-28 00:00"], span("from 18th Dec for 10 days")
+    assert_equal ["2026-10-17 16:00", "2026-10-17 16:30"], span("from 4pm for thirty minutes")
+  end
+
+  def test_d48_an_iso_interval_with_a_slash
+    r = parse("2007-03-01T13:00:00Z/2008-05-11T15:30:00Z")
+    assert_equal [Time.utc(2007, 3, 1, 13), Time.utc(2008, 5, 11, 15, 30)], [r.begin.utc, r.end.utc]
+  end
+
+  def test_d48_up_to_and_in_between_are_ranges
+    assert_equal span("monday to friday"), span("monday up to friday")
+    assert_equal ["2026-10-18 13:00", "2026-10-18 14:30"], span("tomorrow in between 1-2:30 ish")
+  end
+
+  def test_d48_all_and_the_rest_of_a_period
+    assert_equal span("this week"), span("all week")
+    assert_equal ["2026-10-17 14:00", "2026-10-18 00:00"], span("rest of the week")
+  end
+
+  def test_d48_anytime_before_an_open_end_is_dropped
+    assert_equal ["2015-01-01 00:00", nil], span("anytime after 2014")
+    assert_equal [nil, "2014-01-01 00:00"], span("sometimes before 2014")
+  end
+
+  def test_d48_around_after_beginning_of_is_approximate
+    r = parse("beginning of around next week")
+    assert_equal "2026-10-18", r.begin.strftime("%F")
+    assert_includes r.assumptions.map(&:code), :approximate
+  end
+
+  def test_d48_today_and_tomorrow_is_both_days
+    assert_equal ["2026-10-17 00:00", "2026-10-19 00:00"], span("today and tomorrow")
+  end
+
+  def test_d48_first_to_last_day_of_a_period_is_the_period
+    assert_equal ["2008-01-01 00:00", "2009-01-01 00:00"], span("first to last day of 2008")
+  end
+
+  def test_d48_week_commencing
+    assert_equal ["2027-02-04 00:00", "2027-02-11 00:00"], span("w/c feb 4")
+  end
+
+  def test_d48_a_clock_range_of_a_date
+    assert_equal ["2027-04-22 17:00", "2027-04-22 18:00"], span("from 5 to 6pm of April 22")
+    assert_equal ["2027-06-04 09:30", "2027-06-04 16:30"], span("6/4 between 9.30-4.30pm")
+  end
+
+  def test_d48_and_after_is_or_after
+    assert_equal ["2016-01-01 00:00", nil], span("1/1/2016 and after")
+  end
+
+  def test_d48_after_several_lengths_is_a_shift
+    assert_equal "2026-10-19 17:01", span("after 2 days, 3 hours and 1 minute")[0]
+  end
+
+  def test_d48_a_dash_between_a_week_and_a_weekday_labels_the_day
+    assert_equal ["2026-10-05 00:00", "2026-10-06 00:00"], span("previous week - Monday")
+  end
 end

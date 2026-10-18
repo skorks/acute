@@ -63,7 +63,7 @@ module Acute
     S = Lexer::STRIDE
     OPEN = { after: :after, before: :before, since: :since, until: :until, by: :until, upto: :upto, through: :until,
              onafter: :from, onbefore: :through }.freeze
-    RANGE = { to: true, through: true, until: true, butbefore: true }.freeze
+    RANGE = { to: true, through: true, until: true, upto: true, butbefore: true }.freeze # D48: "X up to Y"
     BEFORE_DAY = { the: true, from: true, between: true }.freeze # words that make "ninth" a day
     SHIFT_TAIL = { ago: true, hence: true, later: true, from: true, after: true, before: true }.freeze
     UNIT_SIZE = { second: 0, minute: 0, hour: 0, day: 2, business_day: 2, week: 3, fortnight: 3, month: 5,
@@ -107,10 +107,19 @@ module Acute
 
     def top
       w = @t[@i + 1]
+      if w == :anytime && @t[@i] == L::WORD && OPEN[@t[@i + S + 1]] # D48: "anytime after 2014"
+        @i += S
+        w = @t[@i + 1]
+      end
       if ((dir = OPEN[w]) || starting?(@i)) && @i + S < @n
         dir ||= :from
         @i += S
         @i += S if dir == :from && @t[@i + 1] == :from # "starting from 1/1/2016"
+        # D48: "after 2 days, 3 hours and 1 minute" is a shift, as "in 2 days, 3 hours and 1 minute"
+        if dir == :after && @t[@i] == L::NUM && unit_at(@i + S) && @t[@i + 2 * S] == L::NUM && unit_at(@i + 3 * S)
+          q = quantity
+          return shifts(1, q, more_units(q), nil)
+        end
         node = body
         return node if Failure === node
         return between(dir, node) if @but
@@ -138,11 +147,13 @@ module Acute
       from = item(open)
       return from if Failure === from
       if open
+        return lasting(from) if w == :from && @t[@i + 1] == :for && @t[@i] == L::WORD
         return @i = start && failure(:incomplete) unless separator?(@t[@i + 1] == :and)
       elsif @mid
         return failure(:incomplete) unless separator?(@mid == :between)
       else
-        return from unless separator?(false)
+        # D48: "today and tomorrow": two days in a row are both of them
+        return from unless separator?(DayRef === from && @t[@i + S] == L::DAY && @t[@i + S + 1] == from.offset + 1)
       end
       fe = @i
       @but = @t[@i + 1] == :butbefore
@@ -158,7 +169,7 @@ module Acute
     def separator?(and_ok)
       return false if @i >= @n
       k = @t[@i]
-      k == L::DASH || (k == L::WORD && (RANGE[@t[@i + 1]] || (and_ok && @t[@i + 1] == :and)))
+      k == L::DASH || (k == L::WORD && (RANGE[@t[@i + 1]] || (and_ok && @t[@i + 1] == :and))) || k == L::SLASH
     end
 
     # One constituent after another, then nested by size. Most items are one or two atoms, so the lists of
@@ -183,6 +194,13 @@ module Acute
           next
         elsif k == L::WORD && (v == :the || v == :on || (v == :ad && Date === last)) # D44: "1973 A.D."
           @i += S
+          next
+        elsif k == L::WORD && v == :of && Clock === last && day_at?(@i + S)
+          @i += S # D48: "from 5 to 6pm of April 22", as "on April 22"
+          next
+        elsif k == L::WORD && (v == :for || v == :during)
+          break if v == :for && !for_when?(@i + S) # D48: "from 4pm for 30 minutes": a length; lasting reads it
+          @i += S # D48: "for 9am", "for the past month", "during March": the time it is for
           next
         elsif k == L::WORD && v == :around
           @approx = true # D14: "tomorrow around 10am", "3pm approximately", "11ish"
@@ -223,8 +241,12 @@ module Acute
           start = @i + S
           a = Clock.new(@t[@i + S + 1], @t[@i + 3 * S + 1], 0, nil, nil, true, false)
           @i += 4 * S
+        elsif k == L::SLASH && machine?(last) && @t[@i + S] == L::NUM && @t[@i + S + 2] & L::DIGITS == 4
+          break # D48: "2015-03-28 17:00:00/2015-03-29 21:00:00", an ISO 8601 interval
         elsif k == L::DASH || (k == L::WORD && (RANGE[v] || v == :and || v == :or || v == :orlater || v == :orearlier))
           break
+        elsif k == L::WORD && (v == :before || v == :after) && last && clock_at?(@i + S)
+          break # D48: "tomorrow after 4pm", clipped by open_after
         end
         unless a
           start = @i
@@ -262,6 +284,23 @@ module Acute
       return node if Failure === node
       node = Zoned.new(node, zone, numeric) if zone
       signed ? signed_shifts(node) : node
+    end
+
+    # "for" before a time or a period, not a length (E2)
+    def for_when?(i)
+      k = @t[i]
+      clock_at?(i) || (k == L::WORD && @t[i + 1] == :the) || k == L::REL ||
+        (k == L::ART && @t[i + S] == L::UNIT && clock_word?(i + 2 * S))
+    end
+
+    def day_at?(i)
+      k = @t[i]
+      k == L::MONTH || k == L::DAY || (k == L::NUM && @t[i + S] == L::SLASH)
+    end
+
+    def clock_at?(i)
+      k = @t[i]
+      k == L::CLOCK || k == L::NAMED || (k == L::NUM && @t[i + S] == L::MER)
     end
 
     def glued_clock?(i)

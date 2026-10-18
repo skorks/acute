@@ -319,6 +319,14 @@ article:        # "a" is also the meridiem in "8a"
   an: 1
 
 word:           # function words; the grammar gives them their meaning
+  workweek: work_week
+  during: during
+  all: all
+  rest: rest
+  remainder: rest
+  anytime: anytime
+  sometime: anytime
+  sometimes: anytime
   in: in
   within: within
   ago: ago
@@ -569,6 +577,10 @@ phrases:
   business days: [unit, business_day]
   working day: [unit, business_day]
   working days: [unit, business_day]
+  working week: [word, work_week]   # D48
+  in between: [word, between]
+  work week: [word, work_week]
+  business week: [word, work_week]
   early hours: [part, early_hours]
   small hours: [part, early_hours]
   a m: [meridiem, 0]

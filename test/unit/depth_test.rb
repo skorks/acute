@@ -298,7 +298,7 @@ class DepthTest < Minitest::Test
   def test_d44_a_day_after_or_before_another_is_the_first_one_past_it
     assert_reads "the sunday after next wed", "2026-10-25 00:00:00 -04:00"
     assert_reads "the monday before christmas", "2026-12-21 00:00:00 -05:00"
-    assert_raises(Acute::ParseError) { parse("monday after 5pm") }
+    assert_reads "monday after 5pm", "2026-10-19 17:00:00 -04:00" # D48: not a Counted, an open end inside monday
   end
 
   def test_d44_minutes_after_or_before_an_hour_are_a_clock

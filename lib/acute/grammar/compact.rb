@@ -88,6 +88,8 @@ module Acute
         return @t[j + S] != L::DOT && @t[i + 1] <= 23 && @t[j + 1] <= 59
       end
       j += 2 * S if @t[j + S] == L::DOT && @t[j + 2 * S] == L::NUM && @t[j + 2 * S + 2] & L::DIGITS == 2
+      # D48: "9.30-4.30pm": the start of a range of dotted clocks with a meridiem
+      j += 4 * S if @t[j + S] == L::DASH && @t[j + 2 * S] == L::NUM && @t[j + 3 * S] == L::DOT && @t[j + 4 * S] == L::NUM
       @t[j + S] == L::MER
     end
 

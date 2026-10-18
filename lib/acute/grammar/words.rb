@@ -159,6 +159,17 @@ module Acute
         (q = quantity) ? shift_tail(q) : clock_words(30)
       when :sametime then same_time
       when :closest then closest(1)
+      when :all # D48: "all week" is this whole week
+        return failure(:conflict) unless @t[i + S] == L::UNIT && @t[i + S + 2] & L::PLURAL == 0
+        @i += S
+        this_unit
+      when :rest # D48: "rest of the week" is from now to its end, as "through this week" (D16)
+        return failure(:conflict) unless @t[i + S] == L::WORD && @t[i + S + 1] == :of
+        @i += 2 * S
+        @i += S if @t[@i + 1] == :the
+        return failure(:incomplete) if @i >= @n
+        node = @t[@i] == L::UNIT ? this_unit : atom(true)
+        Failure === node ? node : Open.new(:until, node)
       when :hundred, :thousand, :million then (q = quantity) ? shift_tail(q) : failure(:conflict)
       when :couple
         (q = quantity) ? shift_tail(q) : failure(@i + S < @n ? :conflict : :incomplete, @i + S)
@@ -191,8 +202,8 @@ module Acute
       w = @t[@i + 1]
       start = @i
       @i += S
-      if w == :this && @t[@i] == L::REL && (@t[@i + 1] == :next || @t[@i + 1] == :past) # D40: "this coming week"
-        w = @t[@i + 1] == :next ? :coming : :past # D44: "this past sunday" is "past sunday"
+      if w == :this && @t[@i] == L::REL && @t[@i + 1] != :this # D40: "this coming week"
+        w = @t[@i + 1] == :next ? :coming : :past # D44: "this past sunday" is "past sunday"; D48: so is "this last"
         @i += S
       end
       k = @t[@i]
@@ -223,6 +234,9 @@ module Acute
       elsif k == L::NUM && @t[@i + S] == L::SLASH && @t[@i + 3 * S] != L::SLASH && @t[@i + 2 * S] == L::NUM
         d = atom(true) # D48: "last 9/11": the latest one, as "last christmas"
         Failure === d || !(Date === d) ? failure(:conflict, start) : Rel.new(w, d)
+      elsif k == L::WORD && v == :work_week
+        @i += S # D48: "next working week" is Monday to Friday of next week
+        Within.new(Range.new(Weekday.new(1), Weekday.new(5)), Rel.new(w, Unit.new(:week, nil)))
       elsif k == L::SEASON || k == L::HOLIDAY || k == L::PART
         @i += S
         Rel.new(w, k == L::SEASON ? Season.new(v) : k == L::HOLIDAY ? Holiday.new(v) : Part.new(v))
@@ -276,6 +290,10 @@ module Acute
         return Failure === part ? part : Within.new(Fuzzy.new(pos, part), day)
       end
       @i += S if @t[@i + 1] == :of
+      if @t[@i + 1] == :around && @t[@i] == L::WORD # D48: "beginning of around next week", as "around the beginning of"
+        @approx = true
+        @i += S
+      end
       @i += S if @t[@i + 1] == :the
       @i += S if @t[@i] == L::DASH && (@t[@i + S] == L::NUM || @t[@i + S] == L::DECADE) # "mid-1990s"
       return failure(:incomplete) if @i >= @n

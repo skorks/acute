@@ -59,6 +59,15 @@ module Acute
       nil
     end
 
+    # D48: "from 4pm for thirty minutes", "from 18th Dec for 10 days": that long from its start, as "for 10
+    # days from 18th Dec"
+    def lasting(start)
+      @i += S
+      q = duration_quantity
+      return q if Failure === q
+      q ? Lasting.new(q, start) : failure(@i < @n ? :conflict : :incomplete)
+    end
+
     # D44: "starting", "commencing", or "beginning" with no "of" after it: from the start of what follows. Not
     # "start from october", a verb before its own "from".
     def starting?(i)

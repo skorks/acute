@@ -163,6 +163,11 @@ module Acute
             t.push(ZONE, zone, 0, st, i = st + zone.size)
             next
           end
+          # D48: "w/c feb 4": "week commencing"
+          if k == 23 && i + 1 < n && s.getbyte(i) == 47 && s.getbyte(i + 1) | 32 == 99 && (i + 2 == n || !ALPHA[s.getbyte(i + 2)])
+            t.push(UNIT, :week, 0, st, i, WORD, :starting, 0, i, i += 2)
+            next
+          end
           word = WORDS[k]
           if word && word[4] && (match = phrase(s, i, n, word[4]))
             i, word = match
