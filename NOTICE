@@ -1,0 +1,35 @@
+acute
+Copyright (c) 2026 Alan Skorkin. Licensed under the MIT License (see LICENSE).
+
+The gem itself (lib/, data/, schema/, exe/) contains no third-party code.
+
+The test suite draws on the work of others, credited below. None of it ships in the gem.
+
+test/chronic/
+  chronic 0.10.2's test_parsing.rb and test_span.rb, adapted to run against acute's chronic layer.
+  Copyright (c) Tom Preston-Werner. MIT License. https://github.com/mojombo/chronic
+
+test/cases/
+  Each case records its origin in its "source" field. Phrases and expected answers were collected from the
+  test suites and documentation of the projects below; where a project's expectations differed from acute's
+  conventions, the expected answer is acute's own. Cases whose source is "generated" were written for acute.
+
+  chronic, its issues, pull requests and forks    MIT           https://github.com/mojombo/chronic
+  Duckling                                        BSD-3-Clause  https://github.com/facebook/duckling
+  Microsoft Recognizers-Text                      MIT           https://github.com/microsoft/Recognizers-Text
+  timelib                                         MIT           https://github.com/derickr/timelib
+  chrono-node                                     MIT           https://github.com/wanasit/chrono
+  natty                                           MIT           https://github.com/joestelmach/natty
+  chrono-english                                  MIT           https://github.com/stevedonovan/chrono-english
+  interim                                         MIT           https://github.com/conradludgate/interim
+  two_timer                                       MIT           https://github.com/dfhoughton/two_timer
+  dateparser                                      BSD-3-Clause  https://github.com/scrapinghub/dateparser
+  python-dateutil                                 Apache-2.0 / BSD-3-Clause  https://github.com/dateutil/dateutil
+  when                                            Apache-2.0    https://github.com/olebedev/when
+  datetime-bench                                  MIT           https://github.com/MemoryStore/datetime-bench
+
+  Stack Overflow: phrases from questions and answers about chronic, licensed CC BY-SA. Each case cites its post
+  as "stackoverflow:<id>", at https://stackoverflow.com/q/<id>.
+
+  Public code using chronic: phrases from issues and code in other projects, each cited as
+  "github:<owner>/<repo>#<issue>" or by file.
