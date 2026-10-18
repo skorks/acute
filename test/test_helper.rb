@@ -12,6 +12,9 @@ module Helpers
   def codes(result) = result.assumptions.map(&:code)
 
   def alt_walls(result) = result.alternatives.map { |r| wall(r.begin) }
+
+  # Ractor#value is Ruby 4.0's; before it, Ractor#take
+  def ractor_value(ractor) = ractor.respond_to?(:value) ? ractor.value : ractor.take
 end
 
 Minitest::Test.include(Helpers)

@@ -65,21 +65,21 @@ class ContextTest < Minitest::Test
     expected = texts.map { Acute.parse!(_1, now: "2026-10-17T14:00", zone: "Europe/London").iso8601 }
     expected << Acute.parse!("today", now: "2026-10-17T14:00", zone: "+05:45").iso8601
     out = quietly do
-      Ractor.new(texts) do |list|
+      ractor_value(Ractor.new(texts) do |list|
         list.map { Acute.parse!(_1, now: "2026-10-17T14:00", zone: "Europe/London").iso8601 } <<
           Acute.parse!("today", now: "2026-10-17T14:00", zone: "+05:45").iso8601
-      end.value
+      end)
     end
     assert_equal expected, out
   end
 
   def test_a_ractor_cannot_load_a_zone_from_tzinfo
     message = quietly do
-      Ractor.new do
+      ractor_value(Ractor.new do
         Acute.parse("today", zone: "Africa/Windhoek")
       rescue ArgumentError => e
         e.message
-      end.value
+      end)
     end
     assert_match(/only the main Ractor/, message)
   end

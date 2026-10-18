@@ -35,9 +35,9 @@ module Acute
     end
 
     def self.add(key)
-      unless Ractor.main?
+      unless main_ractor?
         # Another Ractor keeps its own: fixed offsets build anywhere, and a named zone fails in build
-        return Ractor.store_if_absent(:acute_zones) { {} }[key] ||= Ractor.make_shareable(yield)
+        return ractor_zones[key] ||= Ractor.make_shareable(yield)
       end
       zone = Ractor.make_shareable(yield)
       @zones = Ractor.make_shareable(@zones.merge(key => zone))
@@ -45,12 +45,22 @@ module Acute
     end
     private_class_method :add
 
+    # Ractor.main? and Ractor.store_if_absent are Ruby 3.4's; on 3.3 two threads starting a Ractor's own cache at
+    # once may each make one, and the zones of the one dropped are built again
+    def self.main_ractor? = Ractor.current == Ractor.main
+
+    def self.ractor_zones
+      return Ractor.store_if_absent(:acute_zones) { {} } if Ractor.respond_to?(:store_if_absent)
+      Ractor.current[:acute_zones] ||= {}
+    end
+    private_class_method :main_ractor?, :ractor_zones
+
     def self.build(name)
       if (m = FIXED.match(name))
         offset = (m[2].to_i * 3600 + m[3].to_i * 60) * (m[1] == "-" ? -1 : 1)
         return new(name, [], [], [], offset, name)
       end
-      unless Ractor.main?
+      unless main_ractor?
         raise ArgumentError, "zone #{name.inspect} is loaded from tzinfo, which only the main Ractor can use: " \
                              "parse with it there once first"
       end

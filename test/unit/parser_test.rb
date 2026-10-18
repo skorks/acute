@@ -78,7 +78,7 @@ class ParserTest < Minitest::Test
   def test_ractors_share_a_parser
     p = Acute.with(now: "2026-10-17T14:00", zone: "Australia/Sydney")
     out = quietly do
-      Ractor.new(p) { |q| [q.parse("1/2/2027").date.iso8601, q.describe(q.parse("tomorrow at 9am"), style: :calendar)] }.value
+      ractor_value(Ractor.new(p) { |q| [q.parse("1/2/2027").date.iso8601, q.describe(q.parse("tomorrow at 9am"), style: :calendar)] })
     end
     assert_equal ["2027-02-01", "Sun 18 Oct, 9am"], out
   end
