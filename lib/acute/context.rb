@@ -59,27 +59,13 @@ module Acute
       end
       @now = Time === now ? now.to_i : epoch(now)
       self.zone = @zone
-      @locale = Locale.for(locale) if locale
       @locale_zone = @zone.name
-      @week_start = week_start && WEEK_STARTS.fetch(week_start.to_sym) { raise ArgumentError, "week_start: must be :sunday or :monday" }
-      @south = hemisphere && HEMISPHERES.fetch(hemisphere.to_sym) { raise ArgumentError, "hemisphere: must be :north or :south" }
-      @fiscal_year_start = fiscal_year_start && Integer(fiscal_year_start)
       @strict = strict
-      unless strict
-        raise ArgumentError, "strict: must be true or false" unless strict == false
-        # Lenient parsing resolves each piece it tries in a fresh context
-        @args = [now || Time.at(@now), zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst,
-                 holidays, business_days, year_bias]
+      @year_bias = YEAR_BIAS
+      # Most parses give none of the other options, and then skip their checks
+      if locale || week_start || hemisphere || fiscal_year_start || !strict || dst || holidays || business_days || year_bias
+        options(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays, business_days, year_bias)
       end
-      @dst_policy = dst && DST_POLICIES.fetch(dst.to_sym) do
-        raise ArgumentError, "dst: must be :compatible, :earlier, :later or :reject"
-      end
-      @holidays = holidays && Holidays.for(holidays)
-      if business_days
-        raise ArgumentError, "business_days: must answer business_day?(date)" unless business_days.respond_to?(:business_day?)
-        @business_days = business_days
-      end
-      @year_bias = year_bias ? Integer(year_bias) : YEAR_BIAS
     end
 
     def fresh = Context.new(*@args)
@@ -142,6 +128,27 @@ module Acute
 
     private
 
+    def options(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays, business_days, year_bias)
+      @locale = Locale.for(locale) if locale
+      @week_start = week_start && WEEK_STARTS.fetch(week_start.to_sym) { raise ArgumentError, "week_start: must be :sunday or :monday" }
+      @south = hemisphere && HEMISPHERES.fetch(hemisphere.to_sym) { raise ArgumentError, "hemisphere: must be :north or :south" }
+      @fiscal_year_start = fiscal_year_start && Integer(fiscal_year_start)
+      unless strict
+        raise ArgumentError, "strict: must be true or false" unless strict == false
+        # Lenient parsing resolves each piece it tries in a fresh context
+        @args = [now || Time.at(@now), zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst,
+                 holidays, business_days, year_bias]
+      end
+      @dst_policy = dst && DST_POLICIES.fetch(dst.to_sym) do
+        raise ArgumentError, "dst: must be :compatible, :earlier, :later or :reject"
+      end
+      @holidays = holidays && Holidays.for(holidays)
+      if business_days
+        raise ArgumentError, "business_days: must answer business_day?(date)" unless business_days.respond_to?(:business_day?)
+        @business_days = business_days
+      end
+      @year_bias = Integer(year_bias) if year_bias
+    end
 
     def rails_zone
       Time.zone&.tzinfo if defined?(ActiveSupport::TimeZone) && Time.respond_to?(:zone)
