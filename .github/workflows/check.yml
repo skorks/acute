@@ -1,0 +1,45 @@
+name: check
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  # Shared runners are too noisy to judge microsecond budgets; the speed stages print their numbers only
+  ACUTE_SPEED: report
+
+jobs:
+  check:
+    name: bin/check (Ruby ${{ matrix.ruby }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: ["3.3", "3.4", "4.0"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+      - name: System zoneinfo, the corpus's oracle
+        run: |
+          test -f /usr/share/zoneinfo/America/New_York
+          head -1 /usr/share/zoneinfo/tzdata.zi
+      - run: bundle exec bin/check --skip lint,coverage,gem
+
+  once:
+    name: lint, coverage and the gem
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
+        with:
+          ruby-version: "4.0"
+          bundler-cache: true
+      - run: bundle exec bin/check --only lint
+      - run: bundle exec bin/check --only coverage
+      - run: bundle exec bin/check --only gem

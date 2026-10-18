@@ -2,7 +2,8 @@
 # The one command: tables, lint, unit tests, corpus ratchet, chronic compatibility, fuzz, coverage, the
 # gem's contents, speed on the interpreter and under YJIT. Prints one line per stage, and the failures of a
 # stage that failed.
-#   bin/check [--record] [--only tables|lint|unit|corpus|chronic|fuzz|coverage|gem|speed|yjit] [--grep TEXT] [--file NAME] [--rule D20]
+#   bin/check [--record] [--only tables|lint|unit|corpus|chronic|fuzz|coverage|gem|speed|yjit] [--skip STAGE,STAGE]
+#             [--grep TEXT] [--file NAME] [--rule D20]
 # --grep and --file narrow the corpus and imply --only corpus. --record updates test/corpus/passing.txt and
 # test/chronic/differences.yml.
 # The yjit stage runs YJIT_RUBY, or this ruby, with --yjit, and is skipped when that ruby has no YJIT.
@@ -19,6 +20,7 @@ RULE_STAGES = %w[unit corpus].freeze
 
 args = ARGV.dup
 only = (i = args.index("--only")) && args.slice!(i, 2)[1]
+skip = (i = args.index("--skip")) ? args.slice!(i, 2)[1].split(",") : []
 corpus_args = []
 %w[--grep --file].each { |flag| (i = args.index(flag)) && corpus_args.concat(args.slice!(i, 2)) }
 corpus_args << args.delete("--record") if args.include?("--record")
@@ -58,10 +60,11 @@ STAGES = {
             end
 }.freeze
 abort "--only takes one of #{STAGES.keys.join(", ")}" if only && !STAGES.key?(only)
+abort "--skip takes stages from #{STAGES.keys.join(", ")}" unless (skip - STAGES.keys).empty?
 abort "--rule runs the unit and corpus stages" if rule && only && !RULE_STAGES.include?(only)
 
 started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-failed = STAGES.select { |name, _| only ? only == name : !rule || RULE_STAGES.include?(name) }.reject do |name, (cmd, summary)|
+failed = STAGES.select { |name, _| only ? only == name : !skip.include?(name) && (!rule || RULE_STAGES.include?(name)) }.reject do |name, (cmd, summary)|
   t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
   out, status = Open3.capture2e(*cmd, chdir: ROOT)
   secs = Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0

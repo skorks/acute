@@ -33,7 +33,7 @@ text ──lex──▶ tokens ──grammar──▶ tree ──resolve(ctx)─
 - the gem: built, holding only `lib/`, `data/`, `schema/`, `exe/` and LICENSE, then installed on its own and run;
 - speed, on the interpreter and under YJIT (set `YJIT_RUBY` to a Ruby built with YJIT if the default one lacks it). A failing pass is re-run up to three passes in all and judged on their medians; `ACUTE_SPEED=report` prints the numbers without judging them, as CI does.
 
-Options: `--only STAGE`, `--grep TEXT` / `--file NAME` (corpus only), `--rule D20` (the cases and unit tests about one rule, plus the rules no case covers), `--record`.
+Options: `--only STAGE`, `--skip STAGE,STAGE`, `--grep TEXT` / `--file NAME` (corpus only), `--rule D20` (the cases and unit tests about one rule, plus the rules no case covers), `--record`.
 
 ## Adding a phrase
 
