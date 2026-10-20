@@ -223,6 +223,7 @@ module Acute
           if Integer === zone && @i + S < @n && (@t[@i] == L::PLUS || @t[@i] == L::DASH) &&
              (@t[@i + 3] == @t[@i - 1] || @t[@i + S + 3] == @t[@i + 4]) && (off = offset(@i + S))
             zone += @t[@i] == L::PLUS ? off : -off
+            return failure(:invalid_date, @i + S) if zone.abs >= 86_400 # D18: "JST+23:00"
             numeric = true
             @i += 2 * S
           end
@@ -328,15 +329,17 @@ module Acute
       (k == L::NUM && @t[@i + S + 2] & L::DIGITS == 4) || (k == L::CLOCK && @t[@i + S + 2] & L::DIGITS == 2)
     end
 
-    # "+01:00", "-0400", "+1"
+    # "+01:00", "-0400", "+1"; D18: up to 23:59
     def offset(i)
       k = @t[i]
       v = @t[i + 1]
-      if k == L::CLOCK && v % 100 == 0 then (v / 10_000) * 3600 + (v / 100 % 100) * 60
-      elsif k == L::NUM && @t[i + 2] & L::DIGITS == 4 then (v / 100) * 3600 + (v % 100) * 60
+      if k == L::CLOCK && v % 100 == 0 then hm(v / 10_000, v / 100 % 100)
+      elsif k == L::NUM && @t[i + 2] & L::DIGITS == 4 then hm(v / 100, v % 100)
       elsif k == L::NUM && @t[i + 2] & L::DIGITS <= 2 && v <= 14 then v * 3600
       end
     end
+
+    def hm(h, m) = h <= 23 && m <= 59 ? h * 3600 + m * 60 : nil
 
     # Points at token index i, or at the end of the text when the tokens ran out
     def failure(code, i = @i)

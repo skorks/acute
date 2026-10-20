@@ -117,6 +117,8 @@ class ZoneTest < Minitest::Test
   def test_rejects_unknown_zones
     assert_raises(ArgumentError) { Acute::Zone.for("Mars/Olympus") }
     assert_raises(ArgumentError) { Acute::Zone.for(5) }
+    %w[+24:00 +99:99 -05:60].each { |z| assert_raises(ArgumentError, z) { Acute::Zone.for(z) } }
+    assert_equal 86_340, Acute::Zone.for("+23:59").offset_at(0)
   end
 
   def test_d44_an_iana_name_in_the_text_keeps_its_clock_changes

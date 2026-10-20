@@ -10,6 +10,17 @@ class ErrorsTest < Minitest::Test
     assert_kind_of StandardError, error("blah")
   end
 
+  def test_d18_an_offset_of_a_day_or_more_fails_rather_than_raising_inside
+    ["3pm +99:99", "3pm +24:00", "3pm +2400", "3pm +05:75"].each do |text|
+      assert_nil Acute.parse(text, zone: "UTC"), text
+      assert_equal :conflict, error(text).code, text
+    end
+    e = error("3pm JST+23:00")
+    assert_equal :invalid_date, e.code
+    assert_equal '"23:00" is not a valid time', e.message
+    assert_equal 2026, Acute.parse("3pm GMT-23:59", now: "2026-10-17T14:00", zone: "UTC").time.year
+  end
+
   def test_unknown_word_with_position_and_hint
     e = error("tomorow at 5")
     assert_equal :unknown_word, e.code

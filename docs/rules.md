@@ -641,6 +641,7 @@ Holidays whose date isn't a formula stay out: lunar and Hebrew calendars, dates 
 ### D18. Zones and offsets in the text
 
 - **A zone or offset in the text wins over the zone given** (`fixed_offset`). "3pm +02:00" is that instant.
+- **An offset runs up to 23:59 either way,** in the text and in `zone:`. "3pm +24:00", "+05:75" and "JST+23:00" are nil, and `zone: "+24:00"` is an unknown zone.
 - **Abbreviations are fixed offsets,** whatever DST is in force (**D40.**). "3pm EST" is −05:00 even in summer.
 
 | Abbreviations | Offset |
