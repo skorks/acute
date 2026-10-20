@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     acute (0.0.1)
-      tzinfo (~> 2.0)
+      tzinfo (~> 2.0, >= 2.0.5)
 
 GEM
   remote: https://rubygems.org/
