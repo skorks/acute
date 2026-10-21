@@ -24,10 +24,10 @@ module Chronic
   end
 
   class Parser
-    DEFAULT_OPTIONS = {
+    DEFAULT_OPTIONS = Ractor.make_shareable({
       context: :future, now: nil, hours24: nil, week_start: nil, guess: true, ambiguous_time_range: 6,
       endian_precedence: %i[middle little], ambiguous_year_future_bias: 50
-    }.freeze
+    })
 
     Reading = Struct.new(:begin, :end, :point, :span, :frac)
     Notes = Struct.new(:dst)
@@ -142,6 +142,7 @@ module Chronic
     def zone_name
       klass = Chronic.time_class
       return klass.tzinfo if klass.respond_to?(:tzinfo)
+      return Acute::Context::SYSTEM_ZONE unless Ractor.current == Ractor.main # the cache is the main Ractor's
       tz = ENV["TZ"]
       cached = Parser.system_zone
       return cached[1] if cached && cached[0] == tz

@@ -13,14 +13,14 @@ module ChronicDuration
   VERSION = "0.12.0".freeze
   FULL_WEEKS_PER_MONTH = 4
   YEAR = 31_557_600
-  UNITS = %w[seconds minutes hours days weeks months years].freeze
-  CHRONO_UNITS = (UNITS - ["weeks"]).freeze
-  JOIN_WORDS = %w[and with plus].freeze
+  UNITS = Ractor.make_shareable(%w[seconds minutes hours days weeks months years])
+  CHRONO_UNITS = Ractor.make_shareable(UNITS - ["weeks"])
+  JOIN_WORDS = Ractor.make_shareable(%w[and with plus])
   FLOAT = /[0-9]*\.?[0-9]+/
   # "4:13:02" wherever it stands (D46). GitLab's 0.12 read it only as the whole text, so "2 days, 4:13:02" lost
   # its 4:13; upstream split the whole text at colons, so "Duration: 2 hours" gained a minute.
   CHRONO = /(?<![\d:.])\d+(?:\s*:\s*\d+){1,5}(?:\.\d*)?(?![\d:])/
-  MAPPINGS = {
+  MAPPINGS = Ractor.make_shareable({
     "seconds" => "seconds", "second" => "seconds", "secs" => "seconds", "sec" => "seconds", "s" => "seconds",
     "minutes" => "minutes", "minute" => "minutes", "mins" => "minutes", "min" => "minutes", "m" => "minutes",
     "hours" => "hours", "hour" => "hours", "hrs" => "hours", "hr" => "hours", "h" => "hours",
@@ -28,8 +28,8 @@ module ChronicDuration
     "weeks" => "weeks", "week" => "weeks", "wks" => "weeks", "wk" => "weeks", "w" => "weeks",
     "months" => "months", "mo" => "months", "mos" => "months", "month" => "months",
     "years" => "years", "year" => "years", "yrs" => "years", "yr" => "years", "y" => "years"
-  }.freeze
-  DIVIDERS = {
+  })
+  DIVIDERS = Ractor.make_shareable({
     micro: { years: "y", months: "mo", weeks: "w", days: "d", hours: "h", minutes: "m", seconds: "s" },
     short: { years: "y", months: "mo", weeks: "w", days: "d", hours: "h", minutes: "m", seconds: "s" },
     default: { years: " yr", months: " mo", weeks: " wk", days: " day", hours: " hr", minutes: " min", seconds: " sec",
@@ -37,7 +37,7 @@ module ChronicDuration
     long: { years: " year", months: " month", weeks: " week", days: " day", hours: " hour", minutes: " minute",
             seconds: " second", pluralize: true },
     chrono: { years: ":", months: ":", weeks: ":", days: ":", hours: ":", minutes: ":", seconds: ":", keep_zero: true }
-  }.freeze
+  })
 
   class << self
     attr_accessor :hours_per_day
@@ -221,27 +221,27 @@ module ChronicDuration
 
   # numerizer 0.2.0, which both gems use for number words
   module Numerizer
-    DIRECT_NUMS = [
+    DIRECT_NUMS = Ractor.make_shareable([
       ["eleven", "11"], ["twelve", "12"], ["thirteen", "13"], ["fourteen", "14"], ["fifteen", "15"], ["sixteen", "16"],
       ["seventeen", "17"], ["eighteen", "18"], ["nineteen", "19"], ["ninteen", "19"], ["zero", "0"], ["ten", "10"],
       ['\ba[\b^$]', "1"]
-    ].freeze
-    SINGLE_NUMS = [["one", 1], ["two", 2], ["three", 3], ["four", 4], ["five", 5], ["six", 6], ["seven", 7],
-                   ["eight", 8], ["nine", 9]].freeze
-    TEN_PREFIXES = [["twenty", 20], ["thirty", 30], ["forty", 40], ["fourty", 40], ["fifty", 50], ["sixty", 60],
-                    ["seventy", 70], ["eighty", 80], ["ninety", 90]].freeze
-    BIG_PREFIXES = [["hundred", 100], ["thousand", 1000], ["million", 1_000_000], ["billion", 1_000_000_000],
-                    ["trillion", 1_000_000_000_000]].freeze
-    FRACTIONS = [["half", 2], ["third(s)?", 3], ["fourth(s)?", 4], ["quarter(s)?", 4], ["fifth(s)?", 5],
-                 ["sixth(s)?", 6], ["seventh(s)?", 7], ["eighth(s)?", 8], ["nineth(s)?", 9]].freeze
-    SINGLE_ORDINALS = [["first", 1], ["third", 3], ["fourth", 4], ["fifth", 5], ["sixth", 6], ["seventh", 7],
-                       ["eighth", 8], ["ninth", 9]].freeze
-    DIRECT_ORDINALS = [
+    ])
+    SINGLE_NUMS = Ractor.make_shareable([["one", 1], ["two", 2], ["three", 3], ["four", 4], ["five", 5], ["six", 6], ["seven", 7],
+                   ["eight", 8], ["nine", 9]])
+    TEN_PREFIXES = Ractor.make_shareable([["twenty", 20], ["thirty", 30], ["forty", 40], ["fourty", 40], ["fifty", 50], ["sixty", 60],
+                    ["seventy", 70], ["eighty", 80], ["ninety", 90]])
+    BIG_PREFIXES = Ractor.make_shareable([["hundred", 100], ["thousand", 1000], ["million", 1_000_000], ["billion", 1_000_000_000],
+                    ["trillion", 1_000_000_000_000]])
+    FRACTIONS = Ractor.make_shareable([["half", 2], ["third(s)?", 3], ["fourth(s)?", 4], ["quarter(s)?", 4], ["fifth(s)?", 5],
+                 ["sixth(s)?", 6], ["seventh(s)?", 7], ["eighth(s)?", 8], ["nineth(s)?", 9]])
+    SINGLE_ORDINALS = Ractor.make_shareable([["first", 1], ["third", 3], ["fourth", 4], ["fifth", 5], ["sixth", 6], ["seventh", 7],
+                       ["eighth", 8], ["ninth", 9]])
+    DIRECT_ORDINALS = Ractor.make_shareable([
       ["tenth", "10"], ["eleventh", "11"], ["twelfth", "12"], ["thirteenth", "13"], ["fourteenth", "14"],
       ["fifteenth", "15"], ["sixteenth", "16"], ["seventeenth", "17"], ["eighteenth", "18"], ["nineteenth", "19"],
       ["twentieth", "20"], ["thirtieth", "30"], ["fourtieth", "40"], ["fiftieth", "50"], ["sixtieth", "60"],
       ["seventieth", "70"], ["eightieth", "80"], ["ninetieth", "90"]
-    ].freeze
+    ])
 
     module_function
 
