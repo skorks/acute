@@ -593,7 +593,7 @@ More:
 - **Without a `holidays:` option,** holidays outside the built-in set return nil. That includes lunar holidays ("chinese new year") and state holidays.
 - **D47.** `holidays:` takes a region of the `holidays` gem (a Symbol, a String or an Array), or an object that answers `holiday?(date)` and `named(name, year)`.
   - `named` is asked first, with acute's Symbol (`:thanksgiving`), and returns a Date or nil. nil falls back to the built-in formulas.
-  - A region loads the gem when it is first used. Without the gem installed, the option raises ArgumentError.
+  - A region loads the gem when it is first used. Without the gem installed, the option raises OptionError.
   - A gem holiday matches by its English name, with or without "Day".
 
 ### D28. Which holidays are built in
@@ -772,7 +772,7 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 
 ### with
 
-- **D45.** `Acute.with(**options)` checks its options once, so a bad zone or option raises when the parser is made. Unknown options raise ArgumentError everywhere.
+- **D45.** `Acute.with(**options)` checks its options once, so a bad zone or option raises when the parser is made. Unknown options raise ArgumentError everywhere, and a bad value for a known option raises `Acute::OptionError` (an ArgumentError that names the `option` and `value`).
 - **D45.** Options given to a call override the parser's. `Parser#with(**more)` makes a new parser.
 - **D45.** A `now:` that carries a zone (a TimeWithZone, or a Time made with a TZInfo zone) gives the parser that zone. With no `now:` and no `zone:`, the zone is inferred on each call (`zone_inferred`).
 - **D45.** The parser is frozen and Ractor-shareable. **D47.** A `holidays:` or `business_days:` object is kept as given, so the parser is shareable only when that object is.

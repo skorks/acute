@@ -22,7 +22,7 @@ module Acute
       name = case zone
              when String then zone
              when TZInfo::Timezone then zone.identifier
-             else raise ArgumentError, "zone: must be an IANA name, a TZInfo::Timezone or an offset like \"+10:00\""
+             else raise OptionError.new("zone: must be an IANA name, a TZInfo::Timezone or an offset like \"+10:00\"", option: :zone, value: zone)
              end
       @zones[name] || add(name) { build(name) }
     end
@@ -61,8 +61,8 @@ module Acute
         return new(name, [], [], [], offset, name)
       end
       unless main_ractor?
-        raise ArgumentError, "zone #{name.inspect} is loaded from tzinfo, which only the main Ractor can use: " \
-                             "parse with it there once first"
+        raise OptionError.new("zone #{name.inspect} is loaded from tzinfo, which only the main Ractor can use: " \
+                              "parse with it there once first", option: :zone, value: name)
       end
       tz = TZInfo::Timezone.get(name)
       trs = tz.transitions_up_to(TO, FROM)
@@ -77,7 +77,7 @@ module Acute
       end
       new(name, ats, offsets, abbreviations, first.observed_utc_offset, first.abbreviation)
     rescue TZInfo::InvalidTimezoneIdentifier
-      raise ArgumentError, "unknown zone #{name.inspect}"
+      raise OptionError.new("unknown zone #{name.inspect}", option: :zone, value: name)
     end
 
     RULE_YEARS = 8

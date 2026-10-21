@@ -89,4 +89,18 @@ class ErrorsTest < Minitest::Test
     assert_raises(ArgumentError) { Acute.parse("4pm", now: 5) }
     assert_raises(ArgumentError) { Acute.parse("4pm", context: :sideways) }
   end
+
+  def test_a_bad_option_raises_an_option_error_naming_it
+    e = assert_raises(Acute::OptionError) { Acute.parse("4pm", zone: "Mars/Olympus") }
+    assert_equal [:zone, "Mars/Olympus"], [e.option, e.value]
+    assert_kind_of ArgumentError, e
+    assert_kind_of Acute::Error, e
+    refute_kind_of Acute::ParseError, e
+    assert_equal :context, assert_raises(Acute::OptionError) { Acute.parse("4pm", context: :sideways) }.option
+  end
+
+  def test_text_that_is_not_a_string_is_a_plain_argument_error
+    e = assert_raises(ArgumentError) { Acute.parse(nil) }
+    refute_kind_of Acute::OptionError, e
+  end
 end
