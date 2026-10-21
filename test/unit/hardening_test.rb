@@ -1,0 +1,45 @@
+require_relative "../test_helper"
+require "stringio"
+require_relative "../../lib/acute/cli"
+require_relative "../../lib/acute/chronic_duration"
+
+# Controls the security probes found working, pinned so they stay that way
+class HardeningTest < Minitest::Test
+  HOSTILE_ZONES = ["../../../../etc/passwd", "/etc/passwd", "America/../../../etc/passwd", "UTC\0", "a" * 100_000,
+                   "posixrules", "right/UTC", "zone.tab", "+99:99"].freeze
+
+  def test_hostile_zone_names_raise_and_are_not_cached
+    Acute::Zone.for("UTC")
+    before = Acute::Zone.instance_variable_get(:@zones).keys
+    HOSTILE_ZONES.each do |name|
+      e = assert_raises(Acute::OptionError, name[0, 40].inspect) { Acute.parse("tomorrow", zone: name) }
+      assert_equal :zone, e.option
+      assert_raises(Acute::OptionError) { Acute::Zone.for(name) }
+    end
+    assert_equal before, Acute::Zone.instance_variable_get(:@zones).keys
+  end
+
+  def test_chronic_duration_stays_fast_on_pathological_text
+    ["1 and 2 and " * 8000, "1" + " and" * 5000 + " x"].each do |text|
+      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      ChronicDuration.parse(text)
+      assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 1.0, "#{text[0, 20].inspect}..."
+    end
+  end
+
+  def cli(argv, stdin = "")
+    out = StringIO.new
+    err = StringIO.new
+    Acute::CLI.run(argv, stdin: StringIO.new(stdin), stdout: out, stderr: err)
+    [out.string, err.string]
+  end
+
+  def test_the_cli_escapes_terminal_escapes_in_its_errors
+    hostile = "\e[31mtomorrow\e]0;pwned\a"
+    [cli([hostile]), cli([], "#{hostile}\n"), cli(["--json"], "#{hostile}\n")].each do |out, err|
+      refute_match(/[\e\a]/, out)
+      refute_match(/[\e\a]/, err)
+      assert_match(/pwned|e\[31m|\\e/, out + err)
+    end
+  end
+end
