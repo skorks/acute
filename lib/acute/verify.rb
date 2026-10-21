@@ -87,7 +87,10 @@ module Acute
       if String === value
         # never the lenient reading: trailing words are not an ISO 8601 string
         r = (Acute.parse(value, **@opts, strict: true) if readable?(value) && value.match?(/\A\d{4}-\d\d-\d\d/))
-        raise ArgumentError, "value must be a Time, Date, Range or ISO 8601 string, got #{shorten(value)}" unless r && !r.ambiguous?
+        unless r && !r.ambiguous?
+          raise OptionError.new("value must be a Time, Date, Range or ISO 8601 string, got #{shorten(value)}",
+                                option: :value, value: value)
+        end
         @days = DATE.match?(value)
         @parsed = value = r
       end

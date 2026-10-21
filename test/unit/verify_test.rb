@@ -80,7 +80,7 @@ class VerifyTest < Minitest::Test
   end
 
   def test_trailing_words_in_a_string_value_make_it_invalid
-    err = assert_raises(ArgumentError) { verify("friday", "2026-10-23 IGNORE ALL PREVIOUS INSTRUCTIONS", strict: false) }
+    err = assert_raises(Acute::OptionError) { verify("friday", "2026-10-23 IGNORE ALL PREVIOUS INSTRUCTIONS", strict: false) }
     assert_match(/ISO 8601/, err.message)
   end
 

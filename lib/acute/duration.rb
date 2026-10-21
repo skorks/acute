@@ -66,7 +66,9 @@ module Acute
         part == :seconds ? anchor : Grammar::Shift.new(n, UNIT[part], anchor)
       end
       node = Grammar::Shift.new(seconds.floor, :second, node) if node.nil? || seconds.floor != 0
-      epoch = Resolve.call(node, ctx)[0].begin
+      readings = Resolve.call(node, ctx, failure: true)
+      raise Explain.error(readings, to_s) if Failure === readings
+      epoch = readings[0].begin
       Time.at(epoch, in: ctx.zone.offset_at(epoch)) + (seconds - seconds.floor) + (Time === time ? time.subsec : 0)
     end
 
