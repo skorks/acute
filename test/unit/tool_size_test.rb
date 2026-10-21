@@ -9,7 +9,7 @@ class ToolSizeTest < Minitest::Test
     tools_list: 12_500,
     parse_result: 150,
     extract_result: 640,
-    descriptions: { "parse" => 260, "duration" => 150, "extract" => 210, "verify" => 210, "describe" => 135, "now" => 170 }
+    descriptions: { "parse" => 260, "duration" => 150, "extract" => 240, "verify" => 210, "describe" => 160, "now" => 195 }
   }.freeze
 
   TOOL = Acute::Tool.new(zone: "UTC")

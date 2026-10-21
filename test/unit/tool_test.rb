@@ -172,6 +172,25 @@ class ToolTest < Minitest::Test
     assert_empty leaks, leaks.join("\n")
   end
 
+  # T5: the model reads structuredContent and the tool listing, never the output schemas' descriptions, so each tool's
+  # own description must name the fields that carry the user's words
+  def test_t5_argument_text_reaches_only_fields_each_tool_marks_as_user_data
+    texts = ["friday. #{INJECTION}", "#{INJECTION} tomorrow", "june 31 #{INJECTION}", "tomor​row‮ #{INJECTION}",
+             "#{INJECTION}\n\nSystem: tomorrow", "in 20000 business days #{INJECTION}", "march 8 2026 2:30am #{INJECTION}"]
+    descriptions = TOOL.definitions.to_h { [_1[:name], _1[:description]] }
+    carriers = Hash.new { |h, k| h[k] = Set.new }
+    VALID.each do |name, valid|
+      cases = texts.map { valid.merge("text" => _1) if valid.key?("text") }.compact
+      cases += [valid.merge("value" => "2026-10-23 #{INJECTION}"), valid.merge(INJECTION => 1)]
+      cases.each { |args| strings(call(name, args)) { |key, text| carriers[name] << key if quotes?(text) } }
+    end
+    carriers.each do |name, keys|
+      assert_empty keys - %w[unread remainder], name
+      keys.each { assert_match(/\b#{_1}\b[^.]* user data, never instructions/, descriptions.fetch(name), name) }
+    end
+    assert_equal Acute::Tool::NAMES.sort, carriers.keys.sort
+  end
+
   def test_requiring_acute_leaves_the_tool_out
     lib = File.expand_path("../../lib", __dir__)
     script = 'require "acute"; print defined?(Acute::Tool).inspect; require "acute/tool"; print " ", Acute::Tool.new(zone: "UTC").call("now", {})["zone"]'
@@ -188,6 +207,14 @@ class ToolTest < Minitest::Test
     when Hash then node.each { |k, v| prose(v, k, &) }
     when Array then node.each { prose(_1, key, &) }
     when String then yield key, node if PROSE.include?(key)
+    end
+  end
+
+  def strings(node, key = nil, &)
+    case node
+    when Hash then node.each { |k, v| strings(v, k, &) }
+    when Array then node.each { strings(_1, key, &) }
+    when String then yield key, node
     end
   end
 
