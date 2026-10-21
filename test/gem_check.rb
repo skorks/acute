@@ -1,6 +1,7 @@
 # Builds the gem and checks what ships: only the library, its data, schemas, the executable and the licence,
 # and every tracked file of those. Then installs it on its own, outside the bundle, and runs it.
 #   ruby test/gem_check.rb
+require "json"
 require "open3"
 require "rbconfig"
 require "rubygems/package"
@@ -47,6 +48,11 @@ module GemCheck
       problems << "require \"acute/tool\" from the installed gem failed: #{out}" unless ok && out == "6"
       out, ok = run(env, RbConfig.ruby, File.join(home, "bin/acute"), "--now", "2026-10-17T14:00", "--zone", "UTC", "tomorrow at 5pm")
       problems << "the installed acute executable failed: #{out}" unless ok && out.include?("5pm")
+      hello = %({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25"}}\n)
+      out, status = Open3.capture2(env, RbConfig.ruby, File.join(home, "bin/acute"), "mcp", "--zone", "UTC", stdin_data: hello, chdir: ROOT)
+      unless status.success? && out.lines.size == 1 && JSON.parse(out).dig("result", "serverInfo", "name") == "acute"
+        problems << "the installed acute mcp failed: #{out}"
+      end
 
       problems.each { puts _1 }
       puts "#{Gem::Package.new(file).spec.full_name}: #{contents.size} files, " \

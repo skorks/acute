@@ -17,6 +17,7 @@ module Acute
     end
 
     def run(argv)
+      return mcp(argv.drop(1)) if argv.first == "mcp"
       args = options.parse(argv)
       return say(@say) if @say
       @parser = Acute.with(**@options)
@@ -33,7 +34,8 @@ module Acute
 
     def options
       OptionParser.new do |o|
-        o.banner = "Usage: acute [options] PHRASE\n       acute [options] < phrases.txt   (one per line)"
+        o.banner = "Usage: acute [options] PHRASE\n       acute [options] < phrases.txt   (one per line)\n       " \
+                   "acute mcp [options]             (an MCP server: acute mcp --help)"
         o.on("--json", "Print JSON (JSON Lines for stdin)") { @json = true }
         o.on("--now TIME", "Now, in ISO 8601 (default: the clock)") { @options[:now] = _1 }
         o.on("--zone ZONE", "IANA zone or offset (default: the system's)") { @options[:zone] = _1 }
@@ -49,6 +51,27 @@ module Acute
         o.on("-v", "--version") { @say = Acute::VERSION }
         o.on("-h", "--help") { @say = o.to_s }
       end
+    end
+
+    # The options an operator fixes for every call. now is always the clock; the model may pass zone per call.
+    def mcp(argv)
+      options = {}
+      parser = OptionParser.new do |o|
+        o.banner = "Usage: acute mcp [options]\n" \
+                   "Serves acute's tools to an MCP client over stdio: one JSON-RPC message per line."
+        o.on("--zone ZONE", "IANA zone or offset when a call names none (default: the system's)") { options[:zone] = _1 }
+        o.on("--locale LOCALE", "en-US, en-GB, en-AU… (default: from the zone)") { options[:locale] = _1 }
+        o.on("--context CONTEXT", %w[future past], "Default for calls that give none: future or past") { options[:context] = _1.to_sym }
+        o.on("--week-start DAY", %w[sunday monday], "sunday or monday") { options[:week_start] = _1.to_sym }
+        o.on("-h", "--help") { return say(o.to_s) }
+      end
+      extra = parser.parse(argv)
+      raise OptionParser::NeedlessArgument, extra.join(" ") if extra.any?
+      require_relative "mcp"
+      server = MCP.new(Tool.new(**options), log: @err)
+      @stdin.binmode
+      server.serve(@stdin, @out)
+      0
     end
 
     def say(text)
