@@ -4505,6 +4505,7 @@ generated-conventions-bare-hours-0274
 generated-conventions-bare-hours-0275
 generated-conventions-bare-hours-0276
 generated-conventions-bare-hours-0277
+generated-conventions-bare-hours-0278
 generated-conventions-business-fiscal-0001
 generated-conventions-business-fiscal-0002
 generated-conventions-business-fiscal-0003
@@ -7381,6 +7382,8 @@ generated-conventions-part-of-day-0534
 generated-conventions-part-of-day-0535
 generated-conventions-part-of-day-0536
 generated-conventions-part-of-day-0537
+generated-conventions-part-of-day-0538
+generated-conventions-part-of-day-0539
 generated-conventions-ranges-0001
 generated-conventions-ranges-0002
 generated-conventions-ranges-0003
