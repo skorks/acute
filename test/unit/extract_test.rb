@@ -132,6 +132,58 @@ class ExtractTest < Minitest::Test
 
   def texts(text) = extract(text).mentions.map(&:text)
 
+  def test_d50_numbers_in_words_alone_are_plain_english
+    assert_empty texts("There are two to four people in the room")
+    assert_empty texts("One may ask a question")
+    assert_equal ["june 28th"], texts("The first free fish is june 28th")
+    assert_equal ["the 5th"], texts("see you on the 5th")
+    assert_equal ["eight forty"], texts("set an alarm for eight forty")
+    assert_equal ["fourth of may"], texts("i'll go back fourth of may")
+  end
+
+  def test_d50_an_ordinal_before_times_counts_occasions
+    assert_equal ["July 1st"], texts("I'll go back July 1st, 17th times.")
+  end
+
+  def test_d50_a_greeting_is_no_mention
+    assert_empty texts("Good Morning Paul")
+    assert_equal ["this morning"], texts("I saw him this morning")
+  end
+
+  def test_d50_nothing_starts_after_a_currency_sign
+    assert_equal ["December 27"], texts("I bought it for $12 December 27")
+    assert_empty texts("$DEC farming is coming to $CUB Finance!")
+  end
+
+  def test_d50_nothing_inside_a_word_or_an_id
+    assert_empty texts("see id=~.~3am3ioYcY0KBufXF")
+    assert_equal ["3am"], texts("see you at 3am")
+  end
+
+  def test_d50_the_same_number_at_both_ends_is_no_range
+    assert_empty texts("schedule me a 1-1 meeting")
+    assert_equal ["1-3 tomorrow"], texts("free 1-3 tomorrow")
+  end
+
+  def test_d50_a_month_abbreviation_before_a_month_is_a_name
+    assert_equal ["November 2019"], texts("By Angie Mar November 2019")
+  end
+
+  def test_d50_start_and_end_in_lower_case_are_verbs
+    assert_equal ["3 minutes from now"], texts("Let's start 3 minutes from now")
+    assert_equal ["two months after next Friday"], texts("It will end two months after next Friday.")
+    assert_equal ["by end of May"], texts("due by end of May")
+  end
+
+  def test_d50_the_leading_word_is_left_out_when_the_rest_reaches_further
+    assert_equal ["2 days from today"], texts("I will leave in 2 days from today")
+    assert_equal ["12:30 PM ON FRI"], texts("ADD LUNCH AT 12:30 PM ON FRI")
+  end
+
+  def test_d50_a_mention_does_not_end_in_a_word_that_introduces
+    assert_equal ["May 6th 2004"], texts("on May 6th 2004, the customer returned")
+  end
+
   def test_d50_a_decade_in_words_or_with_an_apostrophe_is_never_seconds
     x = extract("In 70's")
     assert_equal ["70's"], x.mentions.map(&:text)
