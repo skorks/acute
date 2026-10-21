@@ -1,31 +1,37 @@
-require "tzinfo"
+require_relative "tables/zones"
 
 module Acute
-  # A zone's UTC offsets as a table compiled once from tzinfo, so lookups are a binary search over Integers.
+  # A zone's UTC offsets, unpacked from the shipped tables the first time it is used, so lookups are a binary
+  # search over Integers.
   # Times are epoch seconds; a "local" time is wall-clock seconds counted as if the wall clock were UTC.
   class Zone
     FROM = Time.utc(1800).freeze # before any zone's first transition (1844), so local mean time is kept
     TO = Time.utc(2200).freeze
     # IANA names with an area, by their lower case, for the lexer
-    NAMES = Ractor.make_shareable(TZInfo::Timezone.all_identifiers.select { _1.include?("/") }.to_h { [_1.downcase, _1.to_sym] })
+    NAMES = Ractor.make_shareable([*Tables::ZONES.keys, *Tables::ZONE_LINKS.keys].grep(%r{/}).to_h { [_1.downcase, _1.to_sym] })
     FIXED = /\A([+-])([01]\d|2[0-3]):([0-5]\d)\z/
     # Lookups start from a bucket of 2**22 seconds (about 48 days), so they skip the binary search
     BUCKET_SHIFT = 22
     BUCKET_BASE = FROM.to_i
     BUCKETS = ((TO.to_i - BUCKET_BASE) >> BUCKET_SHIFT) + 1
     # Name (or a fixed offset in seconds) => Zone. Shareable and replaced rather than changed, so every Ractor
-    # can read it. Only the main Ractor can reach tzinfo, so only it adds to it; two threads adding at once
-    # may drop one zone, to be built again.
+    # can read it. Only the main Ractor can set it, so only it adds to it; two threads adding at once may drop
+    # one zone, to be built again. It holds at most the shipped names, the fixed offsets and the zones an app
+    # passes in itself.
     @zones = Ractor.make_shareable({})
 
     def self.for(zone)
-      name = case zone
-             when String then zone
-             when TZInfo::Timezone then zone.identifier
+      name = if String === zone then zone
+             elsif tzinfo?(zone) then zone.identifier
              else raise OptionError.new("zone: must be an IANA name, a TZInfo::Timezone or an offset like \"+10:00\"", option: :zone, value: zone)
              end
-      @zones[name] || add(name) { build(name) }
+      @zones[name] || add(name) { build(name, zone) }
     end
+
+    # D45: a TZInfo::Timezone, without requiring tzinfo. Its name picks the shipped data.
+    def self.tzinfo?(zone) = zone.respond_to?(:identifier) && zone.respond_to?(:transitions_up_to)
+
+    def self.known?(name) = Tables::ZONES.key?(name) || Tables::ZONE_LINKS.key?(name)
 
     # The zone fixed at offset seconds from UTC, for an offset in the text
     def self.fixed(offset)
@@ -36,7 +42,7 @@ module Acute
 
     def self.add(key)
       unless main_ractor?
-        # Another Ractor keeps its own: fixed offsets build anywhere, and a named zone fails in build
+        # Another Ractor keeps its own
         return ractor_zones[key] ||= Ractor.make_shareable(yield)
       end
       zone = Ractor.make_shareable(yield)
@@ -55,51 +61,67 @@ module Acute
     end
     private_class_method :main_ractor?, :ractor_zones
 
-    def self.build(name)
-      raise OptionError.new("unknown zone #{name.inspect}", option: :zone, value: name) unless name.valid_encoding?
+    def self.build(name, zone)
+      raise OptionError.new("unknown zone #{name.inspect}", option: :zone, value: name) unless name.ascii_only?
       if (m = FIXED.match(name))
         offset = (m[2].to_i * 3600 + m[3].to_i * 60) * (m[1] == "-" ? -1 : 1)
         return new(name, [], [], [], offset, name)
       end
-      unless main_ractor?
-        raise OptionError.new("zone #{name.inspect} is loaded from tzinfo, which only the main Ractor can use: " \
-                              "parse with it there once first", option: :zone, value: name)
+      if (entry = Tables::ZONES[Tables::ZONE_LINKS.fetch(name, name)]) then unpack(name, *entry)
+      elsif String === zone then raise OptionError.new("unknown zone #{name.inspect}", option: :zone, value: name)
+      else from_tzinfo(name, zone)
       end
-      tz = TZInfo::Timezone.get(name)
+    end
+
+    # A shipped zone: its (offset, abbreviation) types, the first in force before any change, and its
+    # changes packed as base64 of the first time (64-bit), the gaps to the rest (32-bit) and a type each
+    def self.unpack(name, types, packed)
+      raw = packed.unpack1("m0")
+      n = raw.bytesize / 5
+      at = 0
+      ats = n.zero? ? [] : raw.unpack("q<L<#{n - 1}").map { at += _1 }
+      kinds = raw.unpack("@#{raw.bytesize - n}C#{n}")
+      complete(name, ats, kinds.map { types[2 * _1] }, kinds.map { types[2 * _1 + 1] }, types[0], types[1])
+    end
+
+    # A TZInfo::Timezone whose name acute doesn't ship, from its own data
+    def self.from_tzinfo(name, tz)
       trs = tz.transitions_up_to(TO, FROM)
       first = trs.empty? ? tz.period_for_utc(FROM).offset : trs.first.previous_offset
-      ats = trs.map(&:timestamp_value)
-      offsets = trs.map { |t| t.offset.observed_utc_offset }
-      abbreviations = trs.map { |t| t.offset.abbreviation }
-      recurring(trs).each do |at, offset, abbreviation|
+      complete(name, trs.map(&:timestamp_value), trs.map { |t| t.offset.observed_utc_offset },
+               trs.map { |t| t.offset.abbreviation }, first.observed_utc_offset, first.abbreviation)
+    end
+
+    def self.complete(name, ats, offsets, abbreviations, first_offset, first_abbreviation)
+      recurring(ats, offsets, abbreviations, first_offset).each do |at, offset, abbreviation|
         ats << at
         offsets << offset
         abbreviations << abbreviation
       end
-      new(name, ats, offsets, abbreviations, first.observed_utc_offset, first.abbreviation)
-    rescue TZInfo::InvalidTimezoneIdentifier
-      raise OptionError.new("unknown zone #{name.inspect}", option: :zone, value: name)
+      new(name, ats, offsets, abbreviations, first_offset, first_abbreviation)
     end
+    private_class_method :build, :unpack, :from_tzinfo, :complete
 
     RULE_YEARS = 8
     # Every source's data runs at least this far (2038 is the 32-bit limit), and a zone whose clock changes
     # stop before it has stopped changing its clocks
     RULES_RUN_TO = Time.utc(2037).to_i
 
-    # D47: tzinfo's data can stop decades short of TO (tzinfo-data's about fifty years out). When the last
-    # 2 * RULE_YEARS changes alternate between two that each fall yearly on one weekday on or after one day of
-    # their month, at one wall time, and run past RULES_RUN_TO, both are carried on to TO.
-    def self.recurring(trs)
-      return [] unless trs.last && trs.last.timestamp_value > RULES_RUN_TO
-      changes = trs.last(2 * RULE_YEARS).map do |t|
-        before = t.previous_offset.observed_utc_offset
-        local = t.timestamp_value + before
+    # D47: the data stops decades short of TO (the shipped tables in 2045, or 2076 where carrying on from 2045
+    # would differ; a TZInfo zone's wherever its source does). When the last 2 * RULE_YEARS changes alternate
+    # between two that each fall yearly on one weekday on or after one day of their month, at one wall time,
+    # and run past RULES_RUN_TO, both are carried on to TO.
+    def self.recurring(ats, offsets, abbreviations, first_offset)
+      n = ats.size
+      return [] unless n >= 2 * RULE_YEARS && ats[-1] > RULES_RUN_TO
+      changes = ((n - 2 * RULE_YEARS)...n).map do |k|
+        before = k.zero? ? first_offset : offsets[k - 1]
+        local = ats[k] + before
         days = local.div(86_400)
         ymd = Calendar.civil_from_days(days)
-        [ymd / 10_000, ymd / 100 % 100, ymd % 100, Calendar.weekday(days), local % 86_400, before,
-         t.offset.observed_utc_offset, t.offset.abbreviation]
+        [ymd / 10_000, ymd / 100 % 100, ymd % 100, Calendar.weekday(days), local % 86_400, before, offsets[k],
+         abbreviations[k]]
       end
-      return [] if changes.size < 2 * RULE_YEARS
       [0, 1].flat_map do |s|
         years = (0...RULE_YEARS).map { changes[2 * _1 + s] }
         return [] unless years.each_cons(2).all? { |a, b| b[0] == a[0] + 1 }

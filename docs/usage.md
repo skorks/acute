@@ -166,7 +166,7 @@ Every call takes the same options:
 | Option | What it sets |
 |---|---|
 | `now:` | the time phrases are relative to (a Time or an ISO 8601 string) |
-| `zone:` | an IANA zone name or an offset |
+| `zone:` | an IANA zone name, an offset, or a `TZInfo::Timezone` (read by its name) |
 | `context:` | `:future` (default) or `:past`, for times that could be either |
 | `locale:` | `"en-US"`, `"en-GB"`, `"en-AU"`…: date order, week start, holidays, seasons. By default it comes from the zone |
 | `week_start:`, `hemisphere:` | override the locale's |
