@@ -1,4 +1,5 @@
 require_relative "../test_helper"
+require_relative "../../lib/acute/tool"
 
 # Every keyword every entry point takes, found from its signature so a new option is swept the day it is added,
 # fails with an Acute::Error or not at all, whatever junk it is given
@@ -18,6 +19,7 @@ class OptionSweepTest < Minitest::Test
     "verify" => [Acute.method(:verify), ->(**o) { Acute.verify("tomorrow", "2026-10-22", **o) }],
     "describe" => [Acute.method(:describe), ->(**o) { Acute.describe(NOW + 86_400, **o) }],
     "with" => [Acute.method(:with), ->(**o) { Acute.with(**o).parse("tomorrow") }],
+    "Tool.new" => [Acute::Tool.instance_method(:initialize), ->(**o) { Acute::Tool.new(**o).call("parse", { "text" => "tomorrow" }) }],
     "Duration#after" => [Acute::Duration.instance_method(:after), ->(**o) { Acute.duration("2 days").after(NOW, **o) }]
   }.freeze
 
@@ -28,7 +30,7 @@ class OptionSweepTest < Minitest::Test
   end
 
   ENTRY_POINTS.each do |name, (method, call)|
-    define_method("test_#{name.tr("#!", "__")}_options_fail_as_acute_errors") do
+    define_method("test_#{name.tr("#!.", "___")}_options_fail_as_acute_errors") do
       keywords = self.class.keywords(method)
       refute_empty keywords
       base = { now: NOW, zone: NY }.slice(*keywords)
