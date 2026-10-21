@@ -270,6 +270,8 @@ D32 says when there are two. The coming Friday and next week's Friday must diffe
 
 "this friday" said on Saturday → next week's Friday first, then the one that has passed (`this_passed`). Before Friday, it is this week's Friday, one answer.
 
+- "this saturday at noon" said on Saturday at 14:00 → next Saturday at noon first, then today's (`this_passed`). Said before noon, it is today's.
+
 ### D32. next, this and last with any named period
 
 D20 and D21 apply to every named period: weekdays, months, seasons, holidays, quarters and week numbers.
