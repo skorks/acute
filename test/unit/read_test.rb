@@ -10,6 +10,16 @@ class ReadTest < Minitest::Test
     assert_empty codes(r)
   end
 
+  def test_d45_a_rule_comes_first
+    r = read("every friday at 5pm")
+    assert_kind_of Acute::Rule, r
+    assert_equal "FREQ=WEEKLY;BYDAY=FR;BYHOUR=17;BYMINUTE=0", r.rrule
+    assert_kind_of Acute::Rule, read("fridays")
+    assert_kind_of Acute::Result, read("next friday")
+    assert_kind_of Acute::Result, read("this weekend")
+    assert_nil read("every morning")
+  end
+
   def test_a_length_is_a_duration
     d = read("1h 30m")
     assert_kind_of Acute::Duration, d

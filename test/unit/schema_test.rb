@@ -25,6 +25,12 @@ class SchemaTest < Minitest::Test
     end
   end
 
+  def test_rules
+    ["every weekday at 9am", "every monday except november 2", "every 30 minutes until 5pm", "monthly for a year"].each do |text|
+      assert_valid "rule", Acute.recurrence(text, now: "2026-10-17T14:00", zone: NY)
+    end
+  end
+
   def test_verdicts
     [["next friday", "2026-10-23"], ["this weekend", "2026-10-18"], ["this friday", "2026-10-16"],
      ["in two weeks", "2026-10-30"], ["a banana", "2026-10-30"]].each do |text, value|
