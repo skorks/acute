@@ -9,7 +9,8 @@ module Acute
       when Symbol, String, Array then Region.new(Array(given).map(&:to_sym))
       else
         unless given.respond_to?(:holiday?) && given.respond_to?(:named)
-          raise ArgumentError, "holidays: must be a holidays-gem region, or answer holiday?(date) and named(name, year)"
+          raise OptionError.new("holidays: must be a holidays-gem region, or answer holiday?(date) and named(name, year)",
+                                option: :holidays, value: given)
         end
         given
       end
@@ -20,8 +21,8 @@ module Acute
         begin
           require "holidays" unless defined?(::Holidays)
         rescue LoadError
-          raise ArgumentError, "holidays: #{regions.join(", ")} is a region of the holidays gem, " \
-                               "which is not installed"
+          raise OptionError.new("holidays: #{regions.join(", ")} is a region of the holidays gem, " \
+                                "which is not installed", option: :holidays, value: regions)
         end
         @regions = regions
       end

@@ -49,7 +49,7 @@ module Acute
       @past = case context
               when :future then false
               when :past then true
-              else raise ArgumentError, "context: must be :future or :past"
+              else raise OptionError.new("context: must be :future or :past", option: :context, value: context)
               end
       if zone
         @zone = Zone.for(zone)
@@ -129,21 +129,21 @@ module Acute
 
     def options(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays, business_days, year_bias)
       @locale = Locale.for(locale) if locale
-      @week_start = week_start && WEEK_STARTS.fetch(week_start.to_sym) { raise ArgumentError, "week_start: must be :sunday or :monday" }
-      @south = hemisphere && HEMISPHERES.fetch(hemisphere.to_sym) { raise ArgumentError, "hemisphere: must be :north or :south" }
+      @week_start = week_start && WEEK_STARTS.fetch(week_start.to_sym) { raise OptionError.new("week_start: must be :sunday or :monday", option: :week_start, value: week_start) }
+      @south = hemisphere && HEMISPHERES.fetch(hemisphere.to_sym) { raise OptionError.new("hemisphere: must be :north or :south", option: :hemisphere, value: hemisphere) }
       @fiscal_year_start = fiscal_year_start && Integer(fiscal_year_start)
       unless strict
-        raise ArgumentError, "strict: must be true or false" unless strict == false
+        raise OptionError.new("strict: must be true or false", option: :strict, value: strict) unless strict == false
         # Lenient parsing resolves each piece it tries in a fresh context
         @args = [now || Time.at(@now), zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst,
                  holidays, business_days, year_bias]
       end
       @dst_policy = dst && DST_POLICIES.fetch(dst.to_sym) do
-        raise ArgumentError, "dst: must be :compatible, :earlier, :later or :reject"
+        raise OptionError.new("dst: must be :compatible, :earlier, :later or :reject", option: :dst, value: dst)
       end
       @holidays = holidays && Holidays.for(holidays)
       if business_days
-        raise ArgumentError, "business_days: must answer business_day?(date)" unless business_days.respond_to?(:business_day?)
+        raise OptionError.new("business_days: must answer business_day?(date)", option: :business_days, value: business_days) unless business_days.respond_to?(:business_day?)
         @business_days = business_days
       end
       @year_bias = Integer(year_bias) if year_bias
@@ -162,15 +162,15 @@ module Acute
       when String then iso_epoch(now)
       else
         return now.to_i if now.respond_to?(:time_zone)
-        raise ArgumentError, "now: must be a Time, Date or ISO 8601 String"
+        raise OptionError.new("now: must be a Time, Date or ISO 8601 String", option: :now, value: now)
       end
     end
 
     def iso_epoch(str)
-      m = ISO.match(str) or raise ArgumentError, "now: #{str.inspect} is not ISO 8601"
+      m = ISO.match(str) or raise OptionError.new("now: #{str.inspect} is not ISO 8601", option: :now, value: str)
       y, mo, d, h, mi, s = m.captures.first(6).map(&:to_i)
       unless mo.between?(1, 12) && d.between?(1, Calendar.days_in_month(y, mo)) && h < 24 && mi < 60 && s < 60
-        raise ArgumentError, "now: #{str.inspect} is not a valid time"
+        raise OptionError.new("now: #{str.inspect} is not a valid time", option: :now, value: str)
       end
       local = Calendar.days_from_civil(y, mo, d) * 86_400 + h * 3600 + mi * 60 + s
       return @zone.local_to_utc(local, self) unless m[7]

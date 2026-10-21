@@ -2,7 +2,7 @@ module Acute
   def self.describe(value, now: nil, zone: nil, context: :future, locale: nil, week_start: nil, hemisphere: nil,
                     fiscal_year_start: nil, strict: true, dst: nil, holidays: nil, business_days: nil, year_bias: nil,
                     style: :relative)
-    raise ArgumentError, "style: must be :relative or :calendar" unless Describe::STYLES.include?(style)
+    raise OptionError.new("style: must be :relative or :calendar", option: :style, value: style) unless Describe::STYLES.include?(style)
     return Describe.duration(value) if Duration === value
     zone ||= value.zone if Result === value
     ctx = Context.new(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays,

@@ -111,6 +111,8 @@ Acute.parse!("tomorow at 3", now:, zone:)
 #   e.code => :unknown_word, e.hint => "did you mean \"tomorrow\"?"
 ```
 
+A bad option value raises `Acute::OptionError`, an `ArgumentError` that names the `option` and the `value`. It and `ParseError` both include `Acute::Error`, so `rescue Acute::Error` catches either.
+
 By default, text with a word acute doesn't know fails. `strict: false` skips unknown words, as chronic did, and records that it did:
 
 ```ruby
