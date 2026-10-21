@@ -711,9 +711,19 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
   - A capital at the start of a sentence doesn't count: "Lunch with Sam" has no mention, but "May 3" does.
   - **D48.** "during" doesn't start a mention.
   - The remainder drops an "on", "at", "for", "by" or "in" left dangling before a mention: "flight back on the 30th" leaves "flight back".
+  - **D50.** Numbers written as words with no time word beside them are plain English: "two to four people", "One may ask", "The first free fish", "the twenty second". A numeric ordinal still counts ("the 5th"), and so do written numbers that read as a time together or with a month: "eight forty", "fourth of may".
+  - **D50.** An ordinal before "time" or "times" counts occasions: "17th times", "the 5th time".
+  - **D50.** "Good morning", "Good night" are greetings: a part of the day right after "good" is no mention.
+  - **D50.** Nothing starts right after a currency sign: "$12 December 27" mentions "December 27", and "$DEC" is a ticker.
+  - **D50.** Nothing is found inside a word or an id: a mention whose first or last character touches a letter or digit, as "3am" in "~.~3am3ioY", is none.
+  - **D50.** The same number at both ends is no range: "a 1-1 meeting".
+  - **D50.** A month abbreviation alone right before another month is a name: "Angie Mar November 2019" mentions "November 2019".
+  - **D50.** "start" and "end" in lower case are verbs unless "of" follows: "Let's start 3 minutes from now" mentions "3 minutes from now", "it will end two months after next Friday" "two months after next Friday"; "end of May" is one mention.
 - **E4.** A mention starts at its first word that changes the reading. "the" belongs to the phrase, as a determiner, and stays: "the 30th", "the day before yesterday", "the weekend". A leading "in", a preposition that introduces the phrase, is left out when the rest reads the same: the same begin and end for every reading, and the same alternatives. "She is leaving in August" mentions "August", and "in the morning" is "the morning". It stays when dropping it changes or breaks the reading: "in 3 days" is a shift, and "in 2016" without its "in" is a lone number.
   - "on" and "at" never start a mention: "on Tuesday" is "Tuesday", "at 4 a.m." is "4 a.m.". Where what follows is no mention by itself, nothing is found ("at 6.45", as in "at 6.45 percent").
   - Words that change the reading by meaning stay: "from", "between", "within", "after", "before", "since", "until", "by", "about", "around".
+  - **D50.** The leading "in" is also left out when the rest reaches further: "in 2 days from today" is "2 days from today". A meal right before "at" is left out the same way: "LUNCH AT 12:30 PM" is "12:30 PM", while "lunchtime 12 o'clock" keeps it.
+  - **D50.** A mention doesn't end in a word that only introduces what follows ("on", "the", "at", "and", "of", "to", "in", "for", "by"): "May 6th 2004, the customer" mentions "May 6th 2004".
 - **E5.** A dot right after a month, weekday or meridiem ends its abbreviation, not the sentence: "Oct. 2", "Dec. 2021", "1p.m. to 4" are one mention each, unless a capital follows. A meridiem written with dots keeps its last one ("4 a.m.", "3 p . m ."), and a decade its apostrophe ("'40s").
 - **D43.** A malformed clock ("4:3") is one unknown word, so the rest of the text is still searched.
 - **D44.** No mention starts inside a written number: nothing in "123-12-1234".

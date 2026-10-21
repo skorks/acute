@@ -54,16 +54,20 @@ module Acute
           # Text that makes every start parse far and fail, as "the the the…", has the grammar see a few words
           # at each once it has cost far more than prose does
           w = spent[0] > budget && e > i + FEW ? i + FEW : e
-          found = starts_mention?(tokens, i) &&
+          found = starts_mention?(text, tokens, i) &&
                   longest(text, tokens[(i * S)...(w * S)], make_context, whole, spent)
           if found
             k = i
-            # E4: a leading "in" is left out when the rest reads the same
-            while tokens[k * S] == L::WORD && LEADS[tokens[k * S + 1]]
-              shorter = longest(text, tokens[((k + 1) * S)...(w * S)], make_context, whole, spent)
-              break unless shorter && shorter[0].offset.end == found[0].offset.end && same?(shorter[0].value, found[0].value)
+            # E4: a leading "in", or a meal before "at" (D50), is left out when the rest reads the same, or
+            # when the rest reaches further (D50): "in 2 days from today" is "2 days from today"
+            while LEADS[tokens[k * S]]&.[](tokens[k * S + 1]) && (tokens[k * S] == L::WORD || tokens[(k + 1) * S] == L::AT)
+              n = k + 1
+              n += 1 while n < w && !starts_mention?(text, tokens, n)
+              shorter = n < w && longest(text, tokens[(n * S)...(w * S)], make_context, whole, spent)
+              break unless shorter && (shorter[0].offset.end > found[0].offset.end ||
+                                       (shorter[0].offset.end == found[0].offset.end && same?(shorter[0].value, found[0].value)))
               found = shorter
-              k += 1
+              k = n
             end
             mentions << found[0]
             i = k + found[1] / S
@@ -105,7 +109,8 @@ module Acute
         return unless tree || units
         j = t.to_i > d.to_i ? t : d
         slice = j == tokens.size ? tokens : tokens[0, j]
-        found = !glued?(all, j) && mention(text, slice, j == t ? tree : nil, j == d ? units : nil, make_context, whole)
+        found = !glued?(all, j) && !trailing?(tokens, j) && !before_month?(all, j) &&
+                mention(text, slice, j == t ? tree : nil, j == d ? units : nil, make_context, whole)
         return [found, j] if found
         tokens = tokens[0, j - S]
       end
@@ -145,18 +150,46 @@ module Acute
     def self.capital?(byte) = byte && byte >= 65 && byte <= 90
 
     START_WORDS = { on: true, and: true, to: true, for: true, during: true }.freeze
-    LEADS = { in: true }.freeze
+    LEADS = { L::WORD => { in: true }.freeze, L::PART => { lunch: true, breakfast: true, dinner: true }.freeze }.freeze
 
     # "on", "at", "for" and "during" introduce a mention without being part of it (E2 gives a duration its
     # "for", E4 leaves out "on" and "at"). None starts inside a written number, as "12-1234" in "123-12-1234"
     # or "1 in the morning" in "37.1 in the morning".
-    def self.starts_mention?(tokens, i)
+    def self.starts_mention?(text, tokens, i)
       k = tokens[i * S]
       if i >= 2 && GLUE[tokens[(i - 1) * S]] && tokens[(i - 2) * S] == L::NUM &&
          tokens[(i - 2) * S + 4] == tokens[(i - 1) * S + 3] && tokens[(i - 1) * S + 4] == tokens[i * S + 3]
         return false
       end
-      k != L::AT && !(k == L::WORD && START_WORDS[tokens[i * S + 1]])
+      return false if k == L::AT || (k == L::WORD && START_WORDS[tokens[i * S + 1]])
+      return false if after?(text, tokens[i * S + 3], CURRENCY) # D50: "$12", "$DEC"
+      return false if k == L::PART && after?(text, tokens[i * S + 3], GREETING) # D50: "Good morning"
+      # D50: "start" and "end" in lower case are verbs unless "of" follows: "start 3 minutes from now"
+      return false if k == L::FUZZ && tokens[i * S + 2] & L::CAP == 0 &&
+                      VERBS.match?(text.byteslice(tokens[i * S + 3], tokens[i * S + 4] - tokens[i * S + 3])) &&
+                      !(tokens[(i + 1) * S] == L::WORD && tokens[(i + 1) * S + 1] == :of)
+      true
+    end
+
+    VERBS = /\A(?:start|end)\z/
+    CURRENCY = /[$£€]\s*\z/
+    GREETING = /\bgood\s+\z/i
+
+    # Whether the text just before the byte matches
+    def self.after?(text, byte, pattern)
+      byte > 0 && text.byteslice([byte - 12, 0].max, [byte, 12].min).match?(pattern)
+    end
+
+    TRAILING = { on: true, the: true, at: true, and: true, of: true, to: true, in: true, for: true, by: true }.freeze
+
+    # D50: a mention doesn't end in a word that only introduces what follows: "May 6th 2004, the customer"
+    def self.trailing?(tokens, j)
+      j > S && tokens[j - S] == L::WORD && TRAILING[tokens[j - S + 1]]
+    end
+
+    # D50: a month abbreviation directly before another month is a name: "Angie Mar November 2019"
+    def self.before_month?(all, j)
+      j == S && all[0] == L::MONTH && all[j] == L::MONTH && all[4] - all[3] <= 3
     end
 
     # E4: the same begin and end for every reading, and the same alternatives
@@ -173,7 +206,8 @@ module Acute
 
     def self.mention(text, slice, tree, units, make_context, whole)
       st = slice[3]
-      return if plain_english?(slice, sentence_start?(text, st)) || (slice.size == S && slice[0] == L::NUM)
+      return if plain_english?(slice, sentence_start?(text, st)) || (slice.size == S && slice[0] == L::NUM) ||
+                spelled?(slice) || in_word?(text, st, slice[-1]) || one_to_one?(slice) || counted?(text, slice)
       stop = meridiem_dot(text, slice) || slice[-1]
       # E5: "'40s": the apostrophe for the century left out is part of it
       st -= 1 if slice[0] == L::DECADE && st > 0 && text.getbyte(st - 1) == 39
@@ -208,6 +242,39 @@ module Acute
       content.any? && content.each_with_index.all? do |(_, _, flags, start), n|
         flags & L::ENGLISH != 0 && (flags & L::CAP == 0 || (n == 0 && sentence_start && start == slice[3]))
       end
+    end
+
+    JOINS = { to: true, and: true, or: true }.freeze
+
+    # D50: numbers written as words with no time word beside them are plain English: "two to four people",
+    # "One may ask", "The first free fish"
+    def self.spelled?(slice)
+      tokens = slice.each_slice(S).to_a
+      words, content = tokens.partition { |k, *| k == L::WORD || k == L::ART }
+      spelled = ->((k, _, flags)) { (k == L::NUM || k == L::ORD) && flags & L::WORDY != 0 }
+      if content.all?(&spelled)
+        content.size == 1 ? content[0][0] == L::ORD && words.all? { |_, v| v == :the } : words.any? && words.all? { |_, v| JOINS[v] }
+      else
+        words.empty? && content.size == 2 && spelled.(content[0]) && content[1][2] & (L::ENGLISH | L::CAP) == L::ENGLISH
+      end
+    end
+
+    # D50: nothing inside a word or an id: "3am" in "~.~3am3ioYcY0"
+    def self.in_word?(text, st, stop)
+      (st > 0 && alnum?(text.getbyte(st - 1))) || alnum?(text.getbyte(stop))
+    end
+
+    def self.alnum?(byte) = byte && ((byte >= 48 && byte <= 57) || ((byte | 32) >= 97 && (byte | 32) <= 122))
+
+    # D50: the same number at both ends is no range: "a 1-1 meeting"
+    def self.one_to_one?(slice)
+      slice.size == 3 * S && slice[0] == L::NUM && slice[S] == L::DASH && slice[2 * S] == L::NUM && slice[1] == slice[2 * S + 1]
+    end
+
+    # D50: an ordinal before "time" or "times" counts occasions: "17th times", "the 5th time"
+    def self.counted?(text, slice)
+      slice.each_slice(S).count { |k, *| k != L::WORD && k != L::ART } == 1 && slice[-S] == L::ORD &&
+        text.byteslice(slice[-1], 8).match?(/\A\s+times?\b/i)
     end
 
     SPACE = [32, 9, 10, 11, 12, 13].freeze
