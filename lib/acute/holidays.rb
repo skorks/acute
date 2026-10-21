@@ -6,7 +6,7 @@ module Acute
   module Holidays
     def self.for(given)
       case given
-      when Symbol, String, Array then Region.new(Array(given).map(&:to_sym))
+      when Symbol, String, Array then Region.new(Array(given).dup, given)
       else
         unless given.respond_to?(:holiday?) && given.respond_to?(:named)
           raise OptionError.new("holidays: must be a holidays-gem region, or answer holiday?(date) and named(name, year)",
@@ -17,12 +17,21 @@ module Acute
     end
 
     class Region
-      def initialize(regions)
+      NAME = /\A[a-z][a-z0-9_]*\z/i
+
+      def initialize(regions, given)
+        unless regions.any? && regions.all? { (String === _1 || Symbol === _1) && NAME.match?(_1) }
+          raise OptionError.new("holidays: a region is a name like :us or :gb_eng", option: :holidays, value: given)
+        end
         begin
           require "holidays" unless defined?(::Holidays)
         rescue LoadError
           raise OptionError.new("holidays: #{regions.join(", ")} is a region of the holidays gem, " \
-                                "which is not installed", option: :holidays, value: regions)
+                                "which is not installed", option: :holidays, value: given)
+        end
+        regions.map!(&:to_sym)
+        if ::Holidays.respond_to?(:available_regions) && (unknown = regions - ::Holidays.available_regions).any?
+          raise OptionError.new("holidays: unknown region #{unknown.join(", ")}", option: :holidays, value: given)
         end
         @regions = regions
       end

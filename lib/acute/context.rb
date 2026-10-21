@@ -63,7 +63,7 @@ module Acute
       @strict = strict
       @year_bias = YEAR_BIAS
       # Most parses give none of the other options, and then skip their checks
-      return unless locale || week_start || hemisphere || fiscal_year_start || !strict || dst || holidays || business_days || year_bias
+      return unless locale || week_start || hemisphere || fiscal_year_start || true != strict || dst || holidays || business_days || year_bias
       options(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays, business_days, year_bias)
     end
 
@@ -128,25 +128,34 @@ module Acute
     private
 
     def options(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays, business_days, year_bias)
+      raise OptionError.new("strict: must be true or false", option: :strict, value: strict) unless false == strict || true == strict
       @locale = Locale.for(locale) if locale
-      @week_start = week_start && WEEK_STARTS.fetch(week_start.to_sym) { raise OptionError.new("week_start: must be :sunday or :monday", option: :week_start, value: week_start) }
-      @south = hemisphere && HEMISPHERES.fetch(hemisphere.to_sym) { raise OptionError.new("hemisphere: must be :north or :south", option: :hemisphere, value: hemisphere) }
-      @fiscal_year_start = fiscal_year_start && Integer(fiscal_year_start)
+      @week_start = week_start && choice(:week_start, week_start, WEEK_STARTS, ":sunday or :monday")
+      @south = hemisphere && choice(:hemisphere, hemisphere, HEMISPHERES, ":north or :south")
+      @fiscal_year_start = fiscal_year_start && whole(:fiscal_year_start, fiscal_year_start, 1..12, "a month, 1 to 12")
       unless strict
-        raise OptionError.new("strict: must be true or false", option: :strict, value: strict) unless strict == false
         # Lenient parsing resolves each piece it tries in a fresh context
         @args = [now || Time.at(@now), zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst,
                  holidays, business_days, year_bias]
       end
-      @dst_policy = dst && DST_POLICIES.fetch(dst.to_sym) do
-        raise OptionError.new("dst: must be :compatible, :earlier, :later or :reject", option: :dst, value: dst)
-      end
+      @dst_policy = dst && choice(:dst, dst, DST_POLICIES, ":compatible, :earlier, :later or :reject")
       @holidays = holidays && Holidays.for(holidays)
       if business_days
         raise OptionError.new("business_days: must answer business_day?(date)", option: :business_days, value: business_days) unless business_days.respond_to?(:business_day?)
         @business_days = business_days
       end
-      @year_bias = Integer(year_bias) if year_bias
+      @year_bias = whole(:year_bias, year_bias, 0..99, "a number of years, 0 to 99") if year_bias
+    end
+
+    def choice(option, value, table, allowed)
+      key = (String === value || Symbol === value) && value.to_sym
+      table.fetch(key) { raise OptionError.new("#{option}: must be #{allowed}", option: option, value: value) }
+    end
+
+    def whole(option, value, range, allowed)
+      n = Integer === value ? value : (String === value && Integer(value, 10, exception: false))
+      return n if n && range.cover?(n)
+      raise OptionError.new("#{option}: must be #{allowed}", option: option, value: value)
     end
 
     def rails_zone
