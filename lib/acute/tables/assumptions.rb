@@ -26,6 +26,7 @@ module Acute
       season_year: ["D3", "a season that runs over New Year belongs to the year it starts in; the one ending in that year is an alternative"].freeze,
       range_under_way: ["D11", "the range is under way, so it means the current one; the coming one is an alternative"].freeze,
       same_day_or_next: ["D11", "that day is today, so it means today; the next one is an alternative"].freeze,
+      same_day_passed: ["D11", "that day is today but today's has passed (or, said looking back, has not come yet), so the other one comes first; today's is an alternative"].freeze,
       next_two_readings: ["D20", "\"next\" can mean the coming one or the one after; both are given, the coming one first"].freeze,
       this_passed: ["D21", "that one has passed in the current period, so the next one comes first; the passed one is an alternative"].freeze,
       rolling_window: ["D31", "a span counted from now; whole calendar units are alternatives"].freeze,

@@ -252,7 +252,7 @@
   phrase: wed
   chronic: '2006-08-23 12:00:00'
   acute: '2006-08-16 12:00:00'
-  rule: D40
+  rule: D11
 - test: test_parse_guess_gr
   line: 712
   assert_line: 712

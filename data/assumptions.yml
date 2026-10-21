@@ -67,6 +67,9 @@ range_under_way:
 same_day_or_next:
   rule: D11
   message: "that day is today, so it means today; the next one is an alternative"
+same_day_passed:
+  rule: D11
+  message: "that day is today but today's has passed (or, said looking back, has not come yet), so the other one comes first; today's is an alternative"
 next_two_readings:
   rule: D20
   message: "\"next\" can mean the coming one or the one after; both are given, the coming one first"

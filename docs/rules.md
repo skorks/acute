@@ -837,6 +837,7 @@ Every code a result can carry. `rule` is nil only for `zone_inferred`, which rec
 | `season_year` | [D3](#d3-seasons) | a season that runs over New Year belongs to the year it starts in; the one ending in that year is an alternative |
 | `range_under_way` | [D11](#d11-a-named-period-on-its-own) | the range is under way, so it means the current one; the coming one is an alternative |
 | `same_day_or_next` | [D11](#d11-a-named-period-on-its-own) | that day is today, so it means today; the next one is an alternative |
+| `same_day_passed` | [D11](#d11-a-named-period-on-its-own) | that day is today but today's has passed (or, said looking back, has not come yet), so the other one comes first; today's is an alternative |
 | `next_two_readings` | [D20](#d20-next-friday) | "next" can mean the coming one or the one after; both are given, the coming one first |
 | `this_passed` | [D21](#d21-this-friday-once-friday-has-passed) | that one has passed in the current period, so the next one comes first; the passed one is an alternative |
 | `rolling_window` | [D31](#d31-windows-of-weeks-months-quarters-and-years) | a span counted from now; whole calendar units are alternatives |

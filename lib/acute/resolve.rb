@@ -47,7 +47,7 @@ module Acute
       wday = wday.outer until G::Weekday === wday.inner
       fit = list.select { |s| (s.b.div(Period::DAY) + 4) % 7 == wday.inner.wday }
       unless fit.empty?
-        ctx.unnote(Periodic::SAME_DAY) if fit.size < list.size
+        ctx.unnote(Periodic::SAME_DAY) || ctx.unnote(Periodic::SAME_DAY_PASSED) if fit.size < list.size
         return fit
       end
       ctx.note(WEEKDAY_MISMATCH) unless list.empty?
