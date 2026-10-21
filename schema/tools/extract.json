@@ -2,15 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/skorks/acute/schema/tools/extract.json",
   "title": "extract",
-  "description": "Find every time and length mentioned in a message (\"lunch with Sam tomorrow at 1 for an hour\"): each mention's words, character offsets and value, and the message without them (remainder). acute knows the user's zone and the current time, so \"today\" means the user's today. When the whole text is one time, call {parse} instead. If a mention's alternatives isn't empty, ask the user which they meant; its assumptions are worth relaying.",
+  "description": "Find every time and length in a message. \"today\" means the user's today. If the whole text is one time, use {parse}. If a mention's alternatives isn't empty, ask the user. Relay assumptions.",
   "type": "object",
   "required": ["text"],
   "additionalProperties": false,
   "properties": {
-    "text": { "type": "string", "maxLength": 4096, "description": "The message as the user wrote it" },
-    "context": {
-      "enum": ["future", "past"],
-      "description": "Which way a phrase that could point either way points: \"friday\" is the next one (future, the default) or the last one (past)"
-    }
+    "text": { "type": "string", "maxLength": 4096, "description": "The user's message, verbatim" },
+    "context": { "enum": ["future", "past"], "description": "\"friday\" is the next (future, the default) or the last (past)" }
   }
 }
