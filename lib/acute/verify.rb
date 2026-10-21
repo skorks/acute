@@ -59,9 +59,9 @@ module Acute
                                     "another way.", nil)
     end
 
-    # T5: the message names the value as acute normalised it and the text by its readings' labels, never as
-    # they came in. A text it can't read raises the ParseError, for the caller to word.
-    def tool_verdict = judge("the value #{@given}", "the text")
+    # T5: the message names the text by its readings' labels and a mismatched value as acute normalised it, never
+    # as they came in; the model knows which value it sent. A text it can't read raises the ParseError, for the caller to word.
+    def tool_verdict = judge("the value", "the text")
 
     private
 

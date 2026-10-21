@@ -118,7 +118,7 @@ module Acute
       @parser.verify(text, value, **context, &:tool_verdict).as_json.merge("unread" => [])
     rescue ParseError => e
       failed = parse_failure(e, text)
-      message = "The text can't be read as a time: #{failed["error"]}. Ask the user to say it another way."
+      message = "The text can't be read: #{failed["error"]}. Ask the user to rephrase."
       Verdict.new(text, :unparsed, message, nil).as_json.merge("unread" => failed["unread"])
     end
 

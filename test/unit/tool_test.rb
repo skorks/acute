@@ -122,25 +122,25 @@ class ToolTest < Minitest::Test
     end
   end
 
-  # T5: the verdict names the value as acute normalised it and the text by what it means
+  # T5: the verdict names the text by what it means and a mismatched value as acute normalised it
   def test_verify_words_each_status_without_the_input
     {
-      ["next friday", "2026-10-23"] => ["match", "The value 2026-10-23 matches the text: Fri 23 Oct.", []],
+      ["next friday", "2026-10-23"] => ["match", "The value matches the text: Fri 23 Oct.", []],
       ["friday", "2026-10-23T15:00:00-04:00"] =>
-        ["inside", "The value 2026-10-23T15:00:00-04:00 is inside the text, which is Fri 23 Oct.", []],
+        ["inside", "The value is inside the text, which is Fri 23 Oct.", []],
       ["this friday", "2026-10-16"] =>
-        ["alternative", "The value 2026-10-16 is the second reading of the text; the first is Fri 23 Oct. Ask the user which they meant.", []],
+        ["alternative", "The value is the second reading of the text; the first is Fri 23 Oct. Ask the user which they meant.", []],
       ["tomorrow", "2026-10-19"] => ["mismatch", "The text is Sun 18 Oct, not Mon 19 Oct.", []],
       ["flurb friday", "2026-10-23"] =>
-        ["unparsed", "The text can't be read as a time: acute couldn't read the words in unread. Ask the user to say it another way.",
+        ["unparsed", "The text can't be read: acute couldn't read the words in unread. Ask the user to rephrase.",
          ["flurb"]],
       ["june 31", "2026-06-30"] =>
-        ["unparsed", "The text can't be read as a time: June has 30 days. Ask the user to say it another way.", ["june 31"]]
+        ["unparsed", "The text can't be read: June has 30 days. Ask the user to rephrase.", ["june 31"]]
     }.each do |(text, value), expected|
       assert_equal expected, call("verify", { "text" => text, "value" => value }).values_at("status", "message", "unread"), text
     end
     weekend = call("verify", { "text" => "this weekend", "value" => "2026-10-17" })
-    assert_equal "The value 2026-10-17 is inside the text, which is Sat 17 Oct – Sun 18 Oct. It can also mean Fri 16 Oct – " \
+    assert_equal "The value is inside the text, which is Sat 17 Oct – Sun 18 Oct. It can also mean Fri 16 Oct – " \
                  "Sun 18 Oct; ask the user if that matters.", weekend["message"]
     assert_nil call("verify", { "text" => "nothing #{INJECTION}", "value" => "2026-10-23" })["expected"]
   end
