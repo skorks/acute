@@ -81,9 +81,10 @@ module Corpus
   def run_case(c)
     exp = c["expect"]
     return duration_case(c) if exp.key?("duration")
-    return ["other_kind", nil] if exp["rrule"] || exp["extract"]
+    return ["other_kind", nil] if exp["rrule"]
     opts = c["options"] || {}
     return ["chronic_option", nil] if opts.keys.intersect?(CHRONIC_ONLY)
+    return extract_case(c) if exp["extract"]
 
     tz = TZS[c["tz"]]
     r = Acute.parse(c["text"], **context(c))
@@ -94,6 +95,23 @@ module Corpus
     want = (exp["alternatives"] || [exp]).map { |e| interval(e, tz) }
     return ["pass", got] if got == want
     [got[0] == want[0] ? "alt_differs" : "wrong", got]
+  rescue StandardError, SystemStackError => e
+    ["raises", "#{e.class}: #{e.message[0, 80]}"]
+  end
+
+  # Mentions are [start, end, readings]; the durations acute finds are ignored, as the sources don't list them
+  def extract_case(c)
+    tz = TZS[c["tz"]]
+    mentions = Acute.extract(c["text"], **context(c)).mentions.select { _1.kind == :time }
+    got = mentions.map { |m| [m.offset.begin, m.offset.end, ([m.value] + m.value.alternatives).map { [_1.begin&.to_r, _1.end&.to_r] }] }
+    exp = c["expect"]["extract"]
+    return [got.empty? ? "pass" : "garbage", got] if exp.empty?
+    return ["nil", got] if got.empty?
+
+    want = exp.map { |e| [e["start"], e["end"], (e["alternatives"] || [e]).map { interval(_1, tz) }] }
+    return ["pass", got] if got == want
+    same_first = got.size == want.size && got.zip(want).all? { |g, w| g[0, 2] == w[0, 2] && g[2][0] == w[2][0] }
+    [same_first ? "alt_differs" : "wrong", got]
   rescue StandardError, SystemStackError => e
     ["raises", "#{e.class}: #{e.message[0, 80]}"]
   end
@@ -121,8 +139,14 @@ module Corpus
     return "#{c["id"]} | #{c["text"]} | #{c["expect"]["duration"]} | #{got.inspect}" if c["expect"].key?("duration")
     tz = TZS[c["tz"]]
     at = ->(t) { t ? tz.to_local(Time.at(t)).strftime("%F %T") : "open" }
-    fmt = ->(pairs) { pairs.map { |b, e| b && e ? "#{at.(b)}+#{e - b}s" : "#{at.(b)}..#{at.(e)}" }.join(" ; ") }
+    fmt = ->(pairs) { pairs.map { |b, e| b && e ? "#{at.(b)}+#{(e - b).then { |d| d.denominator == 1 ? d.to_i : d }}s" : "#{at.(b)}..#{at.(e)}" }.join(" ; ") }
     exp = c["expect"]
+    if exp.key?("extract")
+      list = ->(ms) { ms.empty? ? "none" : ms.map { |s, e, rs| "[#{s},#{e}) #{fmt.(rs)}" }.join(" | ") }
+      want = exp["extract"].map { |e| [e["start"], e["end"], (e["alternatives"] || [e]).map { interval(_1, tz) }] }
+      shown = got.is_a?(Array) ? list.(got) : got.inspect
+      return "#{c["id"]} | #{c["text"]} | #{c["now"]} #{c["tz"]} | #{list.(want)} | #{shown}"
+    end
     want = exp["nil"] ? "nil" : fmt.((exp["alternatives"] || [exp]).map { |e| interval(e, tz) })
     shown = got.is_a?(Array) ? fmt.(got) : got.inspect
     "#{c["id"]} | #{c["text"]} | #{c["now"]} #{c["tz"]} | #{want} | #{shown}"
@@ -153,7 +177,7 @@ module Corpus
     regressions = results.select { |c, s, _| s != "pass" && ratchet.include?(c["id"]) }
     gained = passing - ratchet
     regressions.each { |c, s, got| puts "REGRESSION #{s}: #{show(c, got)}" }
-    misread = results.select { |c, s, _| s == "pass" && !c["expect"]["nil"] && !read_kind?(c) }
+    misread = results.select { |c, s, _| s == "pass" && !c["expect"]["nil"] && !c["expect"]["extract"] && !read_kind?(c) }
     misread.each { |c, _, _| puts "MISREAD: #{c["id"]} | #{c["text"]}" }
     puts "read: #{misread.size} passing cases of the wrong kind"
     puts "ratchet: #{ratchet.count { |id| ids[id] }} recorded, #{passing.size} passing, #{gained.size} new, #{regressions.size} regressed"
