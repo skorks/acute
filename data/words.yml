@@ -389,6 +389,30 @@ word:           # function words; the grammar gives them their meaning
   onwards: orlater
   onward: orlater
   commencing: starting
+  every: every      # R5, R6: a rule; only Acute.recurrence reads these
+  each: every
+  other: other
+  alternate: other
+  once: once
+  times: times
+  occurrences: times
+  occurrence: times
+  except: except
+  excluding: except
+  everyday: daily
+  daily: daily
+  hourly: hourly
+  weekly: weekly
+  monthly: monthly
+  yearly: yearly
+  annually: yearly
+  annual: yearly
+  quarterly: quarterly
+  semiannually: semiannual
+  semiannual: semiannual
+  biweekly: biweekly
+  fortnightly: biweekly
+  bimonthly: bimonthly
 
 # Several words read as one token, longest first. Spaces in a key stand for any run of spaces or hyphens.
 phrases:
@@ -653,6 +677,9 @@ phrases:
   calendar week: [unit, week]
   calendar quarter: [unit, quarter]
   financial year: [word, fy]
+  semi annually: [word, semiannual]
+  semi annual: [word, semiannual]
+  bi weekly: [word, biweekly]
 
 # Words that are also plain English. In extraction they need a neighbour that confirms the date reading.
 english: [may, march, following, sat, sun, tu, fr, second, fall, a, mon, wed, start, end, last, past, this, next, d, m, s, h, w, y, lunch,
@@ -660,7 +687,7 @@ english: [may, march, following, sat, sun, tu, fr, second, fall, a, mon, wed, st
 
 # D44: plurals, which only count ("3 fridays from now"); alone they recur, which is not a time. Plural units
 # let "2 upcoming weeks" be "next 2 weeks" while "3 next week" is not.
-plural: [thanksgivings, springs, summers, autumns, falls, winters, seasons, sundays, mondays, tuesdays, wednesdays, thursdays, fridays, saturdays, black fridays, memorial days,
+plural: [thanksgivings, springs, summers, autumns, falls, winters, seasons, sundays, mondays, tuesdays, wednesdays, thursdays, fridays, saturdays, weekends, weekdays, black fridays, memorial days,
          secs, seconds, mins, minutes, hrs, hours, days, wks, weeks, fortnights, months, quarters, yrs, years,
          decades, centuries, mornings, afternoons, evenings, nights]
 
