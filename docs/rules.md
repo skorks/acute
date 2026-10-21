@@ -455,6 +455,7 @@ Examples: "1/2/2015", "1.2.2015".
 - **D44.** One that runs past midnight and began yesterday is under way until it ends: "from 23 to 3pm" said at 13:37 starts at last night's 23:00.
 - **D44.** Atoms before or after a clock range belong to both ends: "monday 8-9am", "9:30 - 11:00 CST".
 - **D44.** A range after a day is within it: "tomorrow from 2 to 4pm", "Friday between 1PM and 4 PM". "tomorrow from 9am" is incomplete, as "from 9am" is.
+- **D51.** A zone after it is the day's too: "Friday, between 9-6 PT" is 09:00 to 18:00 Pacific on Friday. Only after a weekday: a numeric date keeps its readings.
 - **D48.** A clock range, then "of" and a date, is on that date: "from 5 to 6pm of April 22".
 
 **Date ranges:**
@@ -723,6 +724,10 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
   - **D50.** The same number at both ends is no range: "a 1-1 meeting".
   - **D50.** A month abbreviation alone right before another month is a name: "Angie Mar November 2019" mentions "November 2019".
   - **D50.** "start" and "end" in lower case are verbs unless "of" follows: "Let's start 3 minutes from now" mentions "3 minutes from now", "it will end two months after next Friday" "two months after next Friday"; "end of May" is one mention.
+  - **D51.** A lone year joined by "and", "or" or "not" to a mention that ends in a year is a year too: "in 2007 and 2009", "before 2000 but not 1998". "sales of 2007 and 2009" has none, as nothing comes before.
+  - **D51.** A month after "in" is a month: "It may be in may" mentions "in may".
+  - **D51.** A number right after a noun that numbers things labels it: "building 4 this afternoon" mentions "this afternoon". The nouns are building, room, floor, level, gate, platform, terminal, suite, unit, table, track, bay, page and chapter.
+  - **D51.** Three dotted numbers with a one-digit day or month and a two-digit year are a version: "1.5.30 - 2015-09-24" mentions only "2015-09-24". Alone, as one phrase to `parse`, "3.5.79" is still a date.
 - **E4.** A mention starts at its first word that changes the reading. "the" belongs to the phrase, as a determiner, and stays: "the 30th", "the day before yesterday", "the weekend". A leading "in", a preposition that introduces the phrase, is left out when the rest reads the same: the same begin and end for every reading, and the same alternatives. "She is leaving in August" mentions "August", and "in the morning" is "the morning". It stays when dropping it changes or breaks the reading: "in 3 days" is a shift, and "in 2016" without its "in" is a lone number.
   - "on" and "at" never start a mention: "on Tuesday" is "Tuesday", "at 4 a.m." is "4 a.m.". Where what follows is no mention by itself, nothing is found ("at 6.45", as in "at 6.45 percent").
   - Words that change the reading by meaning stay: "from", "between", "within", "after", "before", "since", "until", "by", "about", "around".
