@@ -14,6 +14,8 @@ module Acute
     BUCKET_SHIFT = 22
     BUCKET_BASE = FROM.to_i
     BUCKETS = ((TO.to_i - BUCKET_BASE) >> BUCKET_SHIFT) + 1
+    # Shared by every zone with no transitions, so the thousands of fixed offsets cost a few bytes each
+    NO_BUCKETS = Ractor.make_shareable(Array.new(BUCKETS, -1))
     # Name (or a fixed offset in seconds) => Zone. Shareable and replaced rather than changed, so every Ractor
     # can read it. Only the main Ractor can set it, so only it adds to it; two threads adding at once may drop
     # one zone, to be built again. It holds at most the shipped names, the fixed offsets and the zones an app
@@ -225,6 +227,7 @@ module Acute
 
     # For each bucket, the index of the last transition at or before its start
     def buckets(ats)
+      return NO_BUCKETS if ats.empty?
       i = -1
       Array.new(BUCKETS) do |b|
         start = BUCKET_BASE + (b << BUCKET_SHIFT)
