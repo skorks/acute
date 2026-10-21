@@ -16218,6 +16218,13 @@ timelib-0657
 timelib-0658
 timelib-0659
 timelib-0660
+weekday-range-in-week-0001
+weekday-range-in-week-0002
+weekday-range-in-week-0003
+weekday-range-in-week-0004
+weekday-range-in-week-0005
+weekday-range-in-week-0006
+weekday-range-in-week-0007
 when-go-0001
 when-go-0003
 when-go-0005

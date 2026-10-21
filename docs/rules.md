@@ -468,6 +468,7 @@ Examples: "1/2/2015", "1.2.2015".
 - **D48.** An ISO 8601 interval with a slash is a range: "2007-03-01T13:00:00Z/2008-05-11T15:30:00Z".
 - **D48.** "up to" and "in between" join a range as "to" and "between" do.
 - **D48.** "first to last day of 2008" is all of 2008.
+- **D48.** "friday to monday next week" starts on that week's Friday and ends with the Monday after it, as a range to an earlier weekday does without the week: Friday to Monday inclusive.
 - **D48.** "today and tomorrow", and any day then the next, is both days. Other pairs are not joined.
 
 **Lengths:**

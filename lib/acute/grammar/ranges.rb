@@ -40,8 +40,9 @@ module Acute
         from = Date.new(later ? to.year - 1 : to.year, from.month, from.day, from.sep, to.short)
       end
       # D48: "monday to friday last week" is within that week too; Sunday's place in it is the locale's (D19)
+      # D48: "friday to monday next week" starts in that week and ends on the Monday after it
       if Within === to && ((Clock === from && Clock === to.inner) ||
-                           (Weekday === from && Weekday === to.inner && from.wday >= 1 && from.wday <= to.inner.wday))
+                           (Weekday === from && Weekday === to.inner && from.wday >= 1))
         return Within.new(Range.new(from, to.inner), to.outer)
       end
       return Within.new(Range.new(from.inner, to), from.outer) if Within === from && Clock === from.inner && Clock === to
