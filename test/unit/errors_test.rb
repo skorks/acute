@@ -76,9 +76,16 @@ class ErrorsTest < Minitest::Test
     assert_equal :conflict, error("today tomorrow").code
   end
 
-  def test_too_long_counts_characters
+  def test_too_long_counts_bytes
     assert_equal :too_long, error("x" * 513).code
-    assert_equal :unknown_word, error("é" * 300).code
+    assert_equal :unknown_word, error("x" * 512).code
+    assert_equal :too_long, error("é" * 300).code
+    assert_equal :unknown_word, error("é" * 256).code
+    emoji = "\u{1F600}" * 200 + "tomorrow"
+    assert_equal :too_long, error(emoji).code
+    assert_nil Acute.parse(emoji, strict: false)
+    assert_nil Acute.duration(emoji)
+    assert_match(/512 bytes/, error(emoji).message)
   end
 
   def test_bad_arguments_raise_argument_error

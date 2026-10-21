@@ -70,7 +70,7 @@ module Acute
 
   def self.run(text, ctx)
     raise ArgumentError, "text must be a String, got #{text.class}" unless String === text
-    return Failure.new(:too_long, 0, text.bytesize) if text.bytesize > MAX_LENGTH && text.length > MAX_LENGTH
+    return Failure.new(:too_long, 0, text.bytesize) if text.bytesize > MAX_LENGTH
     tokens = Lexer.lex(text)
     return ctx.strict ? tokens : skipping(text, ctx, tokens) if Failure === tokens
     tree = Grammar.parse(tokens)
