@@ -73,12 +73,23 @@ module Acute
 
     def self.parse(tokens) = new(tokens).phrase
 
+    FIRST = 16
+
     # The longest prefix of the tokens that is a phrase (or with duration: true, a duration), as [tree, its
     # length in Array entries], or nil. A failure says which token the parser stuck at; a longer prefix gets
     # no further, so the next try ends before it. Each try is a new Array: a lookahead past the end must
-    # read nil.
-    def self.longest(tokens, duration: false)
+    # read nil. A long run of words is tried on its first FIRST tokens before all of them: most fail well
+    # inside that, as a longer prefix would, and the parse of a long run costs its length. spent: an Array
+    # whose first entry counts the entries parsed.
+    def self.longest(tokens, duration: false, spent: nil)
+      if tokens.size > FIRST * S
+        spent[0] += FIRST * S if spent
+        g = new(tokens[0, FIRST * S])
+        tree = duration ? g.duration : g.phrase
+        tokens = tokens[0, g.stuck] if Failure === tree && g.stuck < (FIRST - 4) * S
+      end
       until tokens.empty?
+        spent[0] += tokens.size if spent
         g = new(tokens)
         tree = duration ? g.duration : g.phrase
         return [tree, tokens.size] unless Failure === tree

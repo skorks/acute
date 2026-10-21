@@ -67,4 +67,37 @@ class ExtractTest < Minitest::Test
   def test_arguments_are_checked_once
     assert_raises(ArgumentError) { Acute.extract("tomorrow", now: "2026-10-17T14:00", zone: "Nowhere/Land") }
   end
+
+  def seconds
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    yield
+    Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+  end
+
+  def test_long_text_takes_time_in_proportion_to_its_length
+    prose = "We met on the 3rd and talked about the plan for next friday at 3pm before lunch. " * 1200
+    dense = "next friday tomorrow 3pm june 5th " * 3000
+    limit = defined?(Coverage) && Coverage.running? ? 8 : 2 # line coverage slows Ruby severalfold
+    [[prose, 2400], [dense, 9000], ["the day after " * 2000, 0], ["5" * 100_000, 0]].each do |text, count|
+      x = nil
+      assert_operator seconds { x = extract(text) }, :<, limit, text[0, 20]
+      assert_equal count, x.mentions.size
+    end
+  end
+
+  def test_a_mention_is_never_longer_than_a_phrase_parse_takes
+    x = extract("#{"the day after " * 40}tomorrow")
+    assert_operator x.mentions[0].text.bytesize, :<=, Acute::MAX_LENGTH
+  end
+
+  def test_invalid_utf8_is_scrubbed
+    x = extract("tomorrow \xFF at 3pm, for 2 hours caf\xC3".dup.force_encoding("UTF-8"))
+    assert_equal([[:time, "tomorrow", 0...8], [:time, "3pm", 14...17], [:duration, "for 2 hours", 19...30]],
+                 x.mentions.map { [_1.kind, _1.text, _1.offset] })
+    assert_predicate x.text, :valid_encoding?
+  end
+
+  def test_e2_for_counts_characters_before_it
+    assert_equal [[:duration, "for 2 hours", 10...21]], mentions("Réunion é for 2 hours")
+  end
 end

@@ -31,7 +31,13 @@ module Acute
       while o < order.size
         j = order[o]
         node = nest(node, atoms[j], sizes[j] == sizes[order[o - 1]], starts[j])
-        return node if Failure === node
+        if Failure === node
+          # The atoms nested so far conflict whatever follows the last said of them, so a shorter try (Grammar.longest)
+          # need not keep the atoms after it
+          last = order[0..o].max + 1
+          @stuck = starts[last] if last < starts.size
+          return node
+        end
         o += 1
       end
       node
