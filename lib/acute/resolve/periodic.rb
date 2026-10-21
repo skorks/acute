@@ -7,6 +7,7 @@ module Acute
       DAY = Period::DAY
       LIMIT = 12 # cycles to search; enough for "feb 29"
       SAME_DAY = Assumption.for(:same_day_or_next)
+      SAME_DAY_PASSED = Assumption.for(:same_day_passed)
       SEASON_YEAR = Assumption.for(:season_year)
       SAME_OR_NEXT = [0, DAY].freeze
       SUB_DAY = { G::Clock => true, G::Part => true, G::Range => true, G::Fuzzy => true }.freeze # "friday early evening"
@@ -77,16 +78,17 @@ module Acute
       # D40, D44: a weekday or a day of the month said on that day, with or without a time: today's, then the
       # next one (in past context the one before); today's comes second once it is over
       def self.on_that_day(node, ctx, i, cyc)
-        ctx.note(SAME_DAY)
         cur = at(node, ctx, i, cyc)
         if ctx.past?
           other = last(node, ctx, i - 1, cyc) { true }.take(1)
-          cur[0].b <= ctx.now_local ? cur + other : other + cur
+          today_first = cur[0].b <= ctx.now_local
         else
           other = first(node, ctx, i + 1, cyc) { true }
           other = other.take(1) if cur.size == 1
-          cur[0].e > ctx.now_local ? cur + other : other + cur
+          today_first = cur[0].e > ctx.now_local
         end
+        ctx.note(today_first ? SAME_DAY : SAME_DAY_PASSED)
+        today_first ? cur + other : other + cur
       end
 
       # The first occurrence from cycle i on whose main reading passes the block

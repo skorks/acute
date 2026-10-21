@@ -120,6 +120,15 @@ class BreadthTest < Minitest::Test
     assert_reads "15:45 -0800", "2026-10-17 19:45:00 -04:00", [], [:fixed_offset]
   end
 
+  # D40, D44
+  def test_a_weekday_said_on_that_day_after_it_is_over_notes_that_it_comes_second
+    assert_reads "saturday at noon", "2026-10-24 12:00:00 -04:00", ["2026-10-17 12:00:00 -04:00"], [:same_day_passed]
+    assert_reads "saturday at noon", "2026-10-17 12:00:00 -04:00", ["2026-10-24 12:00:00 -04:00"], [:same_day_or_next],
+                 now: "2026-10-17T10:00"
+    assert_reads "saturday at 6pm", "2026-10-10 18:00:00 -04:00", ["2026-10-17 18:00:00 -04:00"], [:same_day_passed],
+                 context: :past
+  end
+
   def test_two_structure_words_read_by_context
     assert_reads "sat", "2026-10-17 00:00:00 -04:00", ["2026-10-24 00:00:00 -04:00"], [:same_day_or_next]
     assert_reads "may 3", "2027-05-03 00:00:00 -04:00"
