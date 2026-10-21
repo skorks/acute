@@ -66,6 +66,13 @@ class ErrorsTest < Minitest::Test
     assert_equal '"4:3" is not a valid time', error("4:3").message
   end
 
+  def test_d48_reason_is_the_explanation_that_names_no_input
+    { "june 31" => "June has 30 days", "june\u00a031" => "June has 30 days", "25:00" => "there is no hour 25",
+      "4:3" => nil, "flurb" => nil, "4pm 5" => nil }.each do |text, reason|
+      assert_equal [reason], [Acute::Explain.reason(error(text), text)], text
+    end
+  end
+
   def test_incomplete_and_conflicting_phrases
     assert_equal :incomplete, error("").code
     assert_equal :incomplete, error("tomorrow at").code

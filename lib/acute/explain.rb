@@ -40,6 +40,13 @@ module Acute
 
     def self.chars(text, byte) = text.byteslice(0, byte).length
 
+    # D48's account of what is out of range in an error's span, which names no input; nil when there is none
+    def self.reason(error, text)
+      return unless error.code == :invalid_date
+      span = error.position
+      invalid(text, Failure.new(:invalid_date, text[0, span.begin].bytesize, text[0, span.end].bytesize))
+    end
+
     L = Lexer
     MONTHS = %w[_ January February March April May June July August September October November December].freeze
 
