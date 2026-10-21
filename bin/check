@@ -3,7 +3,7 @@
 # gem's contents, speed on the interpreter and under YJIT. Prints one line per stage, and the failures of a
 # stage that failed.
 #   bin/check [--record] [--only tables|lint|unit|corpus|chronic|fuzz|coverage|gem|speed|yjit] [--skip STAGE,STAGE]
-#             [--grep TEXT] [--file NAME] [--rule D20]
+#             [--grep TEXT] [--file NAME] [--rule D20|E4|R3]
 # --grep and --file narrow the corpus and imply --only corpus. --record updates test/corpus/passing.txt and
 # test/chronic/differences.yml.
 # The yjit stage runs YJIT_RUBY, or this ruby, with --yjit, and is skipped when that ruby has no YJIT.
@@ -26,7 +26,7 @@ corpus_args = []
 corpus_args << args.delete("--record") if args.include?("--record")
 rule = (i = args.index("--rule")) && args.slice!(i, 2)[1]
 abort "unknown arguments: #{args.join(" ")}" unless args.empty?
-abort "--rule takes a rule like D20" if rule && !rule.match?(/\AD\d+\z/)
+abort "--rule takes a rule like D20, E4 or R3" if rule && !rule.match?(/\A[DER]\d+\z/)
 only ||= "corpus" if corpus_args.any? { _1 == "--grep" || _1 == "--file" }
 
 # The unit tests whose name, body or the comment above them mentions the rule

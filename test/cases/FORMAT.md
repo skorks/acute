@@ -28,11 +28,11 @@ A case starts counting once it is in the ratchet. Run `bin/check`, then `bin/che
 | `tz` | yes | An IANA zone name: `UTC`, `America/New_York`, `Europe/London`, `Etc/GMT+2`. It is acute's `zone:`. |
 | `options` | no | Options for `Acute.parse`. Leave it out for the defaults. |
 | `expect` | yes | The answer, in one of the kinds below. |
-| `source` | yes | Where the case came from: `chronic#222`, `duckling:<path>`, `generated:dst`, `bin/case`. |
+| `source` | yes | Where the case came from: `chronic#222`, `duckling:<path>`, `generated:dst`, `bin/case`, or `hand` for one written from the rules. |
 | `tags` | no | Short labels: `dst`, `strict`, `range`, `nth-weekday`. A tag like `D20` names a rule. |
 | `note` | no | Anything a reviewer needs, such as the rule applied. |
 
-`bin/check --rule D20` runs the cases that name D20 in a tag or anywhere in the note.
+`bin/check --rule D20` runs the cases that name D20 in a tag or anywhere in the note. It takes E- and R-rules too: `--rule R3`.
 
 ## Expected values
 
@@ -74,7 +74,16 @@ Either end may be `null` for an open end: "before friday" is `[null, "<friday 00
 
 An entry may hold `span` or `alternatives` in place of `time` and `grain`. The corpus compares the `time` mentions `Acute.extract` returns, in order, with these entries: same offsets and the same readings as a normal case (`alternatives` included). Durations acute finds are ignored, because the sources don't list them. Scoring uses the usual statuses: `nil` when mentions were expected and none found, `garbage` when `"extract": []` and some were found, `alt_differs` when offsets and every first reading match but alternatives differ, `wrong` otherwise. The speed stage also times them.
 
-**`rrule`.** An RFC 5545 recurrence: `{"rrule":"DTSTART;VALUE=DATE:20161107\nRRULE:FREQ=WEEKLY"}`. acute doesn't read recurrences yet, so these count as `other_kind`.
+**`rrule`.** An RFC 5545 rule, as `Acute.recurrence(text).to_ical` gives it: a DTSTART line, an RRULE line and any EXDATE line, joined by `\n`.
+
+```json
+{"rrule":"DTSTART;TZID=America/New_York:20261019T090000\nRRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0"}
+```
+
+- The lines, the RRULE's parts and any comma-separated values may come in any order. Everything else is compared exactly. Put every excepted date on one EXDATE line.
+- DTSTART is the wall time in `tz`, with `TZID=<tz>`, or `VALUE=DATE` for a rule of whole days. UNTIL is a date, or a UTC time ending in `Z` when DTSTART has a clock. Work them out from the R-rules in [docs/rules.md](../../docs/rules.md#recurrence), with tzinfo for UTC.
+- `{"rrule": null}`: `Acute.recurrence` must return nil. Use it for phrases that aren't rules ("twice a week", "next friday") and rules that never occur ("every feb 30").
+- Until acute has `Acute.recurrence`, every rule case is `rule_pending`. After that they score `pass`, `wrong`, `nil`, `garbage` or `raises` as time cases do, and a passing one must come back from `Acute.read` as a Rule.
 
 A passing time case must also come back from `Acute.read` as a Result, and a passing duration case as a Duration. Otherwise the run prints `MISREAD` and fails.
 
@@ -106,9 +115,9 @@ Cases using chronic's `endian_precedence`, `hours24` or `ambiguous_time_range` a
 | `garbage` | acute returned a time where `nil` was expected |
 | `raises` | acute raised |
 | `chronic_option` | the case uses an option only the chronic layer has |
-| `other_kind` | an `rrule` case |
+| `rule_pending` | an `rrule` case, while acute has no `Acute.recurrence` |
 
-Other flags: `--grep TEXT` runs the cases whose text contains TEXT, `--file NAME` the files whose name contains NAME, and `--rule D20` the cases that name the rule. `--record` refuses to run with any of them.
+Other flags: `--grep TEXT` runs the cases whose text contains TEXT, `--file NAME` the files whose name contains NAME, and `--rule D20` the cases that name the rule (D, E or R). `--record` refuses to run with any of them.
 
 ## Conventions
 
@@ -125,5 +134,6 @@ Expected values follow [docs/rules.md](../../docs/rules.md). The ones that come 
 - **Parts of the day** have fixed ranges (D1, D35).
 - **Rolling windows** come first, then whole units (D7, D31).
 - **Strict.** Text with words that aren't about dates is `nil` (D22). Invalid dates, year 0, BC and lists are `nil` (D18).
+- **Rules.** DTSTART is the first occurrence on or after now (R2). A clock is in BYHOUR and BYMINUTE too (R4). "until" includes its end (R10).
 
 When a case comes from another library whose convention differs, write the value these rules give, or leave the case out. Don't guess: a wrong expected value is worse than a missing case.
