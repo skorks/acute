@@ -1,6 +1,6 @@
 # Runs test/cases against Acute.parse and compares with the ratchet in test/corpus/passing.txt.
 # Expected values are worked out with the system zoneinfo through TZInfo, not Acute::Zone, so the two check each other.
-#   ruby test/corpus.rb [--record] [--grep TEXT] [--file NAME] [--rule D20] [--list STATUS]
+#   ruby test/corpus.rb [--record] [--grep TEXT] [--file NAME] [--rule D20|R3] [--list STATUS]
 require "json"
 require "time"
 require "date"
@@ -16,21 +16,22 @@ module Corpus
   # chronic's names for acute's options (D47)
   RENAMED = { "ambiguous_year_future_bias" => :year_bias }.freeze
   GRAINS = %w[second minute hour day week month quarter year].freeze
-  STATUSES = %w[pass alt_differs wrong nil garbage raises chronic_option other_kind].freeze
+  STATUSES = %w[pass alt_differs wrong nil garbage raises chronic_option rule_pending].freeze
+  RULE_ID = /\A[DER]\d+\z/
   # The system's zoneinfo, whose rules run a century on where tzinfo-data's transitions stop at about 2076 (D47)
   ZONEINFO = TZInfo::DataSources::ZoneinfoDataSource.new
   TZS = Hash.new { |h, name| h[name] = ZONEINFO.get_timezone_info(name).create_timezone }
 
   module_function
 
-  # D-rules a case is tagged with or names in its note
-  def rules(c) = (c["tags"] || []).grep(/\AD\d+\z/) | c["note"].to_s.scan(/\bD\d+\b/)
+  # D-, E- and R-rules a case is tagged with or names in its note
+  def rules(c) = (c["tags"] || []).grep(RULE_ID) | c["note"].to_s.scan(/\b[DER]\d+\b/)
 
-  # every rule docs/rules.md names, as a heading ("### D4.") or as a bullet tag ("**D44.**")
-  def all_rules = File.read(File.join(ROOT, "docs/rules.md")).scan(/^### (D\d+)\.|\*\*(D\d+)\.\*\*/).flatten.compact.uniq
+  # every D- and R-rule docs/rules.md names, as a heading ("### D4.") or as a bullet tag ("**D44.**", "**R3.**")
+  def all_rules = File.read(File.join(ROOT, "docs/rules.md")).scan(/^### ([DR]\d+)\.|\*\*([DR]\d+)\.\*\*/).flatten.compact.uniq
 
-  # D-rules the unit tests mention: API rules with no corpus case count as covered by them
-  def unit_rules = Dir[File.join(ROOT, "test/unit/*_test.rb")].flat_map { |f| File.read(f).scan(/\bD\d+\b/) }.uniq
+  # Rules the unit tests mention: API rules with no corpus case count as covered by them
+  def unit_rules = Dir[File.join(ROOT, "test/unit/*_test.rb")].flat_map { |f| File.read(f).scan(/\b[DR]\d+\b/) }.uniq
 
   def load(file: nil, grep: nil)
     Dir[File.join(CASES, "*.jsonl")].flat_map do |path|
@@ -81,7 +82,7 @@ module Corpus
   def run_case(c)
     exp = c["expect"]
     return duration_case(c) if exp.key?("duration")
-    return ["other_kind", nil] if exp["rrule"]
+    return rule_case(c) if exp.key?("rrule")
     opts = c["options"] || {}
     return ["chronic_option", nil] if opts.keys.intersect?(CHRONIC_ONLY)
     return extract_case(c) if exp["extract"]
@@ -116,16 +117,44 @@ module Corpus
     ["raises", "#{e.class}: #{e.message[0, 80]}"]
   end
 
+  # A rule is compared by its to_ical: DTSTART, RRULE and EXDATE, in any order (ical). Until acute has
+  # Acute.recurrence, every rule case is rule_pending. "rrule": null means recurrence must give nil.
+  def rule_case(c)
+    return ["rule_pending", nil] unless Acute.respond_to?(:recurrence)
+    want = c["expect"]["rrule"]
+    rule = Acute.recurrence(c["text"], **context(c))
+    return [rule ? "garbage" : "pass", rule&.to_ical] if want.nil?
+    return ["nil", nil] unless rule
+    got = rule.to_ical
+    [ical(got) == ical(want) ? "pass" : "wrong", got]
+  rescue StandardError, SystemStackError => e
+    ["raises", "#{e.class}: #{e.message[0, 80]}"]
+  end
+
+  # The order of lines, of RRULE parts and of comma-separated values doesn't matter
+  def ical(text)
+    text.split(/\r?\n/).reject(&:empty?).map do |line|
+      name, value = line.split(":", 2)
+      parts = name == "RRULE" ? value.split(";").map { |p| p.split("=", 2) }.sort : [[nil, value]]
+      [name, parts.map { |k, v| [k, v.split(",").sort] }]
+    end.sort
+  end
+
   def context(c)
     kwargs = (c["options"] || {}).to_h { |k, v| [RENAMED[k] || k.to_sym, k == "context" ? v.to_sym : v] }
     { now: Time.at(epoch(c["now"], TZS[c["tz"]])), zone: c["tz"], **kwargs }
   end
 
-  # Acute.read gives a passing case the kind it expects: a Duration for a duration, a Result for a time
+  # Acute.read gives a passing case the kind it expects: a Duration for a duration, a Rule for a rule (D45),
+  # a Result for a time
   def read_kind?(c)
     return Acute::Duration === Acute.read(c["text"]) if c["expect"].key?("duration")
+    return Acute::Rule === Acute.read(c["text"], **context(c)) if c["expect"].key?("rrule")
     Acute::Result === Acute.read(c["text"], **context(c))
   end
+
+  # nil, no mentions or no rule: there is no kind for read to give
+  def no_reading?(exp) = exp["nil"] || exp["extract"] || (exp.key?("rrule") && exp["rrule"].nil?)
 
   # A duration is compared by its ISO 8601 form
   def duration_case(c)
@@ -141,6 +170,7 @@ module Corpus
     at = ->(t) { t ? tz.to_local(Time.at(t)).strftime("%F %T") : "open" }
     fmt = ->(pairs) { pairs.map { |b, e| b && e ? "#{at.(b)}+#{(e - b).then { |d| d.denominator == 1 ? d.to_i : d }}s" : "#{at.(b)}..#{at.(e)}" }.join(" ; ") }
     exp = c["expect"]
+    return "#{c["id"]} | #{c["text"]} | #{c["now"]} #{c["tz"]} | #{exp["rrule"].inspect} | #{got.inspect}" if exp.key?("rrule")
     if exp.key?("extract")
       list = ->(ms) { ms.empty? ? "none" : ms.map { |s, e, rs| "[#{s},#{e}) #{fmt.(rs)}" }.join(" | ") }
       want = exp["extract"].map { |e| [e["start"], e["end"], (e["alternatives"] || [e]).map { interval(_1, tz) }] }
@@ -177,7 +207,7 @@ module Corpus
     regressions = results.select { |c, s, _| s != "pass" && ratchet.include?(c["id"]) }
     gained = passing - ratchet
     regressions.each { |c, s, got| puts "REGRESSION #{s}: #{show(c, got)}" }
-    misread = results.select { |c, s, _| s == "pass" && !c["expect"]["nil"] && !c["expect"]["extract"] && !read_kind?(c) }
+    misread = results.select { |c, s, _| s == "pass" && !no_reading?(c["expect"]) && !read_kind?(c) }
     misread.each { |c, _, _| puts "MISREAD: #{c["id"]} | #{c["text"]}" }
     puts "read: #{misread.size} passing cases of the wrong kind"
     puts "ratchet: #{ratchet.count { |id| ids[id] }} recorded, #{passing.size} passing, #{gained.size} new, #{regressions.size} regressed"
