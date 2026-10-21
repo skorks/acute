@@ -53,6 +53,14 @@ class ResultTest < Minitest::Test
     assert_predicate parse("at 4").assumptions, :frozen?
   end
 
+  # Tools give the model the short form instead of message, so each must keep its gist in far fewer chars
+  def test_every_assumption_has_a_short_form_shorter_than_its_message
+    Acute::Assumption::ALL.each_value do |a|
+      assert_operator a.short.length, :<, a.message.length, a.code
+      assert_operator a.short.length, :<=, 60, a.code
+    end
+  end
+
   def test_to_h_and_to_json
     r = parse("at 4")
     expected = {

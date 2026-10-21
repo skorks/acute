@@ -1,93 +1,124 @@
 # Every assumption a result can carry. bin/generate turns this into lib/acute/tables/assumptions.rb.
-# The code is a stable public identifier; the rule is a section of docs/rules.md.
+# The code is a stable public identifier; the rule is a section of docs/rules.md. short is what the tools give the model
+# instead of message: its gist in about 45 chars, in acute's own words, never the input's.
 
 bare_hour_window:
   rule: D4
   message: "no am/pm given: 6-11 read as am, 12 and 1-5 as pm; the other half of the day is an alternative"
+  short: "no am/pm: 6-11 am, 12-5 pm; the other is an alternative"
 next_occurrence:
   rule: D23
   message: "that time has passed today, so it means the next one"
+  short: "that time has passed today, so the next one"
 previous_occurrence:
   rule: D23
   message: "that time is still to come today, so in past context it means the previous one"
+  short: "still to come today, so looking back, the previous one"
 equal_to_now:
   rule: D36
   message: "that time is now"
+  short: "that is now"
 twelve_oclock:
   rule: D30
   message: "a time in the 12 o'clock hour without am/pm is read as pm"
+  short: "the 12 o'clock hour without am/pm is pm"
 midnight_end_of_day:
   rule: D6
   message: "midnight with a day means the end of that day; its start is an alternative"
+  short: "midnight is the day's end; its start is an alternative"
 machine_time:
   rule: D29
   message: "seconds were given, so the time is read as 24-hour"
+  short: "seconds given, so read as 24-hour"
 tomorrow_after_midnight:
   rule: D35
   message: "\"tomorrow\" said before 04:00 means the coming day first; the calendar tomorrow is an alternative"
+  short: "\"tomorrow\" before 4am: today; next day is an alternative"
 dst_repeated_time:
   rule: D23
   message: "that wall time happens twice as clocks go back; the earlier one is used"
+  short: "occurs twice as clocks go back; the earlier is used"
 dst_skipped_time:
   rule: D23
   message: "that wall time doesn't exist as clocks go forward; it is moved forward by the gap"
+  short: "skipped as clocks go forward; moved on by the gap"
 approximate:
   rule: D14
   message: "the time was given as approximate; the exact time is returned"
+  short: "approximate time; the exact time is given"
 fixed_offset:
   rule: D18
   message: "the text names a zone or offset, which wins over the zone given"
+  short: "the text's zone wins over the zone given"
 ambiguous_zone:
   rule: D38
   message: "the zone abbreviation names more than one zone; each one's offset is a reading, in order"
+  short: "ambiguous zone abbreviation; each zone is a reading"
 numeric_date_order:
   rule: D10
   message: "a numeric date is read in the locale's order; the other order is an alternative"
+  short: "numeric date in locale order; the other is an alternative"
 part_of_day_point:
   rule: D1
   message: "a part of the day is a range; its time is a representative point"
+  short: "a part of the day is a range; time is a point in it"
 weekend_friday_evening:
   rule: D8
   message: "the weekend is Saturday 00:00 to Monday 00:00; from Friday 18:00 is an alternative"
+  short: "weekend is Sat-Sun; from Friday 6pm is an alternative"
 meteorological_season:
   rule: D3
   message: "seasons are meteorological (three whole months) for the locale's hemisphere"
+  short: "seasons are whole months, for the locale's hemisphere"
 century_from_00:
   rule: D12
   message: "a century runs from its 00 year, as most people count it; the 01-to-00 reading is an alternative"
+  short: "a century starts at year 00; from 01 is an alternative"
 decade_or_century:
   rule: D12
   message: "a decade at a century's start (\"the 2000s\") is the decade; the whole century is an alternative"
+  short: "the decade is used; the whole century is an alternative"
 season_year:
   rule: D3
   message: "a season that runs over New Year belongs to the year it starts in; the one ending in that year is an alternative"
+  short: "season by its start year; the end year is an alternative"
 range_under_way:
   rule: D11
   message: "the range is under way, so it means the current one; the coming one is an alternative"
+  short: "under way, so the current one; the next is an alternative"
 same_day_or_next:
   rule: D11
   message: "that day is today, so it means today; the next one is an alternative"
+  short: "that day is today; the next one is an alternative"
 same_day_passed:
   rule: D11
   message: "that day is today but today's has passed (or, said looking back, has not come yet), so the other one comes first; today's is an alternative"
+  short: "the next (or previous) one first; today's is an alternative"
 next_two_readings:
   rule: D20
   message: "\"next\" can mean the coming one or the one after; both are given, the coming one first"
+  short: "\"next\": the coming one; the one after is an alternative"
 this_passed:
   rule: D21
   message: "that one has passed in the current period, so the next one comes first; the passed one is an alternative"
+  short: "passed, so the next one; the passed one is an alternative"
 rolling_window:
   rule: D31
   message: "a span counted from now; whole calendar units are alternatives"
+  short: "counted from now; calendar units are alternatives"
 zone_inferred:
   rule:
   message: "no zone was given; the zone comes from now, Time.zone or the system"
+  short: "no zone given, so a default zone is used"
 weekday_mismatch:
   rule: D37
   message: "the weekday given doesn't fall on that date, so the date is used"
+  short: "the weekday doesn't match the date; the date is used"
 also_duration:
   rule: D45
   message: "the text also reads as a length of time, which Acute.duration gives; read takes the time"
+  short: "also reads as a length of time; this is the time"
 unknown_words_skipped:
   rule: D22
   message: "strict: false skipped words acute doesn't know; this is the first time in the rest of the text"
+  short: "skipped unknown words; first time in the rest"
