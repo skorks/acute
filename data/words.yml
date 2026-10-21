@@ -113,6 +113,7 @@ unit:
   week's: week
   weeks: week
   fortnight: fortnight
+  fortnight's: fortnight
   fortnights: fortnight
   mo: month
   month: month
@@ -635,6 +636,13 @@ phrases:
   months' time: [unit, month]
   years time: [unit, year]
   years' time: [unit, year]
+  minute's time: [unit, minute]
+  hour's time: [unit, hour]
+  day's time: [unit, day]
+  week's time: [unit, week]
+  fortnight's time: [unit, fortnight]
+  month's time: [unit, month]
+  year's time: [unit, year]
   a couple of: [word, couple]
   a couple: [word, couple]
   couple of: [word, couple]

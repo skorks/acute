@@ -196,4 +196,35 @@ class ExtractTest < Minitest::Test
     assert_nil Acute.parse("this 5 years", now: "2026-10-17T14:00", zone: NY)
     assert_equal ["5 years ago"], texts("he said this 5 years ago.")
   end
+
+  def test_d51_a_for_that_makes_a_span_belongs_to_the_mention
+    m = extract("set OOO for 3 days, from today").mentions
+    assert_equal ["for 3 days, from today"], m.map(&:text)
+    assert_equal [Time.new(2026, 10, 17, 0, 0, 0, "-04:00"), Time.new(2026, 10, 20, 0, 0, 0, "-04:00")], [m[0].value.begin, m[0].value.end]
+    assert_equal ["the past month"], texts("for the past month")
+  end
+
+  def test_d51_about_and_within_are_left_out_when_the_rest_reaches_further
+    assert_equal ["year 2016 and greater"], texts("How about year 2016 and greater")
+    assert_equal ["2 weeks before yesterday"], texts("It will start within 2 weeks before yesterday")
+    assert_equal ["about 3pm"], texts("How about 3pm")
+  end
+
+  def test_d51_a_bare_number_at_the_end_goes_with_what_follows
+    assert_equal ["11/20", "12 of Nov"], texts("Do you know the date? 11/20, 12 of Nov?")
+    assert_equal ["3 jan 10"], texts("on 3 jan 10")
+  end
+
+  def test_d51_or_later_before_than_is_two
+    assert_equal ["between 2015 and 2018", "later than 2020"], texts("sales between 2015 and 2018 or later than 2020")
+    assert_nil Acute.parse("2015 or later", now: "2026-10-17T14:00", zone: NY).end
+  end
+
+  def test_d51_parse
+    at = ->(t, now, zone = "UTC") { Acute.parse(t, now:, zone:) }
+    assert_equal Time.utc(2016, 11, 6, 17), at.("last night", "2016-11-07T00:00:00").begin
+    assert_equal Time.utc(2016, 11, 5, 17), at.("last night", "2016-11-07T00:00:01").begin
+    assert_equal [Time.utc(2008), Time.utc(2009)], [at.("the year of 2008", "2016-11-07T00:00").begin, at.("the year of 2008", "2016-11-07T00:00").end]
+    assert_equal at.("in a fortnight", "2021-05-20T00:00").begin, at.("in a fortnight\u2019s time", "2021-05-20T00:00").begin
+  end
 end

@@ -114,10 +114,10 @@ module Acute
       end
     end.freeze
     # Unicode spaces and dashes by their UTF-8 bytes as one Integer: no-break, thin and ideographic spaces;
-    # hyphens, en and em dashes and the minus sign; and ½
+    # hyphens, en and em dashes and the minus sign; ½; and the curly apostrophe
     WIDE = [0xC2A0, *0xE28080..0xE2808A, 0xE280AF, 0xE2819F, 0xE38080].to_h { [_1, SPACE] }
                                                                       .merge([*0xE28090..0xE28095, 0xE28892].to_h { [_1, DASH] })
-                                                                      .merge(0xC2BD => WORD).freeze
+                                                                      .merge(0xC2BD => WORD, 0xE28099 => 39).freeze
     # Whether a byte is an ASCII letter, a lookup rather than a call
     ALPHA = Array.new(256) { |c| (c >= 97 && c <= 122) || (c >= 65 && c <= 90) }.freeze
     # An ordinal's suffix ("3rd"), its two bytes lower-cased and packed
@@ -157,7 +157,12 @@ module Acute
               break if b < 46 # a space, comma or hyphen; only a dot or a UTF-8 byte may carry a word on
               if b == 46 && i + 1 < n && (x = CODE[s.getbyte(i + 1)]) >= 1 && x <= 26
                 x = 27
-              elsif b >= 194 && (w = wide(s, i, b)) != SPACE && w != DASH
+              elsif b >= 194 && (w = wide(s, i, b)) == 39
+                # D51: "fortnight’s": a curly apostrophe is an apostrophe
+                k = k * 32 + 28
+                i += 3
+                next
+              elsif b >= 194 && w != SPACE && w != DASH
                 x = 31 # a UTF-8 letter, or "½"
               else
                 break # "10am–2pm": a Unicode dash or space ends the word
@@ -400,7 +405,10 @@ module Acute
           break unless k == rest[r]
           r += 1
         end
-        return [j, entry] if r == rest.size && (j >= n || !ALPHA[s.getbyte(j)])
+        next unless r == rest.size && (j >= n || !ALPHA[s.getbyte(j)])
+        # D51: "2018 or later than 2020": the "later" goes with its "than"
+        next if (entry[1] == :orlater || entry[1] == :orearlier) && s.byteslice(j, 8).match?(/\A\s+than\b/i)
+        return [j, entry]
       end
       nil
     end
