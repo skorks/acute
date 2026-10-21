@@ -51,6 +51,7 @@ When a rule leaves another reasonable reading, that reading is an **alternative*
 - **Options win over the locale:** `week_start:` and `hemisphere:`.
 - **D42.** A zone's country is its primary country in the tz database, also for zones that several countries share.
 - **D44.** A zone the tz database turned into a link keeps its own country: `Europe/Oslo` is Norway.
+- **E5.** A dot right after a month, weekday or meridiem ends its abbreviation, not the sentence: "Oct. 2", "Dec. 2021", "1p.m. to 4" are one mention each, unless a capital follows. A meridiem written with dots keeps its last one ("4 a.m.", "3 p . m ."), and a decade its apostrophe ("'40s").
 - **D43.** The locale follows the zone passed, or `locale:`. A zone or offset written in the text never changes it.
 
 ### D39. Locale data comes from CLDR

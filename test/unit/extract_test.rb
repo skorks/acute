@@ -32,6 +32,21 @@ class ExtractTest < Minitest::Test
     assert_equal "Call me; dinner.", extract("Call me tomorrow; dinner at 7pm.").remainder
   end
 
+  def test_e5_an_abbreviation_dot_does_not_end_the_sentence
+    assert_equal [[:time, "Oct. 2", 13...19]], mentions("I'll go back Oct. 2")
+    assert_equal [[:time, "Dec. 2021", 15...24]], mentions("the year ended Dec. 2021")
+    assert_equal [[:time, "Oct. 2 to October 22", 12...32]], mentions("I'll be out Oct. 2 to October 22")
+    assert_equal [[:time, "from 1p.m. to 4", 11...26]], mentions("let's meet from 1p.m. to 4")
+    assert_equal [[:time, "Oct", 7...10], [:time, "May 3", 12...17]], mentions("I left Oct. May 3 is next")
+  end
+
+  def test_e5_a_meridiem_keeps_its_last_dot_and_a_decade_its_apostrophe
+    assert_equal [[:time, "4 a.m.", 6...12]], mentions("up at 4 a.m. again")
+    assert_equal [[:time, "3 p . m .", 3...12]], mentions("at 3 p . m .")
+    assert_equal [[:time, "4 pm", 3...7]], mentions("at 4 pm.")
+    assert_equal [[:time, "'40s", 6...10]], mentions("loved '40s music")
+  end
+
   def test_e3_lowercase_english_words_are_not_mentions
     assert_equal [], mentions("this may or may not work")
     assert_equal [], mentions("Sat on the mat. May I go?")

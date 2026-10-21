@@ -110,18 +110,31 @@ module Acute
       a = 0
       n = tokens.size / S
       (1..n).each do |k|
-        next if k < n && !split?(text, tokens[(k - 1) * S + 4], tokens[k * S + 3], gaps)
+        next if k < n && !split?(text, tokens, k, gaps)
         out << [a, k]
         a = k
       end
       out
     end
 
-    def self.split?(text, from, to, gaps)
+    def self.split?(text, tokens, k, gaps)
+      from = tokens[(k - 1) * S + 4]
+      to = tokens[k * S + 3]
       gaps.shift while gaps.any? && gaps[0] < from
       return true if gaps.any? && gaps[0] < to
-      text.byteslice(from, to - from).each_byte.any? { |c| PUNCT.include?(c) && c != 44 }
+      dot = abbreviated?(text, tokens, k - 1) && !capital?(text.getbyte(to)) ? from : -1
+      (from...to).any? { |b| (c = text.getbyte(b)) != 44 && b != dot && PUNCT.include?(c) }
     end
+
+    ABBREVIATED = { L::MONTH => true, L::WDAY => true, L::MER => true }.freeze
+
+    # E5: a dot right after a month, weekday or meridiem ends its abbreviation, not the sentence: "Oct. 2",
+    # "1p.m. to 4". One before a capital still ends the sentence.
+    def self.abbreviated?(text, tokens, k)
+      ABBREVIATED[tokens[k * S]] && text.getbyte(tokens[k * S + 4]) == 46
+    end
+
+    def self.capital?(byte) = byte && byte >= 65 && byte <= 90
 
     START_WORDS = { on: true, and: true, to: true, for: true, during: true }.freeze
 
@@ -146,7 +159,9 @@ module Acute
     def self.mention(text, slice, tree, units, make_context, whole)
       st = slice[3]
       return if plain_english?(slice, sentence_start?(text, st)) || (slice.size == S && slice[0] == L::NUM)
-      stop = slice[-1]
+      stop = meridiem_dot(text, slice) || slice[-1]
+      # E5: "'40s": the apostrophe for the century left out is part of it
+      st -= 1 if slice[0] == L::DECADE && st > 0 && text.getbyte(st - 1) == 39
       piece = text.byteslice(st, stop - st)
       value = (tree && time(piece, tree, make_context, whole)) || (units && Duration.from_units(units))
       return unless value
@@ -156,6 +171,13 @@ module Acute
         piece = text.byteslice(st, stop - st)
       end
       Extraction::Mention.new(value.kind, piece, st...stop, value)
+    end
+
+    # E5: "4 a.m.", "3 p . m .": the last dot of a meridiem written with dots is part of it
+    def self.meridiem_dot(text, slice)
+      return unless slice[-S] == L::MER && (abbr = text.byteslice(slice[-2], slice[-1] - slice[-2])).include?(".")
+      dot = abbr.include?(" ") ? space_after(text, slice[-1]) : slice[-1]
+      dot + 1 if text.getbyte(dot) == 46
     end
 
     def self.time(piece, tree, make_context, whole)
@@ -177,6 +199,11 @@ module Acute
 
     def self.space_before(text, byte)
       byte -= 1 while byte > 0 && SPACE.include?(text.getbyte(byte - 1))
+      byte
+    end
+
+    def self.space_after(text, byte)
+      byte += 1 while byte < text.bytesize && SPACE.include?(text.getbyte(byte))
       byte
     end
 
