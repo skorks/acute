@@ -25,14 +25,14 @@ module Acute
     # An empty Array when nothing fits ("feb 30")
     # A reading the resolver gave up on (Period::LIMIT) is a Failure with failure: true, otherwise no readings
     def self.call(node, ctx, failure: false)
-      out = catch(:failure) do
-        list = spans(node, ctx)
-        if list.empty? && !(date = Periodic.unfiltered(node)).equal?(node)
-          list = mismatch(node, date, ctx)
-        end
-        return readings(list, ctx)
+      list = spans(node, ctx)
+      if list.empty? && !(date = Periodic.unfiltered(node)).equal?(node)
+        list = mismatch(node, date, ctx)
       end
-      failure ? out : []
+      readings(list, ctx)
+    rescue Period::Limit
+      # A rescue costs nothing until something raises, where a catch costs every parse
+      failure ? Failure.new(:business_day_limit, 0, 0) : []
     end
 
     # D37, D43: a weekday that fits none of a date's coming readings may fit the one just gone ("Thu Aug 10"

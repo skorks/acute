@@ -84,7 +84,7 @@ module Acute
 
   def self.run(given, ctx)
     raise ArgumentError, "text must be a String, got #{given.class}" unless String === given
-    text = utf8(given) or return Failure.new(:invalid_encoding, 0, given.bytesize)
+    text = (given.valid_encoding? && given.encoding == Encoding::UTF_8 ? given : utf8(given)) or return Failure.new(:invalid_encoding, 0, given.bytesize)
     return Failure.new(:too_long, 0, text.bytesize) if text.bytesize > MAX_LENGTH
     tokens = Lexer.lex(text)
     return ctx.strict ? tokens : skipping(text, ctx, tokens) if Failure === tokens
