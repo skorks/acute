@@ -23,12 +23,16 @@ module Acute
     WEEKDAY_MISMATCH = Assumption.for(:weekday_mismatch)
 
     # An empty Array when nothing fits ("feb 30")
-    def self.call(node, ctx)
-      list = spans(node, ctx)
-      if list.empty? && !(date = Periodic.unfiltered(node)).equal?(node)
-        list = mismatch(node, date, ctx)
+    # A reading the resolver gave up on (Period::LIMIT) is a Failure with failure: true, otherwise no readings
+    def self.call(node, ctx, failure: false)
+      out = catch(:failure) do
+        list = spans(node, ctx)
+        if list.empty? && !(date = Periodic.unfiltered(node)).equal?(node)
+          list = mismatch(node, date, ctx)
+        end
+        return readings(list, ctx)
       end
-      readings(list, ctx)
+      failure ? out : []
     end
 
     # D37, D43: a weekday that fits none of a date's coming readings may fit the one just gone ("Thu Aug 10"

@@ -86,15 +86,23 @@ module Acute
         end
       end
 
-      # D17: Monday to Friday, or D47: the days business_days: or holidays: give; D38: the time of day is kept
+      LIMIT = 10_000
+
+      # D17: Monday to Friday, or D47: the days business_days: or holidays: give; D38: the time of day is kept.
+      # D49: more than LIMIT business days, or LIMIT days in a row that aren't, is a failure.
       def self.business(t, n, ctx)
         days = ctx.business_days
         step = n < 0 ? -1 : 1
         n = n.abs
+        throw :failure, Failure.new(:business_day_limit, 0, 0) if n > LIMIT
         while n > 0
           t += step * DAY
           if days
-            t += step * DAY until days.business_day?(::Date.jd(t / DAY + 2_440_588))
+            skipped = 0
+            until days.business_day?(::Date.jd(t / DAY + 2_440_588))
+              throw :failure, Failure.new(:business_day_limit, 0, 0) if (skipped += 1) > LIMIT
+              t += step * DAY
+            end
           else
             t += step * DAY while (t / DAY + 4) % 7 % 6 == 0 # Saturday or Sunday
           end
