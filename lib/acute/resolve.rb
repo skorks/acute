@@ -93,7 +93,12 @@ module Acute
         return r
       end
       outers = spans(node.outer, ctx)
-      return Periodic.inside(node.inner, node.outer, outers[0], ctx) if outers.size == 1
+      if outers.size == 1
+        out = Periodic.inside(node.inner, node.outer, outers[0], ctx)
+        return out unless this_passed?(node, out, ctx)
+        # D21: "this saturday at noon" said after noon on Saturday has passed, so it is found as "this (saturday at noon)"
+        return Rel.periodic(:this, G::Within.new(node.inner, node.outer.node), ctx)
+      end
       out = []
       outers.each do |s|
         Periodic.inside(node.inner, node.outer, s, ctx).each { |x| out << x unless out.any? { |o| o.b == x.b && o.e == x.e } }
@@ -116,6 +121,12 @@ module Acute
       unit = cyc unless ordinal?(node.inner) && G::UNIT_SIZE[unit] > G::UNIT_SIZE[cyc]
       t = Shift.spans(node.outer, ctx)[0].b
       Periodic.inside(node.inner, nil, Period.span(unit, ctx, Period.index(unit, ctx, t)), ctx)
+    end
+
+    def self.this_passed?(node, out, ctx)
+      o = node.outer
+      G::Rel === o && o.word == :this && G::Clock === node.inner && !ctx.past && !out.empty? &&
+        out[0].e <= ctx.now_local && Periodic.cycle(o.node) && Periodic.cycle(o.node) != :day
     end
 
     def self.today?(node)
