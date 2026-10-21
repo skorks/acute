@@ -46,7 +46,7 @@ module Acute
 
     def describe(value, **ctx) = Acute.describe(value, **@options, **ctx)
 
-    def verify(text, value, **ctx) = Acute.verify(text, value, **@options, **ctx)
+    def verify(text, value, **ctx, &) = Acute.verify(text, value, **@options, **ctx, &)
 
     def duration(text, **ctx) = Acute.duration(text, **@options, **ctx)
 
