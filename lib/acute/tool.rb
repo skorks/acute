@@ -139,9 +139,7 @@ module Acute
 
     def parse_failure(e, text)
       unread = e.code == :unknown_word ? e.unknown : POINTED.include?(e.code) ? [text[e.position]] : []
-      # D48's account of what is out of range ("June has 30 days") names no input; the fallback quotes it
-      error = e.code == :invalid_date && !e.message.start_with?('"') ? e.message : PARSE_ERRORS.fetch(e.code)
-      failure(e.code, error, unread)
+      failure(e.code, Explain.reason(e, text) || PARSE_ERRORS.fetch(e.code), unread)
     end
 
     def failure(code, error, unread = [])
