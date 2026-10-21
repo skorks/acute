@@ -29,6 +29,9 @@ module Corpus
   # every rule docs/rules.md names, as a heading ("### D4.") or as a bullet tag ("**D44.**")
   def all_rules = File.read(File.join(ROOT, "docs/rules.md")).scan(/^### (D\d+)\.|\*\*(D\d+)\.\*\*/).flatten.compact.uniq
 
+  # D-rules the unit tests mention: API rules with no corpus case count as covered by them
+  def unit_rules = Dir[File.join(ROOT, "test/unit/*_test.rb")].flat_map { |f| File.read(f).scan(/\bD\d+\b/) }.uniq
+
   def load(file: nil, grep: nil)
     Dir[File.join(CASES, "*.jsonl")].flat_map do |path|
       next [] if file && !File.basename(path, ".jsonl").include?(file)
@@ -136,7 +139,7 @@ module Corpus
     cases = load(file: file, grep: grep)
     if rule
       covered = cases.flat_map { |c| rules(c) }.uniq
-      puts "rules with no cases: #{(all_rules - covered).join(", ")}"
+      puts "rules with no cases: #{(all_rules - covered - unit_rules).join(", ")}"
       cases = cases.select { |c| rules(c).include?(rule) }
     end
     results = cases.map { |c| [c, *run_case(c)] }
