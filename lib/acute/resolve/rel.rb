@@ -48,6 +48,8 @@ module Acute
           merge(Periodic.first(x, ctx, i + 1, cyc) { |s| s.e > now }, cur)
         else
           x = TONIGHT if G::Part === x && x.name == :night # D1: last night starts at 17:00
+          # D51: said at exactly 00:00, "last night" is the calendar yesterday's, as D41 reads "tomorrow"
+          return Periodic.last(x, ctx, i, cyc) { |s| s.b < now } if now % DAY == 0 && x.equal?(TONIGHT)
           Periodic.last(x, ctx, i, cyc) { |s| s.e <= now }
         end
       end

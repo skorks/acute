@@ -67,16 +67,28 @@ module Acute
                   longest(text, tokens[(i * S)...(w * S)], make_context, whole, spent)
           if found
             k = i
+            look = ->(n) { longest(text, tokens[(n * S)...(w * S)], make_context, whole, spent) }
+            # D51: "for 3 days from today" is a span with its "for", where "3 days from today" is a shift
+            if i > a && tokens[(i - 1) * S] == L::WORD && tokens[(i - 1) * S + 1] == :for && (with = look.(i - 1)) &&
+               with[0].kind == :time && with[0].offset.end >= found[0].offset.end && !same?(with[0].value, found[0].value)
+              found = with
+              k = i - 1
+            end
             # E4: a leading "in", or a meal before "at" (D50), is left out when the rest reads the same, or
-            # when the rest reaches further (D50): "in 2 days from today" is "2 days from today"
-            while LEADS[tokens[k * S]]&.[](tokens[k * S + 1]) && (tokens[k * S] == L::WORD || tokens[(k + 1) * S] == L::AT)
-              n = k + 1
-              n += 1 while n < w && !starts_mention?(text, tokens, n)
-              shorter = n < w && longest(text, tokens[(n * S)...(w * S)], make_context, whole, spent)
-              break unless shorter && (shorter[0].offset.end > found[0].offset.end ||
-                                       (shorter[0].offset.end == found[0].offset.end && same?(shorter[0].value, found[0].value)))
+            # when the rest reaches further (D50): "in 2 days from today" is "2 days from today". D51: so are
+            # "about" and "within" when the rest reaches further
+            while (lead = LEADS[tokens[k * S]]&.[](tokens[k * S + 1])) && (tokens[k * S] == L::WORD || tokens[(k + 1) * S] == L::AT)
+              shorter = after_lead(text, tokens, k, found, lead == :same, look)
+              break unless shorter
+              found, k = shorter
+            end
+            # D51: a bare number ending a mention goes with what follows when it starts a mention that reaches
+            # further: "11/20, 12 of Nov"
+            last = k + found[1] / S - 1
+            if last > k && last + 1 < w && tokens[last * S] == L::NUM && tokens[last * S + 2] & L::DIGITS <= 2 &&
+               !GLUE[tokens[(last - 1) * S]] && (after = look.(last)) && after[1] > S &&
+               (shorter = longest(text, tokens[(k * S)...(last * S)], make_context, whole, spent))
               found = shorter
-              k = n
             end
             mentions << found[0]
             i = k + found[1] / S
@@ -159,7 +171,21 @@ module Acute
     def self.capital?(byte) = byte && byte >= 65 && byte <= 90
 
     START_WORDS = { on: true, and: true, to: true, for: true, during: true }.freeze
-    LEADS = { L::WORD => { in: true }.freeze, L::PART => { lunch: true, breakfast: true, dinner: true }.freeze }.freeze
+    LEADS = { L::WORD => { in: :same, around: :further, within: :further }.freeze,
+              L::PART => { lunch: :same, breakfast: :same, dinner: :same }.freeze }.freeze
+
+    # The mention inside found after its leading word at k, with where it starts: with same, the next one
+    # when it reads the same or reaches further; otherwise the first that reaches further
+    def self.after_lead(text, tokens, k, found, same, look)
+      ((k + 1)...(k + found[1] / S)).each do |n|
+        next unless starts_mention?(text, tokens, n)
+        m = look.(n)
+        return [m, n] if m && (m[0].offset.end > found[0].offset.end ||
+                               (same && m[0].offset.end == found[0].offset.end && same?(m[0].value, found[0].value)))
+        break if same
+      end
+      nil
+    end
 
     # "on", "at", "for" and "during" introduce a mention without being part of it (E2 gives a duration its
     # "for", E4 leaves out "on" and "at"). None starts inside a written number, as "12-1234" in "123-12-1234"

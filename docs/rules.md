@@ -214,6 +214,7 @@ Each word means a range. The result also carries a single point, for a caller th
 **Said between 00:00 and 04:00:**
 - **"tonight" is the night in progress.** At 01:00, "tonight" → Friday 17:00 to Saturday 04:00.
 - **D42.** At exactly 00:00, "tonight" → [00:00, 04:00) first, then the coming tonight.
+- **D51.** At exactly 00:00, "last night" is the calendar yesterday's: 17:00 yesterday to 04:00 today, as D41 reads "tomorrow".
 - **D40.** A clock in "tonight" counts in the night under way only if it is now or later. At 02:00: "tonight at 4" → 04:00 today, "tonight at 9" → 21:00 today, "tonight at midnight" → the coming midnight.
 - **D40.** "tomorrow" is today first, then the calendar tomorrow (`tomorrow_after_midnight`). "yesterday" stays literal.
 - **D41.** That window starts at 00:00:01. At exactly 00:00:00, "tomorrow" is the calendar tomorrow, so `now: Date.today` behaves as expected.
@@ -309,7 +310,7 @@ More:
 
 "this week" → Sunday 11 to Saturday 17 October in New York, Monday 12 to Sunday 18 in London.
 
-- **D44.** "the week of X" is the calendar week that holds X: "the week of october 7th" in en-US → Sunday 6 to Saturday 12 October. "the month of X" is likewise the month that holds it.
+- **D44.** "the week of X" is the calendar week that holds X: "the week of october 7th" in en-US → Sunday 6 to Saturday 12 October. "the month of X" is likewise the month that holds it. **D51.** So is "the year of X": "the year of 2008".
 - **D44.** "the week beginning february 4" and "w/c feb 4" (**D48.**) are seven days from the 4th.
 - **D48.** The working week is Monday to Friday: "next working week", "work week", "business week". "monday to friday last week" is the same span.
 - **D48.** "all week" is this week. "the rest of the week" runs from now to the week's end.
@@ -492,6 +493,7 @@ More:
 - **D44.** "until 23:59" ends at 23:59, but "by EOD" ends at midnight: until a day's last second is until the day's end.
 - **D44.** "later than X" and "greater than X" are "after X". "earlier than", "sooner than" and "in advance of" are "before X".
 - **D44.** "on or after X", "X or later", "X onwards" and "X and later" start when X starts. **D48.** So does "X and after".
+- **D51.** Before "than", "or later" is "or" and then "later than": "between 2015 and 2018 or later than 2020" is two.
 - **D44.** "on or before X" and "X or earlier" end when X ends, with no start. A clock ends at itself.
 - **D44.** "or after" and "or before" only end a phrase: "before 2010 or after 2018" → nil.
 - **D44.** "no later than X" is "by X". "through X" alone is "until X".
@@ -579,7 +581,7 @@ More:
 - **D44.** "back" after a count is "ago". **D48.** "out" after a length is "hence": "15 minutes out".
 - **D44.** "now - 2 hours" is two hours ago.
 - **D44.** "this time tomorrow" and "same time next week" keep the time of day.
-- **D44.** "a week today", "tomorrow week" and "a week on tuesday" are that day a week on. "in 3 weeks' time" is "in 3 weeks".
+- **D44.** "a week today", "tomorrow week" and "a week on tuesday" are that day a week on. "in 3 weeks' time" is "in 3 weeks". **D51.** So is "in a fortnight's time".
 - **D44.** "1 quarter ago" is an instant, three months back.
 - **D47.** Counts in words past ninety-nine are read: "fifteen hundred seconds", "a hundred days", "two million eight hundred thousand seconds from now". **D48.** "and" follows only hundred, thousand or million. A bare "hundred", "thousand" or "million" is one of them.
 - **D47.** "5400s" before "ago", "from now", "later", "after" or "before" is that many seconds. Alone it is a decade or a year.
@@ -695,6 +697,7 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 - **D43.** Words have no length limit. A number keeps its first nine digits.
 - **D44.** "right now", "just now", "at the moment" and "at present" are now. **D48.** "ATM" is not.
 - **D44.** Unicode spaces and dashes are spaces and dashes: "8 pm" with a narrow no-break space, "tue – thu".
+- **D51.** A curly apostrophe is an apostrophe: "in a fortnight’s time".
 - **D44.** "Tu" and "Fr" are Tuesday and Friday. In extraction they need a date beside them. **D48.** "mon" is Monday, not the month.
 - **D44.** "qtr", "wkend", "oclock" and "lunch time" are spellings of quarter, weekend, o'clock and lunch.
 - **D44.** "!" or "?" at the end is dropped.
@@ -724,6 +727,9 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
   - Words that change the reading by meaning stay: "from", "between", "within", "after", "before", "since", "until", "by", "about", "around".
   - **D50.** The leading "in" is also left out when the rest reaches further: "in 2 days from today" is "2 days from today". A meal right before "at" is left out the same way: "LUNCH AT 12:30 PM" is "12:30 PM", while "lunchtime 12 o'clock" keeps it.
   - **D50.** A mention doesn't end in a word that only introduces what follows ("on", "the", "at", "and", "of", "to", "in", "for", "by"): "May 6th 2004, the customer" mentions "May 6th 2004".
+  - **D51.** "about" and "within" are left out too when the rest reaches further: "How about year 2016 and greater" is "year 2016 and greater", "within 2 weeks before yesterday" is "2 weeks before yesterday".
+  - **D51.** A "for" that makes a span from a start belongs to the mention: "set OOO for 3 days, from today" is "for 3 days, from today", three days from today, where "3 days from today" alone is a shift.
+  - **D51.** A bare number at a mention's end goes with what follows when it starts a mention that reaches further: "11/20, 12 of Nov" is "11/20" and "12 of Nov".
 - **E5.** A dot right after a month, weekday or meridiem ends its abbreviation, not the sentence: "Oct. 2", "Dec. 2021", "1p.m. to 4" are one mention each, unless a capital follows. A meridiem written with dots keeps its last one ("4 a.m.", "3 p . m ."), and a decade its apostrophe ("'40s").
 - **D43.** A malformed clock ("4:3") is one unknown word, so the rest of the text is still searched.
 - **D44.** No mention starts inside a written number: nothing in "123-12-1234".
