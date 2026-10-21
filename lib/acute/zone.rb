@@ -63,14 +63,20 @@ module Acute
     end
     private_class_method :main_ractor?, :ractor_zones
 
+    # The name is quoted only in part, so a huge one costs nothing to report
+    def self.unknown(name)
+      quoted = name.length > 64 ? "#{name[0, 64].inspect[0..-2]}…\"" : name.inspect
+      OptionError.new("unknown zone #{quoted}", option: :zone, value: name)
+    end
+
     def self.build(name, zone)
-      raise OptionError.new("unknown zone #{name.inspect}", option: :zone, value: name) unless name.ascii_only?
+      raise unknown(name) unless name.ascii_only?
       if (m = FIXED.match(name))
         offset = (m[2].to_i * 3600 + m[3].to_i * 60) * (m[1] == "-" ? -1 : 1)
         return new(name, [], [], [], offset, name)
       end
       if (entry = Tables::ZONES[Tables::ZONE_LINKS.fetch(name, name)]) then unpack(name, *entry)
-      elsif String === zone then raise OptionError.new("unknown zone #{name.inspect}", option: :zone, value: name)
+      elsif String === zone then raise unknown(name)
       else from_tzinfo(name, zone)
       end
     end
@@ -102,7 +108,7 @@ module Acute
       end
       new(name, ats, offsets, abbreviations, first_offset, first_abbreviation)
     end
-    private_class_method :build, :unpack, :from_tzinfo, :complete
+    private_class_method :unknown, :build, :unpack, :from_tzinfo, :complete
 
     RULE_YEARS = 8
     # Every source's data runs at least this far (2038 is the 32-bit limit), and a zone whose clock changes

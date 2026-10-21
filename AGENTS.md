@@ -17,7 +17,7 @@ text ──lex──▶ tokens ──grammar──▶ tree ──resolve(ctx)─
 
 - Failures are values (`Acute::Failure`), not exceptions. Only `parse!` turns them into a `ParseError`, through `lib/acute/explain.rb`.
 - `context.rb` holds now, the zone chain and direction. It also collects the assumptions a parse makes.
-- `zone.rb` holds offset tables built once from tzinfo. `calendar.rb` holds integer day maths.
+- `zone.rb` unpacks each zone's offsets from the generated `tables/zones.rb` the first time it is used. `calendar.rb` holds integer day maths.
 - `lib/acute/tables/*.rb` are **generated**. Edit `data/*.yml`, then run `bin/generate`.
 
 ## The one command
