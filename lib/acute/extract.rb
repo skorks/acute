@@ -12,12 +12,12 @@ module Acute
       @mentions = mentions.freeze
     end
 
-    # The text without its mentions, nor the "on", "at", "for", "by", "in" or "the" left dangling before one (E4)
+    # The text without its mentions, nor the "on", "at", "for", "by" or "in" left dangling before one (E4)
     def remainder
       out = +""
       at = 0
       @mentions.each do |m|
-        out << @text[at...m.offset.begin].sub(/(?:\b(?:on|at|for|by|in|the)\s*)+\z/i, "")
+        out << @text[at...m.offset.begin].sub(/(?:\b(?:on|at|for|by|in)\s*)+\z/i, "")
         at = m.offset.end
       end
       out << @text[at..]
@@ -58,7 +58,7 @@ module Acute
                   longest(text, tokens[(i * S)...(w * S)], make_context, whole, spent)
           if found
             k = i
-            # E4: a leading "in" or "the" is left out when the rest reads the same
+            # E4: a leading "in" is left out when the rest reads the same
             while tokens[k * S] == L::WORD && LEADS[tokens[k * S + 1]]
               shorter = longest(text, tokens[((k + 1) * S)...(w * S)], make_context, whole, spent)
               break unless shorter && shorter[0].offset.end == found[0].offset.end && same?(shorter[0].value, found[0].value)
@@ -145,7 +145,7 @@ module Acute
     def self.capital?(byte) = byte && byte >= 65 && byte <= 90
 
     START_WORDS = { on: true, and: true, to: true, for: true, during: true }.freeze
-    LEADS = { in: true, the: true }.freeze
+    LEADS = { in: true }.freeze
 
     # "on", "at", "for" and "during" introduce a mention without being part of it (E2 gives a duration its
     # "for", E4 leaves out "on" and "at"). None starts inside a written number, as "12-1234" in "123-12-1234"
