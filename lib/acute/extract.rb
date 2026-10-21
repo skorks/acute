@@ -92,6 +92,10 @@ module Acute
             end
             mentions << found[0]
             i = k + found[1] / S
+          elsif tokens[i * S] == L::NUM && tokens[i * S + 2] & L::DIGITS == 4 && mentions.any? &&
+                (year = joined_year(text, tokens, i, mentions[-1], make_context, whole, spent))
+            mentions << year
+            i += 1
           else
             i += 1
           end
@@ -198,6 +202,7 @@ module Acute
       end
       return false if k == L::AT || (k == L::WORD && START_WORDS[tokens[i * S + 1]])
       return false if after?(text, tokens[i * S + 3], CURRENCY) # D50: "$12", "$DEC"
+      return false if k == L::NUM && after?(text, tokens[i * S + 3], LABEL) # D51: "building 4 this afternoon"
       return false if k == L::PART && after?(text, tokens[i * S + 3], GREETING) # D50: "Good morning"
       # D50: "start" and "end" in lower case are verbs unless "of" follows: "start 3 minutes from now"
       return false if k == L::FUZZ && tokens[i * S + 2] & L::CAP == 0 &&
@@ -209,6 +214,7 @@ module Acute
     VERBS = /\A(?:start|end)\z/
     CURRENCY = /[$£€]\s*\z/
     GREETING = /\bgood\s+\z/i
+    LABEL = /\b(?:building|room|floor|level|gate|platform|terminal|suite|unit|table|track|bay|page|chapter)\s+\z/i
 
     # Whether the text just before the byte matches
     def self.after?(text, byte, pattern)
@@ -242,7 +248,8 @@ module Acute
     def self.mention(text, slice, tree, units, make_context, whole)
       st = slice[3]
       return if plain_english?(slice, sentence_start?(text, st)) || (slice.size == S && slice[0] == L::NUM) ||
-                spelled?(slice) || in_word?(text, st, slice[-1]) || one_to_one?(slice) || counted?(text, slice)
+                spelled?(slice) || in_word?(text, st, slice[-1]) || one_to_one?(slice) || counted?(text, slice) ||
+                version?(slice)
       stop = meridiem_dot(text, slice) || slice[-1]
       # E5: "'40s": the apostrophe for the century left out is part of it
       st -= 1 if slice[0] == L::DECADE && st > 0 && text.getbyte(st - 1) == 39
@@ -255,6 +262,23 @@ module Acute
         piece = text.byteslice(st, stop - st)
       end
       Extraction::Mention.new(value.kind, piece, st...stop, value)
+    end
+
+    JOINED = /\A\s*(?:and|or|(?:and |but )?not)\s+\z/
+    YEAR_END = /\d{4}\z/
+
+    # D51: a lone year joined by "and", "or" or "not" to a mention that ends in a year is a year too: "in 2007
+    # and 2009", "before 2000 but not 1998". With no mention before it, a lone year is still a number (E3).
+    def self.joined_year(text, tokens, i, last, make_context, whole, spent)
+      st = tokens[i * S + 3]
+      stop = tokens[i * S + 4]
+      return unless last.text.match?(YEAR_END) && JOINED.match?(text.byteslice(last.offset.end, st - last.offset.end)) &&
+                    !glued?(tokens, (i + 1) * S) && !in_word?(text, st, stop)
+      slice = tokens[i * S, S]
+      tree, = Grammar.longest(slice, spent:)
+      piece = text.byteslice(st, stop - st)
+      value = tree && time(piece, tree, make_context, whole)
+      Extraction::Mention.new(value.kind, piece, st...stop, value) if value
     end
 
     # E5: "4 a.m.", "3 p . m .": the last dot of a meridiem written with dots is part of it
@@ -271,8 +295,10 @@ module Acute
     end
 
     # E3: "may", "sat", "second" in lower case and with nothing else to say they are times are words. A
-    # capital that starts a sentence says nothing, so "Lunch with Sam" is a word too.
+    # capital that starts a sentence says nothing, so "Lunch with Sam" is a word too. D51: a month after "in"
+    # is a month: "It may be in may".
     def self.plain_english?(slice, sentence_start)
+      return false if slice[0] == L::WORD && slice[1] == :in && slice[S] == L::MONTH
       content = slice.each_slice(S).reject { |k, *| k == L::WORD || k == L::REL || k == L::ART || k == L::AT }
       content.any? && content.each_with_index.all? do |(_, _, flags, start), n|
         flags & L::ENGLISH != 0 && (flags & L::CAP == 0 || (n == 0 && sentence_start && start == slice[3]))
@@ -304,6 +330,15 @@ module Acute
     # D50: the same number at both ends is no range: "a 1-1 meeting"
     def self.one_to_one?(slice)
       slice.size == 3 * S && slice[0] == L::NUM && slice[S] == L::DASH && slice[2 * S] == L::NUM && slice[1] == slice[2 * S + 1]
+    end
+
+    # D51: three dotted numbers with a one-digit day or month and a two-digit year are a version: "1.5.30"
+    def self.version?(slice)
+      slice.size >= 5 * S && slice[S] == L::DOT && slice[3 * S] == L::DOT && slice[4 * S] == L::NUM &&
+        slice[4 * S + 2] & L::DIGITS == 2 && slice[2] & L::DIGITS <= 2 &&
+        (slice[2] & L::DIGITS == 1 || slice[2 * S + 2] & L::DIGITS == 1) &&
+        slice[4] == slice[S + 3] && slice[S + 4] == slice[2 * S + 3] && slice[2 * S + 4] == slice[3 * S + 3] &&
+        slice[3 * S + 4] == slice[4 * S + 3]
     end
 
     # D50: an ordinal before "time" or "times" counts occasions: "17th times", "the 5th time"

@@ -111,6 +111,10 @@ class DepthTest < Minitest::Test
     assert_raises(Acute::ParseError) { parse("tomorrow from 9am") }
   end
 
+  def test_d51_the_zone_of_a_range_after_a_weekday_is_the_days
+    assert_span "Friday, between 9-6 PT", "2026-10-23 12:00", "2026-10-23 21:00"
+  end
+
   def test_d44_a_number_of_a_month_is_its_day
     assert_span "15 of february", "2027-02-15 00:00", "2027-02-16 00:00"
     assert_span "20 of next month", "2026-11-20 00:00", "2026-11-21 00:00"

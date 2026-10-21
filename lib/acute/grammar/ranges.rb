@@ -46,6 +46,10 @@ module Acute
         return Within.new(Range.new(from, to.inner), to.outer)
       end
       return Within.new(Range.new(from.inner, to), from.outer) if Within === from && Clock === from.inner && Clock === to
+      # D51: "Friday, between 9-6 PT": the zone is the day's too
+      if Within === from && Clock === from.inner && Weekday === from.outer && Zoned === to && Clock === to.node
+        return Zoned.new(Within.new(Range.new(from.inner, to.node), from.outer), to.offset, to.numeric)
+      end
       Range.new(from, to)
     end
 

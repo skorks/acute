@@ -220,6 +220,30 @@ class ExtractTest < Minitest::Test
     assert_nil Acute.parse("2015 or later", now: "2026-10-17T14:00", zone: NY).end
   end
 
+  def test_d51_a_lone_year_joined_to_a_year_mention_is_a_year
+    assert_equal ["in 2007", "2009"], texts("Show sales in 2007 and 2009")
+    assert_equal ["before 2000", "1998"], texts("sales before 2000 but not 1998")
+    assert_equal ["from 2010 – 2020", "2015"], texts("sales from 2010 – 2020 and not 2015")
+    assert_empty texts("Show sales of 2007 and 2009")
+    assert_equal ["May 3"], texts("May 3 and 12 people")
+  end
+
+  def test_d51_a_month_after_in_is_a_month
+    assert_equal ["in may"], texts("It may be in may")
+    assert_empty texts("It may be fine")
+  end
+
+  def test_d51_a_number_after_a_label_is_no_hour
+    assert_equal ["this afternoon"], texts("Let's go for coffee on building 4 this afternoon")
+    assert_equal ["4 this afternoon"], texts("see you 4 this afternoon")
+  end
+
+  def test_d51_a_dotted_version_is_no_date
+    assert_equal ["2015-09-24"], texts("1.5.30 - 2015-09-24")
+    assert_equal ["23.04.22"], texts("on 23.04.22")
+    assert_equal ["2015.5.13"], texts("available on 2015.5.13?")
+  end
+
   def test_d51_parse
     at = ->(t, now, zone = "UTC") { Acute.parse(t, now:, zone:) }
     assert_equal Time.utc(2016, 11, 6, 17), at.("last night", "2016-11-07T00:00:00").begin
