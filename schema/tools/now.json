@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/skorks/acute/schema/tools/now.json",
+  "title": "now",
+  "description": "The user's current date, time, weekday, zone, UTC offset and next clock change. Call it before working out a date yourself: you don't otherwise know what day it is. To turn the user's words into a time, call {parse} instead.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {}
+}

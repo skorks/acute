@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/skorks/acute/schema/now.json",
+  "title": "Acute::Tool now",
+  "description": "The current time in the app's zone. dst is true while the zone is on daylight saving time; next_change is the next change of UTC offset, null when the zone has none to come.",
+  "type": "object",
+  "required": ["kind", "now", "weekday", "zone", "offset", "dst", "next_change"],
+  "additionalProperties": false,
+  "properties": {
+    "kind": { "const": "now" },
+    "now": { "type": "string", "format": "date-time" },
+    "weekday": { "enum": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] },
+    "zone": { "type": "string" },
+    "offset": { "type": "string" },
+    "dst": { "type": "boolean" },
+    "next_change": { "oneOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }] }
+  }
+}

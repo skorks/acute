@@ -140,6 +140,14 @@ module Acute
       i < 0 ? @first_offset : @offsets[i]
     end
 
+    # When the UTC offset next changes after epoch, or nil when the zone has no change to come
+    def next_change(epoch)
+      offset = offset_at(epoch)
+      i = period_index(epoch) + 1
+      i += 1 while i < @ats.size && @offsets[i] == offset
+      @ats[i]
+    end
+
     def abbreviation_at(epoch)
       i = period_index(epoch)
       i < 0 ? @first_abbreviation : @abbreviations[i]

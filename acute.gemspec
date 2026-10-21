@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.metadata["source_code_uri"] = "https://github.com/skorks/acute"
   s.metadata["changelog_uri"] = "https://github.com/skorks/acute/blob/main/CHANGELOG.md"
   s.metadata["bug_tracker_uri"] = "https://github.com/skorks/acute/issues"
-  s.files = Dir["lib/**/*.rb", "data/*.yml", "schema/*.json", "exe/*", "LICENSE"]
+  s.files = Dir["lib/**/*.rb", "data/*.yml", "schema/**/*.json", "exe/*", "LICENSE"]
   s.bindir = "exe"
   s.executables = ["acute"]
   s.required_ruby_version = ">= 3.3"

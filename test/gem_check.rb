@@ -8,7 +8,7 @@ require "tmpdir"
 
 module GemCheck
   ROOT = File.expand_path("..", __dir__)
-  SHIPPED = ["lib/**/*.rb", "data/*.yml", "schema/*.json", "exe/*", "LICENSE"].freeze
+  SHIPPED = ["lib/**/*.rb", "data/*.yml", "schema/**/*.json", "exe/*", "LICENSE"].freeze
   GEM = File.join(RbConfig::CONFIG["bindir"], "gem")
 
   module_function
@@ -42,6 +42,9 @@ module GemCheck
 
       out, ok = run(env, RbConfig.ruby, "-e", 'require "acute"; print Acute.parse("noon", now: Time.utc(2026, 10, 17)).begin.hour')
       problems << "require \"acute\" from the installed gem failed: #{out}" unless ok && out == "12"
+      # the tool reads its input schemas from the gem's schema/tools/
+      out, ok = run(env, RbConfig.ruby, "-e", 'require "acute/tool"; print Acute::Tool.new(zone: "UTC").definitions.size')
+      problems << "require \"acute/tool\" from the installed gem failed: #{out}" unless ok && out == "6"
       out, ok = run(env, RbConfig.ruby, File.join(home, "bin/acute"), "--now", "2026-10-17T14:00", "--zone", "UTC", "tomorrow at 5pm")
       problems << "the installed acute executable failed: #{out}" unless ok && out.include?("5pm")
 

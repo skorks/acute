@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/skorks/acute/schema/tools/describe.json",
+  "title": "describe",
+  "description": "Write a time or length as short English (\"Friday at 3pm\", \"1h 30m\") to confirm it with the user. acute reads the words back as exactly the value given, in the app's zone and relative to its current time.",
+  "type": "object",
+  "required": ["value"],
+  "additionalProperties": false,
+  "properties": {
+    "value": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "An ISO 8601 time (\"2026-10-23T15:00:00-04:00\"), date (\"2026-10-23\") or duration (\"PT1H30M\")"
+    },
+    "style": {
+      "enum": ["relative", "calendar"],
+      "description": "relative (the default) says \"tomorrow\" or \"Friday\" where it can; calendar always writes the date"
+    }
+  }
+}
