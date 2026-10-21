@@ -8,7 +8,7 @@ class ToolSizeTest < Minitest::Test
     definitions: 3_000,
     tools_list: 12_500,
     parse_result: 150,
-    extract_result: 680,
+    extract_result: 640,
     descriptions: { "parse" => 260, "duration" => 150, "extract" => 210, "verify" => 210, "describe" => 135, "now" => 170 }
   }.freeze
 

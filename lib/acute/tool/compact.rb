@@ -2,8 +2,9 @@ module Acute
   class Tool
     # The model pays for every char of a result on every call, so a tool gives the library's JSON without what
     # repeats: the input's echo, a begin equal to time, a mention's kind and text again in its value, the expected
-    # reading of a verdict that holds, now's offset, which the now string ends with, and empty lists. The schema
-    # rules make the same cuts in the output schemas, so the two can't drift.
+    # reading of a verdict that holds, now's offset, which the now string ends with, and empty lists. An assumption's
+    # message is its short form, the gist in about half the chars. The schema rules make the same cuts in the output
+    # schemas, so the two can't drift.
     module Compact
       def self.call(out)
         case out["kind"]
@@ -27,7 +28,9 @@ module Acute
 
       def self.result(r)
         r.delete("text")
-        r.delete("assumptions") if r["assumptions"].empty?
+        if r["assumptions"].empty? then r.delete("assumptions")
+        else r["assumptions"].each { _1["message"] = Assumption.for(_1["code"].to_sym).short }
+        end
         r.delete("alternatives") if r["alternatives"].empty?
         [r, *r["alternatives"]].each { _1.delete("begin") if _1["begin"] == _1["time"] }
       end
