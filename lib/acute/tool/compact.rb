@@ -1,0 +1,56 @@
+module Acute
+  class Tool
+    # The model pays for every char of a result on every call, so a tool gives the library's JSON without what
+    # repeats: the input's echo, a begin equal to time, a mention's kind and text again in its value, the expected
+    # reading of a verdict that holds, now's offset, which the now string ends with, and empty lists. The schema
+    # rules make the same cuts in the output schemas, so the two can't drift.
+    module Compact
+      def self.call(out)
+        case out["kind"]
+        when "time" then result(out)
+        when "extraction"
+          out.delete("text")
+          out["mentions"].each do |m|
+            m.delete("kind")
+            result(m["value"]) if m["value"]["kind"] == "time"
+          end
+        when "verdict"
+          out.delete("text")
+          if out["ok"] then out.delete("expected")
+          elsif out["expected"] then result(out["expected"])
+          end
+        when "now" then out.delete("offset")
+        end
+        out.delete("unread") if out["unread"] == []
+        out
+      end
+
+      def self.result(r)
+        r.delete("text")
+        r.delete("assumptions") if r["assumptions"].empty?
+        r.delete("alternatives") if r["alternatives"].empty?
+        [r, *r["alternatives"]].each { _1.delete("begin") if _1["begin"] == _1["time"] }
+      end
+      private_class_method :result
+
+      # defs: the schemas an output schema holds, by file name, before they are inlined
+      def self.schema(defs)
+        trim(defs["result"], drop: %w[text], optional: %w[begin assumptions alternatives])
+        trim(defs.dig("result", "properties", "alternatives", "items"), optional: %w[begin])
+        trim(defs["extraction"], drop: %w[text])
+        trim(defs.dig("extraction", "properties", "mentions", "items"), drop: %w[kind])
+        trim(defs["verdict"], drop: %w[text], optional: %w[expected unread])
+        trim(defs["now"], drop: %w[offset])
+        trim(defs["failure"], optional: %w[unread])
+        defs
+      end
+
+      def self.trim(node, drop: [], optional: [])
+        return unless node
+        node["properties"] = node["properties"].except(*drop)
+        node["required"] -= drop + optional
+      end
+      private_class_method :trim
+    end
+  end
+end
