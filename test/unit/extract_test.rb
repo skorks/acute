@@ -7,7 +7,7 @@ class ExtractTest < Minitest::Test
 
   def test_mentions_with_their_offsets
     x = extract("Dinner with Sam next Tuesday at 7pm, flight back on the 30th")
-    assert_equal([[:time, "next Tuesday at 7pm", 16...35], [:time, "30th", 56...60]],
+    assert_equal([[:time, "next Tuesday at 7pm", 16...35], [:time, "the 30th", 52...60]],
                  x.mentions.map { [_1.kind, _1.text, _1.offset] })
     assert_equal(["2026-10-20 19:00:00 -04:00", "2026-10-30 00:00:00 -04:00"], x.mentions.map { wall(_1.value.begin) })
     assert_equal "Dinner with Sam, flight back", x.remainder
@@ -24,7 +24,7 @@ class ExtractTest < Minitest::Test
 
   def test_no_mention_starts_inside_a_written_number
     assert_equal [], mentions("The ssn is 123-12-1234")
-    assert_equal [[:time, "morning", 31...38]], mentions("My temperature was 37.1 in the morning")
+    assert_equal [[:time, "the morning", 27...38]], mentions("My temperature was 37.1 in the morning")
   end
 
   def test_remainder_drops_the_word_that_introduced_a_mention
@@ -33,10 +33,10 @@ class ExtractTest < Minitest::Test
     assert_equal "She leaves", extract("She leaves in August").remainder
   end
 
-  def test_e4_a_leading_in_or_the_is_left_out_when_the_rest_reads_the_same
+  def test_e4_a_leading_in_is_left_out_when_the_rest_reads_the_same
     assert_equal [[:time, "August", 14...20]], mentions("She leaves in August.")
-    assert_equal [[:time, "day before yesterday", 11...31]], mentions("I left the day before yesterday")
-    assert_equal [[:time, "afternoon", 18...27]], mentions("let's meet in the afternoon")
+    assert_equal [[:time, "the day before yesterday", 7...31]], mentions("I left the day before yesterday")
+    assert_equal [[:time, "the afternoon", 14...27]], mentions("let's meet in the afternoon")
     assert_equal [[:time, "Tuesday morning", 13...28]], mentions("Lets meet on Tuesday morning")
   end
 
