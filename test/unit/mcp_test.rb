@@ -154,6 +154,46 @@ class MCPTest < Minitest::Test
     assert_equal([3], exchange(exact).map { _1["id"] })
   end
 
+  # T18: what a model or a client can put in a line under the cap is a JSON-RPC error or a tool failure, quickly
+  def test_t18_hostile_json_under_the_line_cap
+    call = ->(args) { %({"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"parse","arguments":#{args}}}) }
+    lines = {
+      "[" * 60_000 => -32_700, "#{'{"a":' * 10_000}1#{"}" * 10_000}" => -32_700,
+      call.(%({"text":"tomorrow \\ud800"})) => -32_700, call.(%({"text":"tomorrow","zone":"UTC\\udc00"})) => -32_700,
+      call.(%({"text":"tomorrow \xff"})) => -32_700, call.(%({"text":"tomorrow\x00"})) => -32_700,
+      %({"jsonrpc":"2.0","id":1e999999999,"method":"ping"}) => -32_600,
+      call.(%({"text":1e999999999})) => "invalid_argument", call.(%({"text":#{"[" * 95}#{"]" * 95}})) => "invalid_argument",
+      call.(%({"__proto__":{},"constructor":{"prototype":1},"text":"friday"})) => "unknown_argument",
+      call.(%({"text":"friday","zone":"../../../../etc/passwd"})) => "invalid_argument"
+    }
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    replies = exchange(*lines.keys)
+    assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 1
+    got = replies.map { _1.dig("error", "code") || _1.dig("result", "structuredContent", "code") }
+    assert_equal lines.values, got
+    big = "9" * 60_000
+    assert_equal Integer(big), exchange(%({"jsonrpc":"2.0","id":#{big},"method":"ping"}))[0]["id"]
+  end
+
+  # T20: a long session keeps no more than the zone cache
+  def test_t20_many_zoned_calls_leave_no_objects_behind
+    # Zones other tests already load: a Ractor test relies on some staying out of the cache
+    zones = %w[UTC Europe/London Asia/Tokyo America/Chicago +05:30 -03:00 +14:00]
+    lines = lambda do |from|
+      (from...(from + 2_000)).map do |i|
+        request("tools/call", { name: "parse", arguments: { text: "in #{i} minutes", zone: zones[i % zones.size] } }, id: i)
+      end
+    end
+    server = Acute::MCP.new(TOOL)
+    session = ->(from) { server.serve(StringIO.new("#{lines.(from).map { JSON.generate(_1) }.join("\n")}\n"), StringIO.new) }
+    session.(0)
+    GC.start
+    before = ObjectSpace.count_objects.then { _1[:TOTAL] - _1[:FREE] }
+    session.(2_000)
+    GC.start
+    assert_operator ObjectSpace.count_objects.then { _1[:TOTAL] - _1[:FREE] } - before, :<, 1_000
+  end
+
   def test_an_exception_in_a_call_is_an_internal_error
     broken = Class.new(Acute::Tool) { def call(*) = raise("secret") }.new(zone: "UTC")
     log = StringIO.new
