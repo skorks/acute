@@ -21,7 +21,7 @@ module Acute
     TAG = /\A[a-z]{2,3}(?:[-_][a-z0-9]{2,8})*\z/i
 
     def self.for(code)
-      unless (String === code || Symbol === code) && TAG.match?(code)
+      unless (Symbol === code || (String === code && code.valid_encoding?)) && TAG.match?(code)
         raise OptionError.new("locale: must be a tag like en-US, en-GB or fr", option: :locale, value: code)
       end
       country = code.to_s.split(/[-_]/).last.upcase
