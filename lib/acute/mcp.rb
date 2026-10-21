@@ -103,6 +103,7 @@ module Acute
       @tool = tool
       @log = log
       @tools = tool.definitions.map { listing(_1) }
+      @names = @tools.to_h { [_1["name"], _1["name"].delete_prefix(tool.prefix)] }
     end
 
     def serve(input, output)
@@ -185,9 +186,10 @@ module Acute
     end
 
     def call(name, args)
-      raise Refusal.new(INVALID_PARAMS, "Unknown tool") unless Tool::NAMES.include?(name)
+      # A Tool with a prefix: lists and answers to the prefixed names only, as Tool#call does
+      base = @names[name] or raise Refusal.new(INVALID_PARAMS, "Unknown tool")
       raise Refusal.new(INVALID_PARAMS, "Invalid params: arguments must be an object") unless Hash === args
-      zone = args["zone"] if ZONED.include?(name)
+      zone = args["zone"] if ZONED.include?(base)
       value = zone.nil? ? @tool.call(name, args) : zoned(zone)&.call(name, args.except("zone")) || zone_failure(zone)
       { "content" => [{ "type" => "text", "text" => JSON.generate(value) }], "structuredContent" => value,
         "isError" => value["kind"] == "failure" }
@@ -195,7 +197,7 @@ module Acute
 
     def zoned(zone)
       return unless String === zone && zone.length <= ZONE_LENGTH
-      Tool.new(@tool.parser, zone: zone)
+      Tool.new(@tool.parser, prefix: @tool.prefix, zone: zone)
     rescue OptionError
       nil
     end
@@ -207,10 +209,11 @@ module Acute
 
     def listing(definition)
       name = definition[:name]
+      base = name.delete_prefix(@tool.prefix)
       input = definition[:input_schema]
-      input = input.merge("properties" => input["properties"].merge("zone" => ZONE)) if ZONED.include?(name)
+      input = input.merge("properties" => input["properties"].merge("zone" => ZONE)) if ZONED.include?(base)
       { "name" => name, "description" => definition[:description], "inputSchema" => input,
-        "outputSchema" => self.class.output_schema(name) }
+        "outputSchema" => self.class.output_schema(base) }
     end
 
     def error(id, code, message, data = nil)

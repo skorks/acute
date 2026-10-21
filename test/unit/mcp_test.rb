@@ -138,6 +138,20 @@ class MCPTest < Minitest::Test
     assert_nil exchange("{nope")[0]["id"]
   end
 
+  def test_a_prefixed_tool_is_listed_and_called_by_its_prefixed_names
+    tool = Acute::Tool.new(prefix: "acute_", now: "2026-10-17T14:00", zone: "America/New_York")
+    listed, parsed, zoned, bare = exchange(request("tools/list"),
+                                           request("tools/call", { name: "acute_parse", arguments: { text: "noon" } }),
+                                           request("tools/call", { name: "acute_now", arguments: { zone: "UTC" } }),
+                                           request("tools/call", { name: "parse", arguments: { text: "noon" } }), tool: tool)
+    tools = listed["result"]["tools"]
+    assert_equal(Acute::Tool::NAMES.map { "acute_#{_1}" }, tools.map { _1["name"] })
+    assert tools.find { _1["name"] == "acute_parse" }["inputSchema"]["properties"].key?("zone")
+    assert_equal "2026-10-18T12:00:00-04:00", parsed["result"]["structuredContent"]["time"]
+    assert_equal "+00:00", zoned["result"]["structuredContent"]["now"][-6..]
+    assert_equal({ "code" => -32_602, "message" => "Unknown tool" }, bare["error"].slice("code", "message"))
+  end
+
   def test_invalid_requests
     invalid = [[request("ping")], { id: 1, method: "ping" }, { jsonrpc: "1.0", id: 1, method: "ping" }, { jsonrpc: "2.0", id: nil, method: "ping" },
                request("ping", id: 1.5), request("ping", id: {}), { jsonrpc: "2.0", id: 1, method: 7 }, request("ping", [1]), 3, {}]
