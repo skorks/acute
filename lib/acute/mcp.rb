@@ -52,7 +52,7 @@ module Acute
       end
       own = OUTPUTS.fetch(name)
       [own, "failure"].each(&hoist)
-      defs = bare(defs, names: true)
+      defs = bare(Tool::Compact.schema(defs), names: true)
       root = [own, "failure"].map { { "$ref" => "#/$defs/#{_1}" } }
       uses = JSON.generate([root, defs]).scan(%r{"#/\$defs/(\w+)"}).flatten.tally
       schema = { "type" => "object", "oneOf" => inline(root, defs, uses) }
@@ -202,7 +202,7 @@ module Acute
 
     def zone_failure(zone)
       unread = String === zone ? [zone[0, Tool::UNREAD_LENGTH]] : []
-      { "kind" => "failure", "code" => "invalid_argument", "error" => ZONE_ERROR, "unread" => unread }
+      Tool::Compact.({ "kind" => "failure", "code" => "invalid_argument", "error" => ZONE_ERROR, "unread" => unread })
     end
 
     def listing(definition)

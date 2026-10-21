@@ -6,11 +6,14 @@ require_relative "../../lib/acute/mcp"
 class ToolSizeTest < Minitest::Test
   CAPS = {
     definitions: 3_000,
-    tools_list: 13_000,
-    descriptions: { "parse" => 270, "duration" => 150, "extract" => 210, "verify" => 210, "describe" => 135, "now" => 170 }
+    tools_list: 12_500,
+    parse_result: 150,
+    extract_result: 680,
+    descriptions: { "parse" => 260, "duration" => 150, "extract" => 210, "verify" => 210, "describe" => 135, "now" => 170 }
   }.freeze
 
   TOOL = Acute::Tool.new(zone: "UTC")
+  NEW_YORK = Acute::Tool.new(now: "2026-10-17T14:00", zone: "America/New_York")
 
   def test_definitions_fit_their_cap
     assert_operator JSON.generate(TOOL.definitions).length, :<=, CAPS[:definitions]
@@ -29,5 +32,10 @@ class ToolSizeTest < Minitest::Test
     reply = out.string.lines.find { JSON.parse(_1)["id"] == 2 }
     assert_equal 6, JSON.parse(reply).dig("result", "tools").size
     assert_operator reply.chomp.length, :<=, CAPS[:tools_list]
+  end
+
+  def test_typical_results_fit_their_caps
+    assert_operator JSON.generate(NEW_YORK.call("parse", { "text" => "next friday at 3pm" })).length, :<=, CAPS[:parse_result]
+    assert_operator JSON.generate(NEW_YORK.call("extract", { "text" => "lunch with Sam tomorrow at 1 for an hour" })).length, :<=, CAPS[:extract_result]
   end
 end

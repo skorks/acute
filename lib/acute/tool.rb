@@ -1,4 +1,5 @@
 require_relative "../acute"
+require_relative "tool/compact"
 
 module Acute
   # The tools an app's LLM calls, for any SDK. The app fixes the options at construction; the input schemas in
@@ -58,7 +59,13 @@ module Acute
     end
 
     # arguments as an SDK gives them: a Hash with string or symbol keys, or OpenAI's JSON string
-    def call(name, arguments)
+    def call(name, arguments) = Compact.(answer(name, arguments))
+
+    def inspect = "#<Acute::Tool #{"prefix: #{@prefix.inspect} " unless @prefix.empty?}#{@parser.inspect}>"
+
+    private
+
+    def answer(name, arguments)
       tool = name.delete_prefix(@prefix) if String === name && name.valid_encoding? && name.start_with?(@prefix)
       return failure(:unknown_tool, "there is no tool by the name in unread", [name]) unless NAMES.include?(tool)
       args = arguments(arguments) or return failure(:invalid_argument, "the arguments must be a JSON object")
@@ -69,10 +76,6 @@ module Acute
     rescue OptionError => e
       failure(:invalid_argument, OPTION_ERRORS.fetch(e.option, "#{e.option} isn't one acute can use"), [e.value])
     end
-
-    def inspect = "#<Acute::Tool #{"prefix: #{@prefix.inspect} " unless @prefix.empty?}#{@parser.inspect}>"
-
-    private
 
     def arguments(given)
       given = JSON.parse(given) if String === given

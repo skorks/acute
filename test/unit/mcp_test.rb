@@ -4,8 +4,11 @@ require "time"
 require "stringio"
 require_relative "../../lib/acute/cli"
 require_relative "../../lib/acute/mcp"
+require_relative "../schema_validator"
 
 class MCPTest < Minitest::Test
+  include SchemaValidator
+
   EXE = File.expand_path("../../exe/acute", __dir__)
   TOOL = Acute::Tool.new(now: "2026-10-17T14:00", zone: "America/New_York")
   PROSE = %w[error message description].freeze
@@ -20,7 +23,10 @@ class MCPTest < Minitest::Test
 
   def request(method, params = nil, id: 1) = { jsonrpc: "2.0", id: id, method: method, params: params }.compact
 
-  def call(name, arguments, tool: TOOL) = exchange(request("tools/call", { name: name, arguments: arguments }), tool: tool)[0]["result"]
+  def call(name, arguments, tool: TOOL)
+    result = exchange(request("tools/call", { name: name, arguments: arguments }), tool: tool)[0]["result"]
+    result&.tap { assert_tool_valid(name, _1["structuredContent"]) }
+  end
 
   def error_of(*messages) = exchange(*messages).map { _1["error"]&.slice("code", "message") }
 

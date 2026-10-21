@@ -1,44 +1,10 @@
 require_relative "../test_helper"
 require "json"
-require_relative "../../lib/acute/tool"
+require_relative "../schema_validator"
 
 # The published schemas describe what to_json gives. The validator covers only the keywords they use.
 class SchemaTest < Minitest::Test
-  DIR = File.expand_path("../../schema", __dir__)
-  TYPES = { "object" => Hash, "array" => Array, "string" => String, "number" => Numeric, "integer" => Integer, "null" => NilClass,
-            "boolean" => [true, false] }.freeze
-  ISO = /\A\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?[+-]\d\d:\d\d\z/
-
-  def schema(name) = JSON.parse(File.read(File.join(DIR, "#{name}.json")))
-
-  def check(value, node, root, path = "$")
-    if (ref = node["$ref"])
-      return check(value, root = schema(ref.delete_suffix(".json")), root, path) unless ref.start_with?("#")
-      node = root.dig(*ref.delete_prefix("#/").split("/"))
-    end
-    errors = []
-    types = Array(node["type"])
-    errors << "#{path}: #{value.inspect} is not #{types.join("/")}" if types.any? && types.none? { Array(TYPES.fetch(_1)).any? { |t| t === value } }
-    if node["oneOf"] && node["oneOf"].count { check(value, _1, root, path).empty? } != 1
-      errors << "#{path}: #{value.inspect} is not exactly one of the oneOf schemas"
-    end
-    errors << "#{path}: #{value.inspect} is not #{node["const"]}" if node.key?("const") && value != node["const"]
-    errors << "#{path}: #{value.inspect} is not one of #{node["enum"]}" if node["enum"] && !node["enum"].include?(value)
-    errors << "#{path}: #{value.inspect} is longer than #{node["maxLength"]}" if node["maxLength"] && String === value && value.length > node["maxLength"]
-    errors << "#{path}: has more than #{node["maxItems"]} items" if node["maxItems"] && Array === value && value.size > node["maxItems"]
-    errors << "#{path}: #{value.inspect} is not a date-time" if node["format"] == "date-time" && String === value && !ISO.match?(value)
-    if Hash === value
-      (node["required"] || []).each { |k| errors << "#{path}: #{k} missing" unless value.key?(k) }
-      props = node["properties"] || {}
-      value.each do |k, v|
-        if props[k] then errors.concat(check(v, props[k], root, "#{path}.#{k}"))
-        elsif node["additionalProperties"] == false then errors << "#{path}: #{k} is not in the schema"
-        end
-      end
-    end
-    value.each_with_index { |v, i| errors.concat(check(v, node["items"], root, "#{path}[#{i}]")) } if Array === value && node["items"]
-    errors
-  end
+  include SchemaValidator
 
   def assert_valid(name, object)
     root = schema(name)
@@ -87,7 +53,8 @@ class SchemaTest < Minitest::Test
     }.each do |schema, calls|
       calls.each do |name, args, t = tool|
         result = t.call(name, args)
-        assert_valid schema, result
+        assert_equal schema, result["kind"] == "time" ? "result" : result["kind"], name
+        assert_tool_valid name, result
       end
     end
   end

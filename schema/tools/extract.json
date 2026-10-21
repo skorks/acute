@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/skorks/acute/schema/tools/extract.json",
   "title": "extract",
-  "description": "Find every time and length in a message. \"today\" means the user's today. If the whole text is one time, use {parse}. If a mention's alternatives isn't empty, ask the user. Relay assumptions.",
+  "description": "Find every time and length in a message. \"today\" means the user's today. If the whole text is one time, use {parse}. If a mention has alternatives, ask the user. Relay assumptions.",
   "type": "object",
   "required": ["text"],
   "additionalProperties": false,

@@ -1,8 +1,10 @@
 require_relative "../test_helper"
-require_relative "../../lib/acute/tool"
+require_relative "../schema_validator"
 require "open3"
 
 class ToolTest < Minitest::Test
+  include SchemaValidator
+
   OPTS = { now: "2026-10-17T14:00", zone: NY }.freeze
   TOOL = Acute::Tool.new(**OPTS)
   MIRRORS = { "parse" => Acute.method(:parse), "duration" => Acute.method(:duration), "extract" => Acute.method(:extract),
@@ -20,16 +22,17 @@ class ToolTest < Minitest::Test
   PROSE = %w[error message description].freeze
   ARGS = %i[req opt key keyreq].freeze
 
-  def call(name, args, tool = TOOL) = tool.call(name, args)
+  def call(name, args, tool = TOOL) = tool.call(name, args).tap { assert_tool_valid(name, _1) }
 
-  def test_each_tool_gives_the_json_of_the_library_call_it_mirrors
-    assert_equal Acute.parse("next friday at 3", **OPTS).as_json, call("parse", { "text" => "next friday at 3" })
-    assert_equal Acute.parse("friday", **OPTS, context: :past).as_json, call("parse", { text: "friday", context: "past" })
-    assert_equal Acute.duration("an hour and a half").as_json, call("duration", { "text" => "an hour and a half" })
-    assert_equal Acute.extract("lunch tomorrow at 1 for an hour", **OPTS).as_json,
+  def test_each_tool_gives_the_compact_json_of_the_library_call_it_mirrors
+    compact = ->(value) { Acute::Tool::Compact.(value.as_json) }
+    assert_equal compact.(Acute.parse("next friday at 3", **OPTS)), call("parse", { "text" => "next friday at 3" })
+    assert_equal compact.(Acute.parse("friday", **OPTS, context: :past)), call("parse", { text: "friday", context: "past" })
+    assert_equal compact.(Acute.duration("an hour and a half")), call("duration", { "text" => "an hour and a half" })
+    assert_equal compact.(Acute.extract("lunch tomorrow at 1 for an hour", **OPTS)),
                  call("extract", { "text" => "lunch tomorrow at 1 for an hour" })
-    assert_equal Acute.verify("tomorrow", "2026-10-19", **OPTS).as_json.except("message"),
-                 call("verify", { "text" => "tomorrow", "value" => "2026-10-19" }).except("message", "unread")
+    assert_equal compact.(Acute.verify("tomorrow", "2026-10-19", **OPTS)).except("message"),
+                 call("verify", { "text" => "tomorrow", "value" => "2026-10-19" }).except("message")
     friday = Acute.parse("2026-10-23T15:00:00-04:00", **OPTS)
     assert_equal({ "kind" => "description", "text" => Acute.describe(friday, **OPTS) },
                  call("describe", { "value" => "2026-10-23T15:00:00-04:00" }))
@@ -87,12 +90,13 @@ class ToolTest < Minitest::Test
 
   def test_now_across_a_clock_change
     before = Acute::Tool.new(now: "2026-11-01T01:30-04:00", zone: NY)
-    assert_equal({ "kind" => "now", "now" => "2026-11-01T01:30:00-04:00", "weekday" => "Sunday", "zone" => NY, "offset" => "-04:00",
-                   "dst" => true, "next_change" => "2026-11-01T01:00:00-05:00" }, call("now", {}, before))
+    assert_equal({ "kind" => "now", "now" => "2026-11-01T01:30:00-04:00", "weekday" => "Sunday", "zone" => NY, "dst" => true,
+                   "next_change" => "2026-11-01T01:00:00-05:00" }, call("now", {}, before))
     after = Acute::Tool.new(now: "2026-11-01T01:30-05:00", zone: NY)
-    assert_equal [false, "-05:00", "2027-03-14T03:00:00-04:00"], call("now", {}, after).values_at("dst", "offset", "next_change")
+    assert_equal [false, "2026-11-01T01:30:00-05:00", "2027-03-14T03:00:00-04:00"], call("now", {}, after).values_at("dst", "now", "next_change")
     kolkata = call("now", {}, Acute::Tool.new(zone: "Asia/Kolkata"))
-    assert_equal [false, "+05:30", nil], kolkata.values_at("dst", "offset", "next_change")
+    assert_equal [false, nil], kolkata.values_at("dst", "next_change")
+    assert kolkata["now"].end_with?("+05:30")
     assert_in_delta Time.now, Time.new(kolkata["now"]), 5
     assert_nil call("now", {}, Acute::Tool.new(zone: "+03:00"))["next_change"]
   end
@@ -104,7 +108,7 @@ class ToolTest < Minitest::Test
     assert_equal ["invalid_date", "June has 30 days", ["june 31"]], call("parse", { "text" => "june 31" }).values_at("code", "error", "unread")
     rejecting = Acute::Tool.new(**OPTS, dst: :reject)
     assert_equal ["dst_skipped_time", ["2026-03-08 02:30"]], call("parse", { "text" => "2026-03-08 02:30" }, rejecting).values_at("code", "unread")
-    assert_equal ["too_long", []], call("parse", { "text" => "é" * 300 }).values_at("code", "unread")
+    assert_equal ["too_long", nil], call("parse", { "text" => "é" * 300 }).values_at("code", "unread")
     assert_equal "conflict", call("duration", { "text" => "next friday" })["code"]
     assert_equal ["invalid_argument", "value must be an ISO 8601 time or date", ["soon"]],
                  call("verify", { "text" => "tomorrow", "value" => "soon" }).values_at("code", "error", "unread")
@@ -125,12 +129,12 @@ class ToolTest < Minitest::Test
   # T5: the verdict names the text by what it means and a mismatched value as acute normalised it
   def test_verify_words_each_status_without_the_input
     {
-      ["next friday", "2026-10-23"] => ["match", "The value matches the text: Fri 23 Oct.", []],
+      ["next friday", "2026-10-23"] => ["match", "The value matches the text: Fri 23 Oct.", nil],
       ["friday", "2026-10-23T15:00:00-04:00"] =>
-        ["inside", "The value is inside the text, which is Fri 23 Oct.", []],
+        ["inside", "The value is inside the text, which is Fri 23 Oct.", nil],
       ["this friday", "2026-10-16"] =>
-        ["alternative", "The value is the second reading of the text; the first is Fri 23 Oct. Ask the user which they meant.", []],
-      ["tomorrow", "2026-10-19"] => ["mismatch", "The text is Sun 18 Oct, not Mon 19 Oct.", []],
+        ["alternative", "The value is the second reading of the text; the first is Fri 23 Oct. Ask the user which they meant.", nil],
+      ["tomorrow", "2026-10-19"] => ["mismatch", "The text is Sun 18 Oct, not Mon 19 Oct.", nil],
       ["flurb friday", "2026-10-23"] =>
         ["unparsed", "The text can't be read: acute couldn't read the words in unread. Ask the user to rephrase.",
          ["flurb"]],
