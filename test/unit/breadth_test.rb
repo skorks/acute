@@ -129,6 +129,12 @@ class BreadthTest < Minitest::Test
                  context: :past
   end
 
+  # Found by the fuzzer: nothing inside the weekday falls on today
+  def test_a_weekday_with_no_reading_on_that_day_fails_as_a_value
+    assert_fails "end of4 day saturday", :invalid_date
+    assert_fails "end of4 day saturday", :invalid_date, context: :past
+  end
+
   def test_two_structure_words_read_by_context
     assert_reads "sat", "2026-10-17 00:00:00 -04:00", ["2026-10-24 00:00:00 -04:00"], [:same_day_or_next]
     assert_reads "may 3", "2027-05-03 00:00:00 -04:00"
