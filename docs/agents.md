@@ -30,7 +30,32 @@ tool.call(name, arguments)            # arguments as the SDK hands them: a Hash 
 
 The app fixes every option at construction, with the same keywords as `Acute.with`. The input schemas leave them out, so the model can set neither the zone nor the time: an argument named `zone` or `now` is an `unknown_argument` failure. `prefix:` namespaces the tool names, such as `prefix: "dates_"`.
 
-`require "acute/tool/ruby_llm"` adds `tool.ruby_llm`, one RubyLLM tool per tool: `chat.with_tools(*tool.ruby_llm)`.
+### RubyLLM
+
+`require "acute/tool/ruby_llm"` adds `tool.ruby_llm`, one `RubyLLM::Tool` per tool. ruby_llm isn't a dependency of acute: add `gem "ruby_llm"` to your Gemfile. Without it the require fails with
+
+```
+acute/tool/ruby_llm needs the ruby_llm gem; add it to your Gemfile (cannot load such file -- ruby_llm) (LoadError)
+```
+
+Build the tool per user or per request, with their zone:
+
+```ruby
+require "acute/tool/ruby_llm"
+
+tool = Acute::Tool.new(zone: current_user.time_zone)  # or Acute::Tool.new(Acute.with(zone: current_user.time_zone, locale: "en-GB"))
+chat = RubyLLM.chat
+chat.with_tools(*tool.ruby_llm)
+chat.ask("Move my dentist appointment to the second monday of may at 3pm")
+```
+
+It's per user because the app, not the model, fixes the zone and now: the schemas give the model no way to set them, so every answer is in the zone the tool was built with.
+
+An app that already has a tool called `parse` can rename acute's with `prefix:`: `Acute::Tool.new(zone: current_user.time_zone, prefix: "dates_")` gives the chat `dates_parse`, `dates_extract`, `dates_now` and so on.
+
+Each call hands the model the compact hash [described at the top](#acute-for-agents). A failure is a value too, never an exception, so ruby_llm passes it back and the model can correct its arguments and try again ([Failures and `unread`](#failures-and-unread)).
+
+One caveat: when the model calls a tool name the chat doesn't have, ruby_llm answers, not acute, with ``Model tried to call unavailable tool `<name>`. Available tools: [...]``. That message quotes the name the model sent, and acute can't change it.
 
 ## Over MCP: `acute mcp`
 
