@@ -46,8 +46,8 @@ module Acute
       @ctx = ctx
       @zone = ctx.zone
       @opts = opts
-      @given = given(value)
       @value = target(value)
+      @given = given(value)
     end
 
     def verdict
@@ -62,11 +62,18 @@ module Acute
       end
       Verdict.new(@text, :mismatch, "#{@text.inspect} is #{label(r)}#{others(r, " (or %s)")}, not #{label(@value)}.", r)
     rescue ParseError => e
-      Verdict.new(@text, :unparsed, "#{@text.inspect} can't be read as a time: #{e.message}. Ask the user to say it " \
+      Verdict.new(@text, :unparsed, "#{shorten(@text)} can't be read as a time: #{unknown(e)}. Ask the user to say it " \
                                     "another way.", nil)
     end
 
     private
+
+    def unknown(error)
+      words = error.unknown
+      return error.message.length > 80 ? "#{error.message[0, 80]}…" : error.message if words.empty?
+      shown = words.first(5).map { shorten(_1, 20) }
+      "unknown #{words.size == 1 ? "word" : "words"} #{shown.join(", ")}#{" and #{words.size - 5} more" if words.size > 5}"
+    end
 
     def matched(r) = "#{@given} matches #{@text.inspect}: #{label(r)}.#{others(r, " It can also mean %s; ask the user if that matters.")}"
 
@@ -78,22 +85,34 @@ module Acute
     def target(value)
       @days = Date === value || (Range === value && (Date === value.begin || Date === value.end))
       if String === value
+        # never the lenient reading: trailing words are not an ISO 8601 string
+        r = (Acute.parse(value, **@opts, strict: true) if readable?(value) && value.match?(/\A\d{4}-\d\d-\d\d/))
+        raise ArgumentError, "value must be a Time, Date, Range or ISO 8601 string, got #{shorten(value)}" unless r && !r.ambiguous?
         @days = DATE.match?(value)
-        r = (Acute.parse(value, **@opts) if value.match?(/\A\d{4}-\d\d-\d\d/))
-        raise ArgumentError, "value must be a Time, Date, Range or ISO 8601 string, got #{value.inspect}" unless r && !r.ambiguous?
-        value = r
+        @parsed = value = r
       end
       Describe::Target.for(value, @ctx)
     end
 
     def given(value)
       case value
-      when String then value
+      when String then @days ? @parsed.date.iso8601 : moment_iso(@parsed)
       when Date then value.iso8601
       when Range then "#{given(value.begin) if value.begin}#{value.exclude_end? ? "..." : ".."}#{given(value.end) if value.end}"
       else value.respond_to?(:to_time) ? value.to_time.getlocal(@zone.offset_at(value.to_time.to_i)).strftime("%FT%T%:z") : value.inspect
       end
     end
+
+    def readable?(string) = (string.encoding == Encoding::UTF_8 || string.encoding == Encoding::US_ASCII) && string.valid_encoding?
+
+    def shorten(string, limit = 60) = string.length > limit ? "#{string[0, limit].inspect[0..-2]}…\"" : string.inspect
+
+    def moment_iso(r)
+      return r.time.getlocal(@zone.offset_at(r.time.to_i)).strftime("%FT%T%:z") if r.instant?
+      "#{r.begin && moment_iso_at(r.begin)}..#{r.end && moment_iso_at(r.end)}"
+    end
+
+    def moment_iso_at(t) = t.getlocal(@zone.offset_at(t.to_i)).strftime("%FT%T%:z")
 
     # :match when the reading is the value, :inside when the value lies within it
     def relation(r)
