@@ -14425,6 +14425,9 @@ recognizers-extract-0135
 recognizers-extract-0136
 recognizers-extract-0137
 recognizers-extract-0138
+recognizers-extract-0139
+recognizers-extract-0140
+recognizers-extract-0141
 recognizers-extract-0142
 recognizers-extract-0143
 recognizers-extract-0144
@@ -14538,6 +14541,9 @@ recognizers-extract-0251
 recognizers-extract-0252
 recognizers-extract-0253
 recognizers-extract-0254
+recognizers-extract-0255
+recognizers-extract-0256
+recognizers-extract-0257
 recognizers-extract-0258
 recognizers-extract-0259
 recognizers-extract-0260
@@ -14712,6 +14718,7 @@ recognizers-extract-0432
 recognizers-extract-0433
 recognizers-extract-0434
 recognizers-extract-0435
+recognizers-extract-0436
 recognizers-extract-0437
 recognizers-extract-0438
 recognizers-extract-0439
@@ -15127,6 +15134,9 @@ recognizers-extract-0877
 recognizers-extract-0878
 recognizers-extract-0879
 recognizers-extract-0880
+recognizers-extract-0881
+recognizers-extract-0882
+recognizers-extract-0883
 recognizers-extract-0884
 recognizers-extract-0885
 recognizers-extract-0886
@@ -15271,9 +15281,11 @@ recognizers-extract-1028
 recognizers-extract-1029
 recognizers-extract-1030
 recognizers-extract-1031
+recognizers-extract-1032
 recognizers-extract-1033
 recognizers-extract-1034
 recognizers-extract-1035
+recognizers-extract-1036
 recognizers-extract-1037
 recognizers-extract-1038
 recognizers-extract-1039
@@ -15329,6 +15341,7 @@ recognizers-extract-1092
 recognizers-extract-1093
 recognizers-extract-1094
 recognizers-extract-1095
+recognizers-extract-1096
 recognizers-extract-1097
 recognizers-extract-1098
 recognizers-extract-1099
