@@ -23,6 +23,15 @@ module Acute
       out << @text[at..]
       out.gsub(/\s+/, " ").gsub(/\s+([,.;])/, '\1').gsub(/\A[\s,;]+|[\s,;]+\z/, "")
     end
+
+    def to_h
+      { kind: "extraction", text: @text, remainder: remainder,
+        mentions: @mentions.map { |m| { kind: m.kind.to_s, text: m.text, offset: [m.offset.begin, m.offset.end], value: m.value.to_h } } }
+    end
+
+    def to_json(*args) = to_h.to_json(*args)
+
+    def as_json(*) = JSON.parse(to_json)
   end
 
   module Extract
