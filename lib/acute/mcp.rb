@@ -20,8 +20,8 @@ module Acute
     ZONE_LENGTH = 64
     ZONE = {
       "type" => "string", "maxLength" => ZONE_LENGTH,
-      "description" => "The user's IANA time zone, such as America/New_York, or a UTC offset such as +05:30. " \
-                       "Leave it out for the server's zone."
+      "description" => "An IANA time zone such as America/New_York, or a UTC offset such as +05:30. Pass one only when the " \
+                       "user names a zone other than their own (\"3pm London time\"); otherwise leave it out and the user's zone is used."
     }.freeze
     ZONE_ERROR = "zone must be an IANA time zone such as America/New_York, or a UTC offset such as +05:30".freeze
     OUTPUTS = { "parse" => "result", "duration" => "duration", "extract" => "extraction", "verify" => "verdict",
