@@ -67,11 +67,16 @@ module Acute
       options(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays, business_days, year_bias)
     end
 
-    def fresh = Context.new(*@args)
+    def fresh = Context.new(*@args).tap { _1.budget = budget }
+
+    # D49: the business days this call may still count, shared with the contexts it makes for each piece (T17)
+    attr_writer :budget
+
+    def budget = @budget ||= Resolve::Period::Budget.new
 
     # D47: the days business-day counts step over, or nil for Monday to Friday. The built-in holidays only name
     # days; a holidays: given is taken as days off.
-    def business_days = @business_days || (@holidays && (@workdays ||= Holidays::Workdays.new(@holidays)))
+    def business_days = @business_days || (@holidays && (budget.workdays ||= Holidays.workdays(@holidays)))
 
     # Under a zone named in the text, today and now_secs move with it; returns the block's value
     def in_zone(zone)

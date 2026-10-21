@@ -173,7 +173,7 @@ Every call takes the same options:
 | `fiscal_year_start:` | the month a fiscal year starts, for "FY27" |
 | `strict:` | `false` skips unknown words |
 | `dst:` | `:compatible` (default), `:earlier`, `:later` or `:reject`, for wall times daylight saving repeats or skips |
-| `holidays:`, `business_days:` | a holidays-gem region, or your own calendar object |
+| `holidays:`, `business_days:` | a holidays-gem region, or your own calendar object. A call counts at most 10,000 business days in all, across every count in it; past that a count fails with `business_day_limit` |
 | `year_bias:` | where two-digit years fall (default 50: the 100 years from 50 years ago) |
 
 `Acute.with` checks a set of options once and returns a parser. The parser is frozen, so it can be shared across threads and Ractors. Options given to a call override the parser's, and `Parser#with(**more)` makes a new parser ([with](rules.md#with)):

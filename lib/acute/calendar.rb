@@ -31,6 +31,22 @@ module Acute
       365 * y + y / 4 - y / 100 + y / 400 - 719_162 <= d ? y + 1 : y
     end
 
+    # D17: the day n (not 0) Mondays to Fridays after day d, or before it when n is negative. A weekend counts from the
+    # Friday before it going forward, and the Monday after it going back.
+    def self.add_weekdays(d, n)
+      m = (d + 3) % 7 # Monday 0 to Sunday 6
+      if n > 0
+        d -= m - 4 if m > 4
+        r = n % 5
+        d + n / 5 * 7 + r + ((m > 4 ? 4 : m) + r > 4 ? 2 : 0)
+      else
+        n = -n
+        d += 7 - m if m > 4
+        r = n % 5
+        d - n / 5 * 7 - r - ((m > 4 ? 0 : m) < r ? 2 : 0)
+      end
+    end
+
     # Packed as y * 10000 + m * 100 + d, so the hot path allocates no Array
     def self.civil_from_days(z)
       z += 719_468
