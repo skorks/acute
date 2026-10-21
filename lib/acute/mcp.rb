@@ -20,12 +20,13 @@ module Acute
     ZONE_LENGTH = 64
     ZONE = {
       "type" => "string", "maxLength" => ZONE_LENGTH,
-      "description" => "An IANA time zone such as America/New_York, or a UTC offset such as +05:30. Pass one only when the " \
-                       "user names a zone other than their own (\"3pm London time\"); otherwise leave it out and the user's zone is used."
+      "description" => "Only if the user names a zone not their own (\"3pm London time\"): IANA or UTC offset"
     }.freeze
-    ZONE_ERROR = "zone must be an IANA time zone such as America/New_York, or a UTC offset such as +05:30".freeze
+    ZONE_ERROR = "zone must be an IANA time zone or a UTC offset such as +05:30".freeze
     OUTPUTS = { "parse" => "result", "duration" => "duration", "extract" => "extraction", "verify" => "verdict",
                 "describe" => "description", "now" => "now" }.freeze
+    ANNOTATIONS = %w[title description examples $comment].freeze
+    NAMED = %w[properties $defs].freeze
     SCHEMAS = File.expand_path("../../schema", __dir__)
 
     Refusal = Class.new(StandardError) do
@@ -38,8 +39,8 @@ module Acute
       end
     end
 
-    # A tool's own schema or a failure, in one self-contained document: the schemas it refers to are hoisted
-    # into $defs and their refs made local, so a client resolves everything without fetching
+    # A tool's own schema or a failure, in one self-contained document: the schemas it refers to are inlined, so a
+    # client resolves everything without fetching
     def self.output_schema(name)
       defs = {}
       hoist = lambda do |file|
@@ -51,7 +52,37 @@ module Acute
       end
       own = OUTPUTS.fetch(name)
       [own, "failure"].each(&hoist)
-      { "type" => "object", "oneOf" => [{ "$ref" => "#/$defs/#{own}" }, { "$ref" => "#/$defs/failure" }], "$defs" => defs }
+      defs = bare(defs, names: true)
+      root = [own, "failure"].map { { "$ref" => "#/$defs/#{_1}" } }
+      uses = JSON.generate([root, defs]).scan(%r{"#/\$defs/(\w+)"}).flatten.tally
+      schema = { "type" => "object", "oneOf" => inline(root, defs, uses) }
+      shared = defs.select { uses.fetch(_1, 0) > 1 }.transform_values { inline(_1, defs, uses) }
+      shared.empty? ? schema : schema.merge("$defs" => shared)
+    end
+
+    # The model's host pays for every char of a listing, and the annotations are for people: validation needs only
+    # the structure. Under properties and $defs the keys are names, never annotations.
+    def self.bare(node, names: false)
+      case node
+      when Hash
+        node.each_with_object({}) do |(key, value), out|
+          out[key] = bare(value, names: !names && NAMED.include?(key)) if names || !ANNOTATIONS.include?(key)
+        end
+      when Array then node.map { bare(_1) }
+      else node
+      end
+    end
+
+    # A schema referred to once is written in place; only those referred to more than once stay in $defs
+    def self.inline(node, defs, uses)
+      case node
+      when Hash
+        ref = node["$ref"]&.delete_prefix("#/$defs/")
+        return inline(defs.fetch(ref), defs, uses).merge(node.except("$ref")) if ref && uses[ref] == 1
+        node.transform_values { inline(_1, defs, uses) }
+      when Array then node.map { inline(_1, defs, uses) }
+      else node
+      end
     end
 
     def self.localise(node, hoist)

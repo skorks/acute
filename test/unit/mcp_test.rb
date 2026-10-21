@@ -65,8 +65,10 @@ class MCPTest < Minitest::Test
     exchange(request("tools/list"))[0].dig("result", "tools").each do |tool|
       schema = tool["outputSchema"]
       assert_equal "object", schema["type"]
-      assert_equal "#/$defs/failure", schema["oneOf"][1]["$ref"]
-      refs(schema).each { assert schema["$defs"].key?(_1.delete_prefix("#/$defs/")), "#{tool["name"]}: #{_1}" }
+      assert_equal "failure", schema["oneOf"][1].dig("properties", "kind", "const")
+      refs(schema).each { assert schema.fetch("$defs", {}).key?(_1.delete_prefix("#/$defs/")), "#{tool["name"]}: #{_1}" }
+      schema.fetch("$defs", {}).each_key { assert_operator refs(schema).count("#/$defs/#{_1}"), :>, 1, "#{tool["name"]}: #{_1}" }
+      refute_match(/"(description|title|examples|\$comment)":/, JSON.generate(schema), tool["name"])
     end
   end
 
@@ -251,8 +253,7 @@ class MCPTest < Minitest::Test
 
   # The top level of one oneOf branch: its kind, its required keys, and no others
   def conforms?(schema, value)
-    schema["oneOf"].any? do |branch|
-      b = schema["$defs"].fetch(branch["$ref"].delete_prefix("#/$defs/"))
+    schema["oneOf"].any? do |b|
       kind = b.dig("properties", "kind")
       (kind.nil? || [kind["const"], *kind["enum"]].include?(value["kind"])) && b["required"].all? { value.key?(_1) } &&
         (b["additionalProperties"] != false || (value.keys - b["properties"].keys).empty?)
