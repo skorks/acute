@@ -43,6 +43,7 @@ module Acute
     CAP = 256      # written with a capital
     SHORT = 512    # two digits after an apostrophe: a year with its century left out, "'26"
     PLURAL = 1024  # "fridays": only after a count
+    QUOTED = 2048  # a decade written with an apostrophe, "90's": never seconds
     # A CLOCK keeps its written fraction of a second in the flags above this bit: the digits after the point as
     # a number, times 32, plus how many there are (D47)
     FRACTION = 12
@@ -277,6 +278,7 @@ module Acute
             t.push(ORD, v, flags, st, i)
           elsif (c | 32 == 115 || c == 39) && (nd == 2 || nd == 4) && v % 10 == 0 && (j = decade_end(s, i, n))
             # "1990s", "90's"
+            flags |= QUOTED if c == 39
             i = j
             t.push(DECADE, v, flags, st, i)
           elsif nd == 12 || nd == 14

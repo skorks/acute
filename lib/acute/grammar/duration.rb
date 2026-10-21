@@ -56,7 +56,7 @@ module Acute
           return Unit.new(unit, f[1])
         end
       end
-      if @t[i] == L::DECADE # "5400s": in a length, seconds, whatever the digits
+      if @t[i] == L::DECADE && @t[i + 2] & (L::WORDY | L::QUOTED) == 0 # "5400s": in a length, seconds, whatever the digits; not "70's" or "nineties" (D50)
         @i = i + S
         return Unit.new(:second, @t[i + 1])
       end

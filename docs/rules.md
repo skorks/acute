@@ -516,6 +516,7 @@ More:
 ### D7. last, past, next and within N units
 
 - **A window counted from now** (`rolling_window`): "past 7 days" → now − 7 days to now; "next 3 days" → now to now + 3 days.
+- **D50.** "this" takes no count: "this 5 years" is nil, so "he said this 5 years ago" mentions "5 years ago".
 - **Whole calendar days are the alternatives.** "past 7 days" → the rolling window, then 11–17 October (ending today), then 10–16 October.
 - **Seconds, minutes and hours** are rolling only: "past 24 hours".
 - **"last week"** with no number is the previous calendar week.
@@ -582,6 +583,7 @@ More:
 - **D44.** "1 quarter ago" is an instant, three months back.
 - **D47.** Counts in words past ninety-nine are read: "fifteen hundred seconds", "a hundred days", "two million eight hundred thousand seconds from now". **D48.** "and" follows only hundred, thousand or million. A bare "hundred", "thousand" or "million" is one of them.
 - **D47.** "5400s" before "ago", "from now", "later", "after" or "before" is that many seconds. Alone it is a decade or a year.
+- **D50.** A decade written with an apostrophe or in words is never seconds: "in 70's" and "in nineties" are the decades; "in 30s" is still 30 seconds.
 - **D48.** "after" with several lengths is a shift: "after 2 days, 3 hours and 1 minute".
 - **D48.** A length after a date with nothing joining them is not a shift: "2004-05-05 12:00:00 CEST 6 months" → nil.
 
