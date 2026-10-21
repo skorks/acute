@@ -754,7 +754,7 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 
 - **D45.** A Duration's JSON is `kind`, `parts`, `iso8601` and `seconds`. `seconds` is null when a part has no fixed length.
 - **D45.** `as_json` gives String keys on every value object.
-- **D45.** The schemas are `schema/result.json`, `schema/duration.json` and `schema/verdict.json`.
+- **D45.** The schemas are [schema/result.json](../schema/result.json), [duration.json](../schema/duration.json), [extraction.json](../schema/extraction.json) and [verdict.json](../schema/verdict.json). The others in [schema/](../schema) are for the [agent tools](agents.md).
 
 ### describe
 
@@ -800,7 +800,7 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 - **D45.** `acute "next friday 3pm"` prints the reading in describe's calendar style, with the zone's abbreviation, then any alternatives as "(also: …)". A Duration prints as "1h 30m".
 - **D45.** With no arguments, it reads one phrase per line from stdin and prints exactly one line for each. A failure prints `error: <reason>`; with `--json`, a JSON line `{"kind":"error",...}`.
 - **D45.** Exit codes: 0 when everything parsed, 1 when a phrase failed, 2 for bad options.
-- **D45.** The options are the context options with dashes (`--now`, `--zone`, `--locale`, `--context`, `--week-start`, `--hemisphere`, `--fiscal-year-start`), plus `--json`.
+- **D45.** The options are the context options with dashes (`--now`, `--zone`, `--locale`, `--context`, `--week-start`, `--hemisphere`, `--fiscal-year-start`, `--dst`, `--holidays`, `--year-bias`), plus `--lenient` for `strict: false` and `--json`. They are all in [cli.md](cli.md).
 
 ## Compatibility layers
 
