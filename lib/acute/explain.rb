@@ -30,6 +30,9 @@ module Acute
       when :dst_repeated_time
         ParseError.new("#{slice.inspect} names a wall time that happens twice as the clocks go back",
                        code: failure.code, position: first, hint: "dst: :earlier or :later picks one")
+      when :business_day_limit
+        ParseError.new("more than #{Resolve::Period::LIMIT} business days is too many to count", code: :business_day_limit,
+                       position: first)
       else
         ParseError.new("longer than #{MAX_LENGTH} bytes", code: :too_long, position: first)
       end

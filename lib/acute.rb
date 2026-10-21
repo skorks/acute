@@ -90,7 +90,8 @@ module Acute
     return ctx.strict ? tokens : skipping(text, ctx, tokens) if Failure === tokens
     tree = Grammar.parse(tokens)
     return tree if Failure === tree
-    readings = Resolve.call(tree, ctx)
+    readings = Resolve.call(tree, ctx, failure: true)
+    return readings if Failure === readings
     return Failure.new(:invalid_date, 0, text.bytesize) if readings.empty?
     if ctx.dst_policy == :reject
       return Failure.new(readings[0].dst, 0, text.bytesize) if readings[0].dst
