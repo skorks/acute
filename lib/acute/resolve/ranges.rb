@@ -57,6 +57,8 @@ module Acute
         f = Periodic.inside(from, outer, s, ctx)[0]
         return [] unless f
         t = G::Clock === node.to ? after(node.to, ctx, f.b) : Periodic.inside(node.to, outer, s, ctx).find { |x| x.b >= f.b }
+        # D48: a weekday earlier in the week than the start is the one after it, out of the week
+        t ||= after(node.to, ctx, f.b) if G::Weekday === node.from && G::Weekday === node.to
         (x = t && finish(f, t)) ? [x] : []
       end
 
