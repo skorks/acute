@@ -225,7 +225,7 @@ module Acute
           return Within.new(Nth.new(-1, node), month)
         end
         Rel.new(w, node)
-      elsif k == L::NUM && unit_at(@i + S)
+      elsif k == L::NUM && unit_at(@i + S) && w != :this # D50: "this" takes no count: "this 5 years ago" is "5 years ago"
         q = quantity
         Rel.new(w, q)
       elsif k == L::MONTH && @t[@i + S] != L::NUM && @t[@i + S] != L::ORD

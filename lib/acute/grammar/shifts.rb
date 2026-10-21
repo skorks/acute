@@ -190,7 +190,7 @@ module Acute
         i += S
       elsif @t[i + 1] == :couple # D44: "a couple of days" is two
         count = 2
-      elsif @t[i] == L::DECADE # "30s", "5400s": seconds, not a decade (D47)
+      elsif @t[i] == L::DECADE && @t[i + 2] & (L::WORDY | L::QUOTED) == 0 # "30s", "5400s": seconds, not a decade (D47); "70's" and "nineties" are decades (D50)
         @i = i + S
         return Unit.new(:second, @t[i + 1])
       else return

@@ -129,4 +129,19 @@ class ExtractTest < Minitest::Test
   def test_e2_for_counts_characters_before_it
     assert_equal [[:duration, "for 2 hours", 10...21]], mentions("Réunion é for 2 hours")
   end
+
+  def texts(text) = extract(text).mentions.map(&:text)
+
+  def test_d50_a_decade_in_words_or_with_an_apostrophe_is_never_seconds
+    x = extract("In 70's")
+    assert_equal ["70's"], x.mentions.map(&:text)
+    assert_equal 10, x.mentions[0].value.end.year - x.mentions[0].value.begin.year
+    assert_equal 1990, Acute.parse("in nineties", now: "2026-10-17T14:00", zone: NY).begin.year
+    assert_equal 30, Acute.parse("in 30s", now: "2026-10-17T14:00", zone: NY).begin - Time.new(2026, 10, 17, 14, 0, 0, "-04:00")
+  end
+
+  def test_d50_this_takes_no_count
+    assert_nil Acute.parse("this 5 years", now: "2026-10-17T14:00", zone: NY)
+    assert_equal ["5 years ago"], texts("he said this 5 years ago.")
+  end
 end
