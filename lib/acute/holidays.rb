@@ -20,7 +20,7 @@ module Acute
       NAME = /\A[a-z][a-z0-9_]*\z/i
 
       def initialize(regions, given)
-        unless regions.any? && regions.all? { (String === _1 || Symbol === _1) && NAME.match?(_1) }
+        unless regions.any? && regions.all? { (Symbol === _1 || (String === _1 && _1.valid_encoding?)) && NAME.match?(_1) }
           raise OptionError.new("holidays: a region is a name like :us or :gb_eng", option: :holidays, value: given)
         end
         begin

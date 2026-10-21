@@ -56,6 +56,7 @@ module Acute
     private_class_method :main_ractor?, :ractor_zones
 
     def self.build(name)
+      raise OptionError.new("unknown zone #{name.inspect}", option: :zone, value: name) unless name.valid_encoding?
       if (m = FIXED.match(name))
         offset = (m[2].to_i * 3600 + m[3].to_i * 60) * (m[1] == "-" ? -1 : 1)
         return new(name, [], [], [], offset, name)

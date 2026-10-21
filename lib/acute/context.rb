@@ -63,7 +63,7 @@ module Acute
       @strict = strict
       @year_bias = YEAR_BIAS
       # Most parses give none of the other options, and then skip their checks
-      return unless locale || week_start || hemisphere || fiscal_year_start || true != strict || dst || holidays || business_days || year_bias
+      return unless locale || week_start || hemisphere || fiscal_year_start || strict != true || dst || holidays || business_days || year_bias
       options(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays, business_days, year_bias)
     end
 
@@ -128,7 +128,7 @@ module Acute
     private
 
     def options(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays, business_days, year_bias)
-      raise OptionError.new("strict: must be true or false", option: :strict, value: strict) unless false == strict || true == strict
+      raise OptionError.new("strict: must be true or false", option: :strict, value: strict) unless strict == true || strict == false
       @locale = Locale.for(locale) if locale
       @week_start = week_start && choice(:week_start, week_start, WEEK_STARTS, ":sunday or :monday")
       @south = hemisphere && choice(:hemisphere, hemisphere, HEMISPHERES, ":north or :south")
@@ -141,14 +141,17 @@ module Acute
       @dst_policy = dst && choice(:dst, dst, DST_POLICIES, ":compatible, :earlier, :later or :reject")
       @holidays = holidays && Holidays.for(holidays)
       if business_days
-        raise OptionError.new("business_days: must answer business_day?(date)", option: :business_days, value: business_days) unless business_days.respond_to?(:business_day?)
+        unless business_days.respond_to?(:business_day?)
+          raise OptionError.new("business_days: must answer business_day?(date)", option: :business_days,
+value: business_days)
+        end
         @business_days = business_days
       end
       @year_bias = whole(:year_bias, year_bias, 0..99, "a number of years, 0 to 99") if year_bias
     end
 
     def choice(option, value, table, allowed)
-      key = (String === value || Symbol === value) && value.to_sym
+      key = (Symbol === value || (String === value && value.valid_encoding?)) && value.to_sym
       table.fetch(key) { raise OptionError.new("#{option}: must be #{allowed}", option: option, value: value) }
     end
 
@@ -176,7 +179,7 @@ module Acute
     end
 
     def iso_epoch(str)
-      m = ISO.match(str) or raise OptionError.new("now: #{str.inspect} is not ISO 8601", option: :now, value: str)
+      m = str.valid_encoding? && ISO.match(str) or raise OptionError.new("now: #{str.inspect} is not ISO 8601", option: :now, value: str)
       y, mo, d, h, mi, s = m.captures.first(6).map(&:to_i)
       unless mo.between?(1, 12) && d.between?(1, Calendar.days_in_month(y, mo)) && h < 24 && mi < 60 && s < 60
         raise OptionError.new("now: #{str.inspect} is not a valid time", option: :now, value: str)
