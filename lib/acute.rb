@@ -7,6 +7,7 @@ require_relative "acute/resolve"
 require_relative "acute/result"
 require_relative "acute/explain"
 require_relative "acute/duration"
+require_relative "acute/rule"
 require_relative "acute/extract"
 require_relative "acute/read"
 require_relative "acute/describe"
@@ -59,6 +60,37 @@ module Acute
     Failure === units ? units : Duration.from_units(units)
   end
   private_class_method :length
+
+  # A repeating time as a Rule, or nil when the text is not one ("next friday" is a time, "twice a week" no rule)
+  def self.recurrence(text, now: nil, zone: nil, context: :future, locale: nil, week_start: nil, hemisphere: nil,
+                      fiscal_year_start: nil, strict: true, dst: nil, holidays: nil, business_days: nil, year_bias: nil)
+    out = rule(text, Context.new(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst,
+                                 holidays, business_days, year_bias))
+    Rule === out ? out : nil
+  end
+
+  def self.recurrence!(text, now: nil, zone: nil, context: :future, locale: nil, week_start: nil, hemisphere: nil,
+                       fiscal_year_start: nil, strict: true, dst: nil, holidays: nil, business_days: nil, year_bias: nil)
+    out = rule(text, Context.new(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst,
+                                 holidays, business_days, year_bias))
+    raise Explain.error(out, utf8(text) || text) if Failure === out
+    out
+  end
+
+  def self.rule(given, ctx, tokens = nil)
+    unless tokens
+      raise ArgumentError, "text must be a String, got #{given.class}" unless String === given
+      text = utf8(given) or return Failure.new(:invalid_encoding, 0, given.bytesize)
+      return Failure.new(:too_long, 0, text.bytesize) if text.bytesize > MAX_LENGTH
+      tokens = Lexer.lex(text)
+      return tokens if Failure === tokens
+    end
+    tree = Grammar.rule(tokens)
+    return tree if Failure === tree
+    out = Resolve::Recur.call(tree, ctx)
+    Symbol === out ? Failure.new(out, 0, given.bytesize) : out
+  end
+  private_class_method :rule
 
   # strict: is taken and has no effect: extract always skips the words it doesn't know
   def self.extract(text, now: nil, zone: nil, context: :future, locale: nil, week_start: nil, hemisphere: nil,

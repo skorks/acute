@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/skorks/acute/schema/rule.json",
+  "title": "Acute::Rule",
+  "description": "A repeating time as an iCalendar rule (RFC 5545). rrule is the RRULE value alone; ical is the DTSTART, RRULE and any EXDATE lines. dtstart is a local time with its offset when the rule has a clock, else a date.",
+  "type": "object",
+  "required": ["kind", "text", "rrule", "dtstart", "zone", "ical"],
+  "additionalProperties": false,
+  "properties": {
+    "kind": { "const": "rule" },
+    "text": { "type": "string" },
+    "rrule": { "type": "string" },
+    "dtstart": { "type": "string" },
+    "zone": { "type": "string" },
+    "ical": { "type": "string" }
+  }
+}

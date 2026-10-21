@@ -758,7 +758,7 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 
 ## Recurrence
 
-`Acute.recurrence` reads a repeating time as an iCalendar rule (RFC 5545). It comes in 0.3: the corpus holds these rules already, and acute doesn't read rules yet. Where iCalendar has its own meaning, the rule keeps it.
+`Acute.recurrence` reads a repeating time as an iCalendar rule (RFC 5545), and `Acute.read` tries one first. Where iCalendar has its own meaning, the rule keeps it.
 
 - **R1.** A rule is a DTSTART, an RRULE and any EXDATE. `rrule` is the RRULE value alone; `to_ical` gives all three lines. With a clock, DTSTART is `DTSTART;TZID=<zone>:<wall time>`, the zone given, UTC too; without one, the rule is of whole days: `DTSTART;VALUE=DATE:20261019`. EXDATE takes DTSTART's form, and UNTIL a date or, with a clock, a UTC time.
 - **R2.** DTSTART is the first occurrence on or after now. A day under way counts and a passed clock doesn't: "every saturday" said on Saturday starts today, "every saturday at 10am" said at 14:00 next Saturday. A clock equal to now is now (D36).
@@ -786,7 +786,7 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 
 - **D45.** A Duration's JSON is `kind`, `parts`, `iso8601` and `seconds`. `seconds` is null when a part has no fixed length.
 - **D45.** `as_json` gives String keys on every value object.
-- **D45.** The schemas are [schema/result.json](../schema/result.json), [duration.json](../schema/duration.json), [extraction.json](../schema/extraction.json) and [verdict.json](../schema/verdict.json). The others in [schema/](../schema) are for the [agent tools](agents.md).
+- **D45.** The schemas are [schema/result.json](../schema/result.json), [duration.json](../schema/duration.json), [rule.json](../schema/rule.json), [extraction.json](../schema/extraction.json) and [verdict.json](../schema/verdict.json). The others in [schema/](../schema) are for the [agent tools](agents.md).
 
 ### describe
 

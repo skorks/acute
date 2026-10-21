@@ -4,6 +4,7 @@ module Acute
                     style: :relative)
     raise OptionError.new("style: must be :relative or :calendar", option: :style, value: style) unless Describe::STYLES.include?(style)
     return Describe.duration(value) if Duration === value
+    return value.to_s if Rule === value
     zone ||= value.zone if Result === value
     ctx = Context.new(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays,
                       business_days, year_bias)
