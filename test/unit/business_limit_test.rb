@@ -7,6 +7,11 @@ class BusinessLimitTest < Minitest::Test
 
   def elapsed(&) = Process.clock_gettime(Process::CLOCK_MONOTONIC).then { |t| yield; Process.clock_gettime(Process::CLOCK_MONOTONIC) - t }
 
+  def test_a_duration_past_the_limit_raises_a_parse_error_from_after
+    err = assert_raises(Acute::ParseError) { Acute.duration("999999999 business days").after(NOW, zone: NY) }
+    assert_equal :business_day_limit, err.code
+  end
+
   def test_ten_thousand_business_days_work
     assert parse_in("in 10000 business days")
   end
