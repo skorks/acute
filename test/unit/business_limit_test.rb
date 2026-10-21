@@ -5,7 +5,10 @@ class BusinessLimitTest < Minitest::Test
 
   def parse_in(text, **opts) = Acute.parse(text, now: NOW, zone: NY, **opts)
 
-  def elapsed(&) = Process.clock_gettime(Process::CLOCK_MONOTONIC).then { |t| yield; Process.clock_gettime(Process::CLOCK_MONOTONIC) - t }
+  def elapsed(&) = Process.clock_gettime(Process::CLOCK_MONOTONIC).then do |t|
+    yield
+    Process.clock_gettime(Process::CLOCK_MONOTONIC) - t
+  end
 
   def test_a_duration_past_the_limit_raises_a_parse_error_from_after
     err = assert_raises(Acute::ParseError) { Acute.duration("999999999 business days").after(NOW, zone: NY) }

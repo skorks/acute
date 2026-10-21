@@ -92,9 +92,9 @@ class VerifyTest < Minitest::Test
   end
 
   def test_unparsed_quotes_at_most_sixty_characters
-    v = verify("banana " + "x" * 200, "2026-10-30")
+    v = verify("banana #{"x" * 200}", "2026-10-30")
     assert_equal :unparsed, v.status
-    assert_includes v.message, "\"#{("banana " + "x" * 200)[0, 60]}…\""
+    assert_includes v.message, "\"#{"banana #{"x" * 200}"[0, 60]}…\""
     assert_operator v.message.length, :<, 250
   end
 

@@ -81,7 +81,7 @@ class ErrorsTest < Minitest::Test
     assert_equal :unknown_word, error("x" * 512).code
     assert_equal :too_long, error("é" * 300).code
     assert_equal :unknown_word, error("é" * 256).code
-    emoji = "\u{1F600}" * 200 + "tomorrow"
+    emoji = "#{"\u{1F600}" * 200}tomorrow"
     assert_equal :too_long, error(emoji).code
     assert_nil Acute.parse(emoji, strict: false)
     assert_nil Acute.duration(emoji)
