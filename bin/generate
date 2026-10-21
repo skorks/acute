@@ -40,7 +40,7 @@ def assumptions_rb
   data = YAML.load_file(File.join(ROOT, "data/assumptions.yml"))
   out = +header("data/assumptions.yml")
   out << "module Acute\n  module Tables\n    ASSUMPTIONS = {\n"
-  data.each { |code, a| out << "      #{code}: [#{a["rule"].inspect}, #{a["message"].inspect}].freeze,\n" }
+  data.each { |code, a| out << "      #{code}: [#{a["rule"].inspect}, #{a["message"].inspect}, #{a.fetch("short").inspect}].freeze,\n" }
   out << "    }.freeze\n  end\nend\n"
 end
 
