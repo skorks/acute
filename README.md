@@ -196,6 +196,21 @@ Fri, Oct 23, 3pm EDT
 $ acute --json < phrases.txt    # one JSON line per phrase
 ```
 
+### Agents and LLMs
+
+```
+$ claude mcp add acute -- acute mcp --zone America/New_York    # an MCP server over stdio
+```
+
+```ruby
+tool = Acute::Tool.new(zone: user.zone)            # require "acute/tool"
+tool.definitions(:anthropic)                       # or :openai: six tools for any SDK
+tool.call("parse", { "text" => "next friday 3pm" }) # => {"kind" => "time", ...}
+chat.with_tools(*tool.ruby_llm)                    # require "acute/tool/ruby_llm"
+```
+
+The tools, their failures and how zone and now are set: [docs/agents.md](docs/agents.md).
+
 ## Coming from chronic
 
 `require "acute/chronic"` gives you chronic's API, `Chronic.parse` with chronic's options, answered by acute. `require "acute/chronic_duration"` does the same for chronic_duration.
@@ -222,6 +237,7 @@ The ranges come from repeated runs on a busy machine, so read the ratios rather 
 ## Documentation
 
 - [docs/rules.md](docs/rules.md): every convention acute follows, by topic, with examples.
+- [docs/agents.md](docs/agents.md): acute as tools for an LLM, through `Acute::Tool` or `acute mcp`.
 - [schema/](schema): JSON Schemas for `to_json` of a Result, a Duration and a Verdict.
 
 ## Contributing
