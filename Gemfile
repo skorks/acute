@@ -11,4 +11,5 @@ group :development do
   gem "rubocop", "1.92.0", require: false
   gem "rubocop-minitest", "0.41.0", require: false
   gem "rubocop-performance", "1.27.0", require: false
+  gem "ruby_llm", "2.1.1", require: false
 end
