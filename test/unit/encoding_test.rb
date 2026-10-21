@@ -4,12 +4,13 @@ require "json"
 # Text that isn't UTF-8 fails as a value, in strict and lenient parsing alike
 class EncodingTest < Minitest::Test
   AT = { now: "2026-10-17T14:00", zone: NY }.freeze
+  MODES = [{}, { strict: false }].freeze
   BAD = ["tomorrow \xff", "\xfftomorrow", "tomorrow".encode("UTF-16LE"), "tomorrow".encode("UTF-16BE"),
          "tomorrow \xE9".dup.force_encoding("ISO-8859-1"), "caf\xE9".b].freeze
 
   def test_invalid_text_gives_nil_everywhere
     BAD.each do |text|
-      [{}, { strict: false }].each do |opts|
+      MODES.each do |opts|
         assert_nil Acute.parse(text, **AT, **opts), text.inspect
         assert_nil Acute.read(text, **AT, **opts), text.inspect
         assert_nil Acute.duration(text, **opts), text.inspect
@@ -19,7 +20,7 @@ class EncodingTest < Minitest::Test
 
   def test_parse_bang_explains
     BAD.each do |text|
-      [{}, { strict: false }].each do |opts|
+      MODES.each do |opts|
         e = assert_raises(Acute::ParseError, text.inspect) { Acute.parse!(text, **AT, **opts) }
         assert_equal :invalid_encoding, e.code
         assert_match(/not valid UTF-8/, e.message)

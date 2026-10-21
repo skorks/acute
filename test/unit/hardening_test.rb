@@ -20,7 +20,7 @@ class HardeningTest < Minitest::Test
   end
 
   def test_chronic_duration_stays_fast_on_pathological_text
-    ["1 and 2 and " * 8000, "1" + " and" * 5000 + " x"].each do |text|
+    ["1 and 2 and " * 8000, "1#{" and" * 5000} x"].each do |text|
       started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       ChronicDuration.parse(text)
       assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 1.0, "#{text[0, 20].inspect}..."

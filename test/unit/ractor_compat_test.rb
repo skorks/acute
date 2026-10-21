@@ -7,10 +7,10 @@ require_relative "../../lib/acute/chronic_duration"
 class RactorCompatTest < Minitest::Test
   NOW = Time.utc(2026, 10, 17, 14)
 
-  def in_ractor(*args, &block)
+  def in_ractor(*args, &)
     was = Warning[:experimental]
     Warning[:experimental] = false
-    ractor_value(Ractor.new(*args, &block))
+    ractor_value(Ractor.new(*args, &))
   ensure
     Warning[:experimental] = was
   end
