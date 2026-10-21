@@ -1,15 +1,21 @@
 module Acute
   def self.verify(text, value, now: nil, zone: nil, context: :future, locale: nil, week_start: nil, hemisphere: nil,
                   fiscal_year_start: nil, strict: true, dst: nil, holidays: nil, business_days: nil, year_bias: nil)
+    verifier(text, value, now:, zone:, context:, locale:, week_start:, hemisphere:, fiscal_year_start:, strict:, dst:,
+                          holidays:, business_days:, year_bias:).verdict
+  end
+
+  # Acute::Tool takes the Verify, by send, to word the verdict without the input (T5)
+  def self.verifier(text, value, now: nil, zone: nil, context: :future, locale: nil, week_start: nil, hemisphere: nil,
+                    fiscal_year_start: nil, strict: true, dst: nil, holidays: nil, business_days: nil, year_bias: nil)
     ctx = Context.new(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays,
                       business_days, year_bias)
     opts = { now: Time.at(ctx.now), zone: zone, context: context, locale: locale, week_start: week_start,
              hemisphere: hemisphere, fiscal_year_start: fiscal_year_start, strict: strict, dst: dst,
              holidays: holidays, business_days: business_days, year_bias: year_bias }
-    verify = Verify.new(text, value, ctx, opts)
-    # Acute::Tool takes the Verify, to word the verdict without the input (T5)
-    block_given? ? yield(verify) : verify.verdict
+    Verify.new(text, value, ctx, opts)
   end
+  private_class_method :verifier
 
   # Whether a time someone else worked out is what the text says. The message is written to go straight back
   # to a model (D45).

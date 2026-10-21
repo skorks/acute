@@ -118,7 +118,7 @@ module Acute
     end
 
     def verify(text, value, context)
-      @parser.verify(text, value, **context, &:tool_verdict).as_json.merge("unread" => [])
+      Acute.send(:verifier, text, value, **@parser.options, **context).tool_verdict.as_json.merge("unread" => [])
     rescue ParseError => e
       failed = parse_failure(e, text)
       message = "The text can't be read: #{failed["error"]}. Ask the user to rephrase."

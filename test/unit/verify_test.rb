@@ -132,6 +132,20 @@ class VerifyTest < Minitest::Test
     assert_equal "#<Acute::Verdict match \"2026-10-18 matches \\\"tomorrow\\\": Sun 18 Oct.\">", v.inspect
   end
 
+  def test_a_block_is_ignored
+    called = false
+    verdict = Acute.verify("tomorrow", "2026-10-18", now: NOW, zone: NY) { called = true }
+    assert_equal Acute.verify("tomorrow", "2026-10-18", now: NOW, zone: NY).message, verdict.message
+    refute called
+    parser = Acute::Parser.new(now: NOW, zone: NY)
+    assert_equal verdict.message, parser.verify("tomorrow", "2026-10-18") { called = true }.message
+    refute called
+  end
+
+  def test_the_verify_object_is_not_public
+    assert_raises(NoMethodError) { Acute.verifier("tomorrow", "2026-10-18") }
+  end
+
   def test_bad_values_raise
     assert_raises(ArgumentError) { verify("tomorrow", "tomorrow") }
     assert_raises(ArgumentError) { verify("tomorrow", "2026-13-45") }
