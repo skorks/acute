@@ -28,7 +28,8 @@ class ToolTest < Minitest::Test
     assert_equal Acute.duration("an hour and a half").as_json, call("duration", { "text" => "an hour and a half" })
     assert_equal Acute.extract("lunch tomorrow at 1 for an hour", **OPTS).as_json,
                  call("extract", { "text" => "lunch tomorrow at 1 for an hour" })
-    assert_equal Acute.verify("tomorrow", "2026-10-19", **OPTS).as_json, call("verify", { "text" => "tomorrow", "value" => "2026-10-19" })
+    assert_equal Acute.verify("tomorrow", "2026-10-19", **OPTS).as_json.except("message"),
+                 call("verify", { "text" => "tomorrow", "value" => "2026-10-19" }).except("message", "unread")
     friday = Acute.parse("2026-10-23T15:00:00-04:00", **OPTS)
     assert_equal({ "kind" => "description", "text" => Acute.describe(friday, **OPTS) },
                  call("describe", { "value" => "2026-10-23T15:00:00-04:00" }))
@@ -121,6 +122,29 @@ class ToolTest < Minitest::Test
     end
   end
 
+  # T5: the verdict names the value as acute normalised it and the text by what it means
+  def test_verify_words_each_status_without_the_input
+    {
+      ["next friday", "2026-10-23"] => ["match", "The value 2026-10-23 matches the text: Fri 23 Oct.", []],
+      ["friday", "2026-10-23T15:00:00-04:00"] =>
+        ["inside", "The value 2026-10-23T15:00:00-04:00 is inside the text, which is Fri 23 Oct.", []],
+      ["this friday", "2026-10-16"] =>
+        ["alternative", "The value 2026-10-16 is the second reading of the text; the first is Fri 23 Oct. Ask the user which they meant.", []],
+      ["tomorrow", "2026-10-19"] => ["mismatch", "The text is Sun 18 Oct, not Mon 19 Oct.", []],
+      ["flurb friday", "2026-10-23"] =>
+        ["unparsed", "The text can't be read as a time: acute couldn't read the words in unread. Ask the user to say it another way.",
+         ["flurb"]],
+      ["june 31", "2026-06-30"] =>
+        ["unparsed", "The text can't be read as a time: June has 30 days. Ask the user to say it another way.", ["june 31"]]
+    }.each do |(text, value), expected|
+      assert_equal expected, call("verify", { "text" => text, "value" => value }).values_at("status", "message", "unread"), text
+    end
+    weekend = call("verify", { "text" => "this weekend", "value" => "2026-10-17" })
+    assert_equal "The value 2026-10-17 is inside the text, which is Sat 17 Oct – Sun 18 Oct. It can also mean Fri 16 Oct – " \
+                 "Sun 18 Oct; ask the user if that matters.", weekend["message"]
+    assert_nil call("verify", { "text" => "nothing #{INJECTION}", "value" => "2026-10-23" })["expected"]
+  end
+
   def test_arguments_come_as_sdks_give_them
     expected = call("parse", { "text" => "friday" })
     assert_equal expected, call("parse", { text: "friday" })
@@ -154,11 +178,10 @@ class ToolTest < Minitest::Test
 
   private
 
-  # The verdict's message still quotes the text: the next batch rewrites it (T5)
   def prose(node, key = nil, &)
     return enum_for(:prose, node, key) unless block_given?
     case node
-    when Hash then node.each { |k, v| prose(v, k, &) unless node["kind"] == "verdict" && k == "message" }
+    when Hash then node.each { |k, v| prose(v, k, &) }
     when Array then node.each { prose(_1, key, &) }
     when String then yield key, node if PROSE.include?(key)
     end

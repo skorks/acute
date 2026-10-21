@@ -108,11 +108,18 @@ module Acute
       when "parse" then @parser.parse!(text, **context).as_json
       when "duration" then @parser.duration!(text).as_json
       when "extract" then @parser.extract(text, **context).as_json
-      # T5: the verdict's message still quotes the text and the value; the next batch rewrites it without them
-      when "verify" then @parser.verify(text, args["value"], **context).as_json
+      when "verify" then verify(text, args["value"], context)
       when "describe" then describe(args["value"], args.fetch("style", "relative").to_sym)
       else now
       end
+    end
+
+    def verify(text, value, context)
+      @parser.verify(text, value, **context, &:tool_verdict).as_json.merge("unread" => [])
+    rescue ParseError => e
+      failed = parse_failure(e, text)
+      message = "The text can't be read as a time: #{failed["error"]}. Ask the user to say it another way."
+      Verdict.new(text, :unparsed, message, nil).as_json.merge("unread" => failed["unread"])
     end
 
     def describe(value, style)

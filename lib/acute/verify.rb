@@ -6,7 +6,9 @@ module Acute
     opts = { now: Time.at(ctx.now), zone: zone, context: context, locale: locale, week_start: week_start,
              hemisphere: hemisphere, fiscal_year_start: fiscal_year_start, strict: strict, dst: dst,
              holidays: holidays, business_days: business_days, year_bias: year_bias }
-    Verify.new(text, value, ctx, opts).verdict
+    verify = Verify.new(text, value, ctx, opts)
+    # Acute::Tool takes the Verify, to word the verdict without the input (T5)
+    block_given? ? yield(verify) : verify.verdict
   end
 
   # Whether a time someone else worked out is what the text says. The message is written to go straight back
@@ -51,22 +53,36 @@ module Acute
     end
 
     def verdict
-      r = Acute.parse!(@text, **@opts)
-      if (rel = relation(r))
-        return Verdict.new(@text, rel, rel == :match ? matched(r) : inside(r), r)
-      end
-      r.alternatives.each_with_index do |alt, i|
-        next unless relation(alt)
-        return Verdict.new(@text, :alternative, "#{@given} is the #{ORDINALS[i + 1] || "#{i + 2}th"} reading of " \
-                                                "#{@text.inspect}; the first is #{label(r)}. Ask the user which they meant.", r)
-      end
-      Verdict.new(@text, :mismatch, "#{@text.inspect} is #{label(r)}#{others(r, " (or %s)")}, not #{label(@value)}.", r)
+      judge(@given, @text.inspect)
     rescue ParseError => e
       Verdict.new(@text, :unparsed, "#{shorten(@text)} can't be read as a time: #{unknown(e)}. Ask the user to say it " \
                                     "another way.", nil)
     end
 
+    # T5: the message names the value as acute normalised it and the text by its readings' labels, never as
+    # they came in. A text it can't read raises the ParseError, for the caller to word.
+    def tool_verdict = judge("the value #{@given}", "the text")
+
     private
+
+    def judge(value, text)
+      r = Acute.parse!(@text, **@opts)
+      also = others(r, " It can also mean %s; ask the user if that matters.")
+      status = relation(r)
+      i = r.alternatives.index { relation(_1) } unless status
+      status ||= i ? :alternative : :mismatch
+      message =
+        case status
+        when :match then "#{value} matches #{text}: #{label(r)}.#{also}"
+        when :inside then "#{value} is inside #{text}, which is #{label(r)}.#{also}"
+        when :alternative
+          "#{value} is the #{ORDINALS[i + 1] || "#{i + 2}th"} reading of #{text}; the first is #{label(r)}. Ask the user " \
+          "which they meant."
+        else "#{text} is #{label(r)}#{others(r, " (or %s)")}, not #{label(@value)}."
+        end
+      # the tool's subjects begin a sentence in lower case; the library's are a quote or a digit
+      Verdict.new(@text, status, message.sub(/\A\w/, &:upcase), r)
+    end
 
     def unknown(error)
       words = error.unknown
@@ -74,10 +90,6 @@ module Acute
       shown = words.first(5).map { shorten(_1, 20) }
       "unknown #{words.size == 1 ? "word" : "words"} #{shown.join(", ")}#{" and #{words.size - 5} more" if words.size > 5}"
     end
-
-    def matched(r) = "#{@given} matches #{@text.inspect}: #{label(r)}.#{others(r, " It can also mean %s; ask the user if that matters.")}"
-
-    def inside(r) = "#{@given} is inside #{@text.inspect}, which is #{label(r)}.#{others(r, " It can also mean %s; ask the user if that matters.")}"
 
     def others(r, form) = r.ambiguous? ? format(form, r.alternatives.map { label(_1) }.join(" or ")) : ""
 
