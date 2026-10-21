@@ -4,7 +4,7 @@ Many date phrases can be read more than one way. "at 9" could be morning or even
 
 ## How to read this page
 
-**A rule** is a numbered convention, such as D4 for a time without am/pm. The main rules have their own heading ("D4."). Smaller rules are bullets tagged with their number ("**D44.**"). Several bullets can share a number. The gaps in the numbering are rules that were retired.
+**A rule** is a numbered convention, such as D4 for a time without am/pm. The main rules have their own heading ("D4."). Smaller rules are bullets tagged with their number ("**D44.**"). Finding times in text has E-rules, and repeating times R-rules. Several bullets can share a number. The gaps in the numbering are rules that were retired.
 
 **An assumption** is a record that a rule made a choice for you. Each result lists the assumptions its parse made. Each one has:
 - a `code`, a stable Symbol you can match on;
@@ -251,7 +251,7 @@ A weekday, month, quarter, season or holiday named alone means the current one i
 - "coming week" and "upcoming week" are the next calendar week.
 - **D42.** Only a date skips the cycles it doesn't exist in. "feb 29" → 2028, and "the 31st" → the next month that has one. "5th tuesday in may" → nil when this May has none.
 - **D42.** "first" alone is not a date.
-- **D44.** A plural day alone ("fridays") → nil. Recurrence is not read yet.
+- **D44.** A plural day alone ("fridays") → nil: it is a rule (R6).
 
 ### D20. "next friday"
 
@@ -755,6 +755,26 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 - **D45.** "5400s" is 5400 seconds as a length, whatever the digits.
 - **D47.** `Acute.duration!` raises the ParseError that `duration` returns nil for, with the same codes as `parse!`.
 - **D47.** `Duration#after(time)` is the Time "<duration> from <time>" reads as: years and months on the calendar first, then weeks and days on the wall clock, then hours to seconds elapsed (D23). Business days skip weekends and a `holidays:` given. `seconds(from: time)` is the seconds between them.
+
+## Recurrence
+
+`Acute.recurrence` reads a repeating time as an iCalendar rule (RFC 5545). It comes in 0.3: the corpus holds these rules already, and acute doesn't read rules yet. Where iCalendar has its own meaning, the rule keeps it.
+
+- **R1.** A rule is a DTSTART, an RRULE and any EXDATE. `rrule` is the RRULE value alone; `to_ical` gives all three lines. With a clock, DTSTART is `DTSTART;TZID=<zone>:<wall time>`, the zone given, UTC too; without one, the rule is of whole days: `DTSTART;VALUE=DATE:20261019`. EXDATE takes DTSTART's form, and UNTIL a date or, with a clock, a UTC time.
+- **R2.** DTSTART is the first occurrence on or after now. A day under way counts and a passed clock doesn't: "every saturday" said on Saturday starts today, "every saturday at 10am" said at 14:00 next Saturday. A clock equal to now is now (D36).
+- **R3.** A rule that names no day starts today: "weekly" → DTSTART today, FREQ=WEEKLY. One finer than a day, with no clock, starts at now to the second: "every 15 minutes" said at 14:07:31 → 14:07:31.
+- **R4.** A clock is also BYHOUR and BYMINUTE, so `rrule` stands alone: "every day at 9am" → FREQ=DAILY;BYHOUR=9;BYMINUTE=0. It is read as D4, D30 and D35 read it, first reading only, as a rule has no alternatives: "every day at 9" is 9am, "every evening at 7" 19:00. Several clocks with the same minute are listed ("at 8:30 and 17:30" → BYHOUR=8,17;BYMINUTE=30). Otherwise they need two rules, so nil: "every day at 9am and 5:30pm".
+- **R5.** Frequency words and intervals. "daily", "weekly", "monthly", "annually", "hourly"; "once a week" is weekly. "quarterly" is every 3 months, "semi-annually" every 6 (iCalendar has no quarter). "biweekly" and "fortnightly" are every 2 weeks, "bimonthly" every 2 months, not twice. "every other X" and "every second day" are INTERVAL=2: an ordinal with a unit is an interval.
+- **R6.** A weekday repeats weekly: "every monday", "mondays", "on mondays" → FREQ=WEEKLY;BYDAY=MO. A plural weekday alone is a rule ("fridays"), where `parse` gives nil (D44). "weekdays" is Monday to Friday and "weekends" Saturday and Sunday (D8). A list keeps them all: "every monday and wednesday" → BYDAY=MO,WE. A rule that picks weekdays is weekly, even after "every day": "every day except sundays" → FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR,SA.
+- **R7.** "every other friday" counts from the first Friday on or after now (R2), every 2 weeks: said on a Friday, from today.
+- **R8.** An ordinal with a weekday is within the month: "every first monday" → FREQ=MONTHLY;BYDAY=1MO, "the 2nd and 4th tuesday" → BYDAY=2TU,4TU. "every second tuesday" is the month's second Tuesday; every two weeks is "every other". "the last friday" is -1FR, "the second to last" -2FR. "the last day of every month" → BYMONTHDAY=-1. "the last weekday of every month" → BYDAY=MO,TU,WE,TH,FR;BYSETPOS=-1, the first BYSETPOS=1.
+- **R9.** A day of the month repeats monthly, a date yearly: "19th of every month" → FREQ=MONTHLY;BYMONTHDAY=19; "every january 1st" → FREQ=YEARLY;BYMONTH=1;BYMONTHDAY=1. Months or years without the day are skipped, as iCalendar does and as D42 skips one-off dates: "every 31st", "every feb 29" (from 2028). A date that never occurs is nil: "every feb 30".
+- **R10.** "until" includes its end, as D9 does: "every monday until december" → UNTIL=20261231. With a clock, UNTIL is the last second of that day, in UTC: "every day at 9am until friday" → UNTIL=20261024T035959Z. "until 5pm" is that instant, and an occurrence at it counts: UNTIL is inclusive in iCalendar. "through" is "until" (D16). A date without a year looks forward (D34).
+- **R11.** A count is COUNT, from DTSTART: "every other friday 5 times" → COUNT=5. A length runs from DTSTART, its end left out, as UNTIL: "every monday for 6 weeks" → six Mondays, UNTIL=20261129. A length in days or longer ends on a whole day (R10); "every 10 minutes for an hour" ends a second before the hour is up.
+- **R12.** An excepted weekday leaves BYDAY: "every weekday except fridays" → BYDAY=MO,TU,WE,TH. An excepted date, read as a one-off (D23), is an EXDATE: "every monday except november 2" → EXDATE;VALUE=DATE:20261102. "every day at 9am except halloween" → EXDATE;TZID=America/New_York:20261031T090000.
+- **R13.** "starting X" moves DTSTART to the first occurrence on or after X begins: "every monday starting november" → 2 November. "in X" also ends the rule with X: "weekends in july" → 3 July 2027 to UNTIL=20270731.
+- **R14.** Clock changes don't change the rule. DTSTART is the wall time said, even in a repeated hour or a gap ("every day at 2:30am" from 14 March 2027); iCalendar moves a gap's time forward by the gap, as `dst: :compatible` does (D23). UNTIL takes the offset in force at its own instant: "every day at 9am until november 15" → DTSTART in EDT, UNTIL=20261116T045959Z in EST.
+- **R15.** These are no rule, so nil: a count per period with no days or times ("twice a week", "3 times a day"); a part of the day with no clock ("every morning"); "every 0 days"; and one-off times ("next friday", "this weekend", "3 days", "each of us at 3pm").
 
 ## The API
 
