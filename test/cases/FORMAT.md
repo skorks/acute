@@ -72,7 +72,7 @@ Either end may be `null` for an open end: "before friday" is `[null, "<friday 00
 {"extract":[{"start":13,"end":23,"time":"2015-08-12T00:00:00","grain":"day"}]}
 ```
 
-An entry may hold `span` or `alternatives` in place of `time` and `grain`. The corpus counts these cases as `other_kind` rather than checking them; the speed stage times them.
+An entry may hold `span` or `alternatives` in place of `time` and `grain`. The corpus compares the `time` mentions `Acute.extract` returns, in order, with these entries: same offsets and the same readings as a normal case (`alternatives` included). Durations acute finds are ignored, because the sources don't list them. Scoring uses the usual statuses: `nil` when mentions were expected and none found, `garbage` when `"extract": []` and some were found, `alt_differs` when offsets and every first reading match but alternatives differ, `wrong` otherwise. The speed stage also times them.
 
 **`rrule`.** An RFC 5545 recurrence: `{"rrule":"DTSTART;VALUE=DATE:20161107\nRRULE:FREQ=WEEKLY"}`. acute doesn't read recurrences yet, so these count as `other_kind`.
 
@@ -106,7 +106,7 @@ Cases using chronic's `endian_precedence`, `hours24` or `ambiguous_time_range` a
 | `garbage` | acute returned a time where `nil` was expected |
 | `raises` | acute raised |
 | `chronic_option` | the case uses an option only the chronic layer has |
-| `other_kind` | an `extract` or `rrule` case |
+| `other_kind` | an `rrule` case |
 
 Other flags: `--grep TEXT` runs the cases whose text contains TEXT, `--file NAME` the files whose name contains NAME, and `--rule D20` the cases that name the rule. `--record` refuses to run with any of them.
 
