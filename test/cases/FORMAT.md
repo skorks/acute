@@ -100,7 +100,7 @@ Options are passed to `Acute.parse` as keywords. `context` is turned into a Symb
 | `fiscal_year_start` | the first month, e.g. `7` |
 | `ambiguous_year_future_bias` | chronic's name for `year_bias:` |
 
-Cases using chronic's `endian_precedence`, `hours24` or `ambiguous_time_range` are not run against `Acute.parse`. They count as `chronic_option`.
+Cases using chronic's `endian_precedence`, `hours24` or `ambiguous_time_range` run through `Chronic.parse(guess: false)` (the chronic layer, with `TZ` set to the case's zone) and are scored `pass`, `wrong`, `nil`, `garbage` or `raises` against the first reading. The layer returns one answer, so alternatives are not compared. An `extract` case with one of these options can't run and counts as `chronic_option`.
 
 ## Statuses
 
@@ -114,7 +114,7 @@ Cases using chronic's `endian_precedence`, `hours24` or `ambiguous_time_range` a
 | `nil` | acute returned nil where a time was expected |
 | `garbage` | acute returned a time where `nil` was expected |
 | `raises` | acute raised |
-| `chronic_option` | the case uses an option only the chronic layer has |
+| `chronic_option` | an `extract` case that uses an option only the chronic layer has |
 | `rule_pending` | an `rrule` case, while acute has no `Acute.recurrence` |
 
 Other flags: `--grep TEXT` runs the cases whose text contains TEXT, `--file NAME` the files whose name contains NAME, and `--rule D20` the cases that name the rule (D, E or R). `--record` refuses to run with any of them.

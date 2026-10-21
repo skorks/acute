@@ -189,7 +189,7 @@
 {"id":"chronic-issues-84-8","text":"10pm last night","now":"2012-03-07T12:00:00","tz":"America/Los_Angeles","expect":{"time":"2012-03-06T22:00:00","grain":"minute"},"source":"chronic#84","tags":["time-before-day"]}
 {"id":"chronic-issues-84-9","text":"last night 10pm","now":"2012-03-07T12:00:00","tz":"America/Los_Angeles","expect":{"time":"2012-03-06T22:00:00","grain":"minute"},"source":"chronic#84"}
 {"id":"chronic-issues-84-10","text":"last night at 10pm","now":"2012-03-07T12:00:00","tz":"America/Los_Angeles","expect":{"time":"2012-03-06T22:00:00","grain":"minute"},"source":"chronic#84"}
-{"id":"chronic-issues-86-1","text":"Serving you in Brisbane, 8000 Marina Blvd, 11:30","now":"2012-02-15T09:32:18","tz":"America/Los_Angeles","options":{"ambiguous_time_range":10},"expect":{"nil":true},"source":"chronic#86","tags":["strict","garbage"]}
+{"id":"chronic-issues-86-1","text":"Serving you in Brisbane, 8000 Marina Blvd, 11:30","now":"2012-02-15T09:32:18","tz":"America/Los_Angeles","expect":{"nil":true},"source":"chronic#86","tags":["strict","garbage"]}
 {"id":"chronic-issues-87-1","text":"2012-03-11 00:00:11","now":"2012-03-10T12:00:00","tz":"America/New_York","expect":{"time":"2012-03-11T00:00:11","grain":"second"},"source":"chronic#87","tags":["dst","iso"],"note":"US spring-forward day"}
 {"id":"chronic-issues-87-2","text":"5 days from now 03:00","now":"2012-03-28T12:00:00","tz":"Australia/Melbourne","expect":{"time":"2012-04-02T03:00:00","grain":"minute"},"source":"chronic#87","tags":["dst"],"note":"crosses the 2012-04-01 end of Australian DST"}
 {"id":"chronic-issues-87-3","text":"2012-11-4 11:00","now":"2012-05-11T12:00:00","tz":"America/New_York","expect":{"time":"2012-11-04T11:00:00","grain":"minute"},"source":"chronic#87","tags":["dst"]}

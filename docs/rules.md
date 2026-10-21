@@ -96,7 +96,7 @@ Examples: "10:36:22", "8:00:00 -04:00", "10:00 GMT-05:00".
 
 A time with seconds or a numeric UTC offset is 24-hour, with no am/pm alternative (`machine_time`). A zone name alone doesn't count: "8:00 gmt" still follows D4.
 
-- **D40.** An option the caller sets beats this. In the chronic layer, `hours24: false` reads "today at 02:00:00" as 14:00.
+- **D40.** An option the caller sets beats this. `hours24: false` does not undo a leading-zero hour (D46): "today at 02:00:00" stays 02:00, where chronic reads 14:00.
 - **D44.** Morning, afternoon and evening still fix am or pm: "afternoon 7:00:05" → 19:00:05.
 
 ### D30. The 12 o'clock hour

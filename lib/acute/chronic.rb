@@ -31,7 +31,7 @@ module Chronic
 
     Reading = Struct.new(:begin, :end, :point, :span, :frac)
     Notes = Struct.new(:dst)
-    NUMERIC_DATE = %r{(?<!\d)(\d{1,2})[/\-.](\d{1,2})(?!\d)}
+    NUMERIC_DATE = %r{(?<!\d)(\d{1,2})(?:[/\-.]|\s+)(\d{1,2})(?!\d)}
 
     attr_accessor :now
     attr_reader :options
@@ -83,7 +83,10 @@ module Chronic
         span = r.span? || (long && !clock)
         Reading.new(r.begin&.to_i, r.end&.to_i, r.time.to_i, span, r.time.subsec)
       end
-      all = prefer(all) { |r| hour_window.include?(wall(r.point, zone) / 3600 % 24) } if codes.include?(:bare_hour_window)
+      if codes.include?(:bare_hour_window)
+        # :none sets no window: the next (or in the past, latest) occurrence of the hour on either half of the day
+        all = @options[:ambiguous_time_range] == :none ? all.sort_by { _1.begin.to_i * (@options[:context] == :past ? -1 : 1) } : prefer(all) { |r| hour_window.include?(wall(r.point, zone) / 3600 % 24) }
+      end
       # only when given: without it the locale decides, as D10 says
       if @endian && codes.include?(:numeric_date_order) && (m = NUMERIC_DATE.match(text))
         a, b = m[1].to_i, m[2].to_i
