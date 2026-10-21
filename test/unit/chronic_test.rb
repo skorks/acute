@@ -95,7 +95,7 @@ class ChronicTest < Minitest::Test
     assert_equal Time.local(2026, 10, 17, 15, 15), chronic("3:15", hours24: false)
     assert_equal Time.local(2026, 10, 18, 3, 15), chronic("3:15", hours24: true)
     assert_equal Time.local(2026, 10, 18, 6, 30), chronic("6:30")
-    assert_equal Time.local(2026, 10, 18, 9), chronic("9", ambiguous_time_range: :none)
+    assert_equal Time.local(2026, 10, 17, 21), chronic("9", ambiguous_time_range: :none) # the first matching instant
     assert_equal Time.local(2026, 10, 17, 21), chronic("9", ambiguous_time_range: 10)
   end
 

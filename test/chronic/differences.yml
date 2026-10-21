@@ -69,7 +69,7 @@
     hours24: false
   chronic: '2006-08-16 14:00:00'
   acute: '2006-08-16 02:00:00'
-  rule: D38, D29
+  rule: D29, D46
 - test: test_handle_s_r_p_a
   line: 460
   assert_line: 461

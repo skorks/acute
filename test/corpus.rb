@@ -84,7 +84,7 @@ module Corpus
     return duration_case(c) if exp.key?("duration")
     return rule_case(c) if exp.key?("rrule")
     opts = c["options"] || {}
-    return ["chronic_option", nil] if opts.keys.intersect?(CHRONIC_ONLY)
+    return (exp["extract"] ? ["chronic_option", nil] : chronic_case(c)) if opts.keys.intersect?(CHRONIC_ONLY)
     return extract_case(c) if exp["extract"]
 
     tz = TZS[c["tz"]]
@@ -98,6 +98,34 @@ module Corpus
     [got[0] == want[0] ? "alt_differs" : "wrong", got]
   rescue StandardError, SystemStackError => e
     ["raises", "#{e.class}: #{e.message[0, 80]}"]
+  end
+
+  CHRONIC_KEYS = %w[context week_start ambiguous_year_future_bias endian_precedence hours24 ambiguous_time_range].freeze
+
+  # Cases with an option only the chronic layer has go through Chronic.parse(guess: false), whose Span is the
+  # case's first reading. The layer takes the zone from TZ, as chronic does with Time.now.
+  def chronic_case(c)
+    require_relative "../lib/acute/chronic"
+    exp = c["expect"]
+    tz = TZS[c["tz"]]
+    opts = (c["options"] || {}).slice(*CHRONIC_KEYS).transform_keys(&:to_sym)
+    opts[:context] = opts[:context].to_sym if opts[:context]
+    opts[:week_start] = opts[:week_start].to_sym if opts[:week_start]
+    opts[:endian_precedence] = opts[:endian_precedence].map(&:to_sym) if opts[:endian_precedence]
+    opts[:ambiguous_time_range] = opts[:ambiguous_time_range].to_sym if opts[:ambiguous_time_range].is_a?(String)
+    old = ENV["TZ"]
+    ENV["TZ"] = c["tz"]
+    r = Chronic.parse(c["text"], now: Time.at(epoch(c["now"], tz)), guess: false, **opts)
+    got = r && [[r.begin.to_r, r.end.to_r]]
+    return [r ? "garbage" : "pass", got] if exp["nil"]
+    return ["nil", got] unless r
+
+    want = interval((exp["alternatives"] || [exp])[0], tz)
+    [got[0] == want ? "pass" : "wrong", got]
+  rescue StandardError, SystemStackError => e
+    ["raises", "#{e.class}: #{e.message[0, 80]}"]
+  ensure
+    ENV["TZ"] = old
   end
 
   # Mentions are [start, end, readings]; the durations acute finds are ignored, as the sources don't list them
@@ -148,6 +176,7 @@ module Corpus
   # Acute.read gives a passing case the kind it expects: a Duration for a duration, a Rule for a rule (D45),
   # a Result for a time
   def read_kind?(c)
+    return true if (c["options"] || {}).keys.intersect?(CHRONIC_ONLY)
     return Acute::Duration === Acute.read(c["text"]) if c["expect"].key?("duration")
     return Acute::Rule === Acute.read(c["text"], **context(c)) if c["expect"].key?("rrule")
     Acute::Result === Acute.read(c["text"], **context(c))
