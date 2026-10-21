@@ -381,20 +381,26 @@ module Acute
       end
       return unless (cands = cands[first])
       after = j
-      cands.each do |rest, entry|
+      # while, not each and all?: a block call here is a measurable share of a phrase's time
+      x = 0
+      while x < cands.size
+        rest, entry = cands[x]
+        x += 1
         j = after
-        ok = rest.all? do |want|
+        r = 0
+        while r < rest.size
           gap = j
           j += 1 while j < n && ((c = s.getbyte(j)) == 32 || c == 45 || c == 46) # "st. patrick's"
-          next false if j == gap
+          break if j == gap
           k = 0
           while j < n && (ALPHA[c = s.getbyte(j)] || c == 39)
             k = k * 32 + CODE[c]
             j += 1
           end
-          k == want
+          break unless k == rest[r]
+          r += 1
         end
-        return [j, entry] if ok && (j >= n || !ALPHA[s.getbyte(j)])
+        return [j, entry] if r == rest.size && (j >= n || !ALPHA[s.getbyte(j)])
       end
       nil
     end
