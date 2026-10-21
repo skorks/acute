@@ -81,9 +81,11 @@ module Acute
         cur = at(node, ctx, i, cyc)
         if ctx.past?
           other = last(node, ctx, i - 1, cyc) { true }.take(1)
+          return other if cur.empty?
           today_first = cur[0].b <= ctx.now_local
         else
           other = first(node, ctx, i + 1, cyc) { true }
+          return other if cur.empty?
           other = other.take(1) if cur.size == 1
           today_first = cur[0].e > ctx.now_local
         end
