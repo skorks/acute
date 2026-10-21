@@ -59,7 +59,6 @@ class ContextTest < Minitest::Test
     Warning[:experimental] = was
   end
 
-  # D43: a zone from tzinfo is built in the main Ractor, then any Ractor can parse with it
   def test_parses_inside_a_ractor
     texts = ["tomorrow at 4pm", "3/4", "next friday 3pm EST", "in 3 hours"]
     expected = texts.map { Acute.parse!(_1, now: "2026-10-17T14:00", zone: "Europe/London").iso8601 }
@@ -73,15 +72,16 @@ class ContextTest < Minitest::Test
     assert_equal expected, out
   end
 
-  def test_a_ractor_cannot_load_a_zone_from_tzinfo
-    message = quietly do
-      ractor_value(Ractor.new do
-        Acute.parse("today", zone: "Africa/Windhoek")
-      rescue ArgumentError => e
-        e.message
+  # The tables ship with acute, so a Ractor builds any zone itself, whether or not the main one has
+  def test_a_ractor_builds_any_named_zone
+    july = Time.utc(2026, 7).to_i
+    out = quietly do
+      ractor_value(Ractor.new(july) do |at|
+        [Acute.parse!("tomorrow 3pm", now: "2026-10-17T14:00", zone: "Africa/Windhoek").iso8601,
+         Acute::Zone.send(:build, "US/Pacific", "US/Pacific").offset_at(at)]
       end)
     end
-    assert_match(/only the main Ractor/, message)
+    assert_equal [Acute.parse!("tomorrow 3pm", now: "2026-10-17T14:00", zone: "Africa/Windhoek").iso8601, -25_200], out
   end
 
   def test_rails_time_zone_when_no_zone_is_given

@@ -19,7 +19,7 @@ chronic is unmaintained, has one global time zone, and silently guesses at words
 gem "acute"
 ```
 
-acute needs Ruby 3.3 or later. Its only dependency is [tzinfo](https://github.com/tzinfo/tzinfo).
+acute needs Ruby 3.3 or later and has no runtime dependencies. Its zone data is IANA 2026e, shipped with the gem (`Acute::TZDATA`).
 
 ## Usage
 

@@ -13,7 +13,7 @@ module Acute
 
     def self.system_zone
       tz = ENV["TZ"]
-      return tz if tz && !tz.empty? && TZInfo::Timezone.all_identifiers.include?(tz)
+      return tz if tz && Zone.known?(tz)
       target = File.readlink("/etc/localtime")
       target[%r{zoneinfo/(.+)\z}, 1] || "UTC"
     rescue SystemCallError
@@ -40,7 +40,7 @@ module Acute
     # The zone a TimeWithZone, or a Time made with a TZInfo zone, brings with it
     def self.carried_zone(now)
       if now.respond_to?(:time_zone) then now.time_zone.tzinfo
-      elsif now.is_a?(Time) && now.zone.is_a?(TZInfo::Timezone) then now.zone
+      elsif now.is_a?(Time) && Zone.tzinfo?(now.zone) then now.zone
       end
     end
 

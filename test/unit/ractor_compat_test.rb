@@ -16,7 +16,6 @@ class RactorCompatTest < Minitest::Test
   end
 
   def test_chronic_parses_in_a_ractor
-    Chronic.parse("tomorrow", now: NOW) # tzinfo is the main Ractor's: the zone is loaded here first
     out = in_ractor(NOW) do |now|
       [Chronic.parse("tomorrow at 3pm", now: now).hour, Chronic.parse("next friday", now: now, context: :past).class.name,
        Chronic.parse("this is not a time", now: now)]

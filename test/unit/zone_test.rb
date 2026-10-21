@@ -11,15 +11,22 @@ class ZoneTest < Minitest::Test
     [Time.at(utc, in: TZInfo::Timezone.get(zone)).strftime("%F %R %:z"), notes.dst]
   end
 
-  def test_offsets_match_tzinfo_either_side_of_every_transition
-    %w[America/New_York Australia/Sydney Asia/Kolkata Australia/Lord_Howe Europe/London America/Sao_Paulo].each do |name|
+  # The release the tables were generated from (Gemfile.lock), whatever source tzinfo would pick itself
+  TZDATA = TZInfo::DataSources::RubyDataSource.new
+
+  # tzinfo-data's transitions run to 2076; D47 carries the shipped ones on, so they meet it at every one
+  def test_every_zone_matches_tzinfo_data_either_side_of_every_transition
+    assert_equal TZInfo::Data::Version::TZDATA, Acute::TZDATA
+    names = TZDATA.timezone_identifiers
+    assert_equal names.sort, (Acute::Tables::ZONES.keys + Acute::Tables::ZONE_LINKS.keys).sort
+    names.each do |name|
       zone = Acute::Zone.for(name)
-      tz = TZInfo::Timezone.get(name)
-      probes = tz.transitions_up_to(Time.utc(2200), Time.utc(1900)).flat_map { |t| [t.timestamp_value - 1, t.timestamp_value] }
-      (probes + [Time.utc(1900).to_i]).each do |epoch|
+      tz = TZDATA.get_timezone_info(name).create_timezone
+      probes = tz.transitions_up_to(Time.utc(2200), Time.utc(1800)).flat_map { |t| [t.timestamp_value - 1, t.timestamp_value] }
+      (probes << Time.utc(1800).to_i).each do |epoch|
         period = tz.period_for_utc(Time.at(epoch).utc)
-        assert_equal period.observed_utc_offset, zone.offset_at(epoch), "#{name} #{epoch}"
-        assert_equal period.abbreviation, zone.abbreviation_at(epoch), "#{name} #{epoch}"
+        assert_equal [period.observed_utc_offset, period.abbreviation], [zone.offset_at(epoch), zone.abbreviation_at(epoch)],
+                     "#{name} #{epoch}"
       end
     end
   end
@@ -80,13 +87,35 @@ class ZoneTest < Minitest::Test
     assert_predicate Acute::Zone.for("Asia/Tokyo"), :frozen?
   end
 
+  # A zone from an app's own tzinfo data source, under a name acute doesn't ship
+  Custom = Struct.new(:identifier, :tz) do
+    def transitions_up_to(...) = tz.transitions_up_to(...)
+    def period_for_utc(...) = tz.period_for_utc(...)
+  end
+
+  def test_a_tzinfo_zone_acute_does_not_know_is_built_from_its_own_data
+    zone = Acute::Zone.for(Custom.new("Custom/Sydney", TZInfo::Timezone.get("Australia/Sydney")))
+    sydney = Acute::Zone.for("Australia/Sydney")
+    epochs = [Time.utc(1900), Time.utc(2026, 1), Time.utc(2026, 7), Time.utc(2150, 1), Time.utc(2150, 7)].map(&:to_i)
+    assert_equal(epochs.map { sydney.offset_at(_1) }, epochs.map { zone.offset_at(_1) })
+    assert_equal "Custom/Sydney", zone.name
+    assert_equal 32_400, Acute::Zone.for(Custom.new("Custom/Nine", TZInfo::Timezone.get("Etc/GMT-9"))).offset_at(0)
+    assert_equal "Custom/Sydney", parse("today", zone: Custom.new("Custom/Sydney", TZInfo::Timezone.get("Australia/Sydney"))).zone
+  end
+
+  def test_links_answer_as_their_target_under_their_own_name
+    zone = Acute::Zone.for("US/Eastern")
+    assert_equal "US/Eastern", zone.name
+    assert_equal(-14_400, zone.offset_at(Time.utc(2026, 7).to_i))
+  end
+
   # The nth (or, with -1, last) Sunday of a month, at hour o'clock UTC
   def sunday(y, m, nth, hour)
     days = (1..Date.new(y, m, -1).day).map { Date.new(y, m, _1) }.select(&:sunday?)
     Time.utc(y, m, days[nth > 0 ? nth - 1 : nth].day, hour).to_i
   end
 
-  def test_d47_clock_changes_go_on_past_tzinfos_data_to_2200
+  def test_d47_clock_changes_go_on_past_the_data_to_2200
     ny = Acute::Zone.for("America/New_York")
     sydney = Acute::Zone.for("Australia/Sydney")
     london = Acute::Zone.for("Europe/London")

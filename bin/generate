@@ -1,6 +1,10 @@
 #!/usr/bin/env ruby
-# Writes lib/acute/tables/*.rb from data/*.yml. With --check, only reports whether they are stale.
+# Writes lib/acute/tables/*.rb from data/*.yml, and zones.rb from the tzinfo-data release in Gemfile.lock.
+# With --check, only reports whether they are stale.
+require "bundler/setup"
 require "yaml"
+require "tzinfo"
+require "tzinfo/data"
 
 ROOT = File.expand_path("..", __dir__)
 
@@ -44,7 +48,50 @@ def assumptions_rb
   out << "    }.freeze\n  end\nend\n"
 end
 
-outputs = { "lib/acute/tables/words.rb" => words_rb, "lib/acute/tables/assumptions.rb" => assumptions_rb }
+# Zones ship their changes to CUT, so D47 finds RULE_YEARS of them past RULES_RUN_TO and carries them on at
+# runtime. A zone whose shortened changes D47 would carry on differently from its full data ships all of it.
+CUT = Time.utc(2045).to_i
+
+def zones_rb
+  require_relative "../lib/acute/calendar"
+  require_relative "../lib/acute/zone"
+  TZInfo::DataSource.set(:ruby)
+  zone = Acute::Zone
+  carried = ->(t, first) { t + zone.send(:recurring, t.map(&:first), t.map { _1[1] }, t.map(&:last), first) }
+  out = +header("tzinfo-data #{TZInfo::Data::Version::STRING}")
+  out << "module Acute\n  TZDATA = #{TZInfo::Data::Version::TZDATA.inspect}\n\n  module Tables\n"
+  out << "    # Name => [[offset, abbreviation, ...] with the one before any change first, the changes packed]\n"
+  out << "    ZONES = Ractor.make_shareable({\n"
+  TZInfo::Timezone.all_data_zone_identifiers.sort.each do |id|
+    tz = TZInfo::Timezone.get(id)
+    trs = tz.transitions_up_to(Acute::Zone::TO, Acute::Zone::FROM)
+    first = trs.empty? ? tz.period_for_utc(Acute::Zone::FROM).offset : trs.first.previous_offset
+    full = trs.map { [_1.timestamp_value, _1.offset.observed_utc_offset, _1.offset.abbreviation] }
+    short = full.take_while { _1[0] < CUT }
+    keep = carried.(short, first.observed_utc_offset) == carried.(full, first.observed_utc_offset) ? short : full
+    types = [[first.observed_utc_offset, first.abbreviation]]
+    kinds = keep.map { |_, o, a| types.index([o, a]) || (types << [o, a]).size - 1 }
+    abort "#{id}: more than 256 types" if types.size > 256
+    ats = keep.map(&:first)
+    gaps = ats.each_cons(2).map { _2 - _1 }
+    abort "#{id}: a gap of more than 32 bits" if gaps.any? { _1 >= 2**32 }
+    packed = ats.empty? ? "" : [ats[0], *gaps, *kinds].pack("q<L<#{gaps.size}C*")
+    out << "      #{id.inspect} => [#{types.flatten.inspect}, #{[packed].pack("m0").inspect}],\n"
+  end
+  out << "    })\n\n    ZONE_LINKS = Ractor.make_shareable({\n"
+  TZInfo::Timezone.all_linked_zone_identifiers.sort.each do |id|
+    out << "      #{id.inspect} => #{TZInfo::Timezone.get(id).canonical_identifier.inspect},\n"
+  end
+  out << "    })\n\n    COUNTRIES = #{TZInfo::Country.all_codes.inspect}.freeze\n\n"
+  # A zone listed under several countries goes to the first; locale.rb overrides the ones that matter
+  countries = TZInfo::Country.all.each_with_object({}) { |c, h| c.zone_identifiers.each { |z| h[z] ||= c.code } }
+  out << "    ZONE_COUNTRIES = Ractor.make_shareable({\n"
+  countries.sort.each { |z, c| out << "      #{z.inspect} => #{c.inspect},\n" }
+  out << "    })\n  end\nend\n"
+end
+
+outputs = { "lib/acute/tables/words.rb" => words_rb, "lib/acute/tables/assumptions.rb" => assumptions_rb,
+            "lib/acute/tables/zones.rb" => zones_rb }
 
 if ARGV.include?("--check")
   stale = outputs.reject { |path, body| File.exist?(File.join(ROOT, path)) && File.read(File.join(ROOT, path)) == body }.keys

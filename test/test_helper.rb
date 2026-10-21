@@ -1,4 +1,5 @@
 require "minitest/autorun"
+require "tzinfo" # the tests compare with it; acute never loads it
 require_relative "../lib/acute"
 
 module Helpers

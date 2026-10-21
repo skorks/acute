@@ -425,7 +425,7 @@ module Acute
       j < n && CLASS[s.getbyte(j)] == DIGIT
     end
 
-    # D44: "America/New_York", "europe/amsterdam": an IANA name, as tzinfo spells it
+    # D44: "America/New_York", "europe/amsterdam": an IANA name, as tzdata spells it
     def self.iana(s, st, i, n)
       i += 1 while i < n && (ALPHA[c = s.getbyte(i)] || c == 47 || c == 95 || c == 45)
       name = s.byteslice(st, i - st)

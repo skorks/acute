@@ -679,9 +679,9 @@ An abbreviation that names more than one zone gives each one's offset as a readi
 
 **Zone data:**
 - **D43.** Zone tables start in 1800. Before standard time, a zone uses local mean time: "1530" in New York starts at −04:56:02.
-- **D47.** Clock changes continue to 2200, past where tzinfo's data stops, for zones whose yearly rule is regular. "2079-07-04 12:00" in New York is −04:00. A zone whose changes stopped stays as it ends.
+- **D47.** Clock changes continue to 2200, past where the shipped data stops, for zones whose yearly rule is regular. "2079-07-04 12:00" in New York is −04:00. A zone whose changes stopped stays as it ends.
 - **D43.** A wall time the clocks repeat keeps its side when it comes from an instant: "in 3 hours" said at 23:30 on 31 October 2026 in New York is the second 01:30 (EST), and "2026-11-01 01:30 EST" is that one too.
-- **D43.** A tzinfo zone must be loaded in the main Ractor before another Ractor uses it. Fixed offsets work anywhere.
+- **D43.** Retired: a zone once had to be loaded in the main Ractor before another Ractor used it. The zone data now ships with acute, so any Ractor can use any zone.
 
 ## Words and strictness
 
@@ -792,6 +792,7 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 - **D45.** `Acute.with(**options)` checks its options once, so a bad zone or option raises when the parser is made. Unknown options raise ArgumentError everywhere, and a bad value for a known option raises `Acute::OptionError` (an ArgumentError that names the `option` and `value`).
 - **D45.** Options given to a call override the parser's. `Parser#with(**more)` makes a new parser.
 - **D45.** A `now:` that carries a zone (a TimeWithZone, or a Time made with a TZInfo zone) gives the parser that zone. With no `now:` and no `zone:`, the zone is inferred on each call (`zone_inferred`).
+- **D45.** A `TZInfo::Timezone`, given as `zone:` or carried by `now:` or Rails' `Time.zone`, is read by its name from acute's own data, so every way into a zone gives the same answer. Only a name acute doesn't ship is built from the zone's own transitions. acute never loads tzinfo.
 - **D45.** The parser is frozen and Ractor-shareable. **D47.** A `holidays:` or `business_days:` object is kept as given, so the parser is shareable only when that object is.
 - **D47.** `duration`, `extract` and `describe` take every option, and ignore those that can't change their answer.
 

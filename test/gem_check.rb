@@ -33,16 +33,23 @@ module GemCheck
       problems.concat(contents.reject { shipped?(_1) }.map { "ships #{_1}, which is not part of the library" })
       problems.concat((tracked - contents).map { "does not ship #{_1}" })
 
-      # tzinfo comes from wherever this Ruby finds it, so the install needs no network
-      deps = Gem::Specification.find_by_name("tzinfo").base_dir
+      # No other gem is installed beside it: acute has no runtime dependencies
       home = File.join(tmp, "home")
-      env = { "GEM_HOME" => home, "GEM_PATH" => "#{home}#{File::PATH_SEPARATOR}#{deps}" }
+      env = { "GEM_HOME" => home, "GEM_PATH" => home }
       env.merge!(%w[RUBYOPT RUBYLIB BUNDLE_GEMFILE BUNDLE_BIN_PATH BUNDLER_SETUP].to_h { [_1, nil] })
       out, ok = run(env, GEM, "install", "--local", "--no-document", file)
       abort "gem install failed\n#{out}" unless ok
 
       out, ok = run(env, RbConfig.ruby, "-e", 'require "acute"; print Acute.parse("noon", now: Time.utc(2026, 10, 17)).begin.hour')
       problems << "require \"acute\" from the installed gem failed: #{out}" unless ok && out == "12"
+      zoned = 'Acute.parse!("tomorrow 3pm", now: "2026-10-17T14:00", zone: "America/New_York").iso8601'
+      out, ok = run(env, RbConfig.ruby, "-W:no-experimental", "-e", <<~RUBY)
+        require "acute"
+        r = Ractor.new { #{zoned} }
+        print #{zoned}, " ", r.respond_to?(:value) ? r.value : r.take, " ", defined?(TZInfo).inspect
+      RUBY
+      want = "2026-10-18T15:00:00-04:00 2026-10-18T15:00:00-04:00 nil"
+      problems << "the installed gem's zones failed: #{out}" unless ok && out == want
       # the tool reads its input schemas from the gem's schema/tools/
       out, ok = run(env, RbConfig.ruby, "-e", 'require "acute/tool"; print Acute::Tool.new(zone: "UTC").definitions.size')
       problems << "require \"acute/tool\" from the installed gem failed: #{out}" unless ok && out == "6"

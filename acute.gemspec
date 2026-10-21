@@ -14,6 +14,5 @@ Gem::Specification.new do |s|
   s.bindir = "exe"
   s.executables = ["acute"]
   s.required_ruby_version = ">= 3.3"
-  s.add_dependency "tzinfo", "~> 2.0", ">= 2.0.5"
   s.metadata["rubygems_mfa_required"] = "true"
 end

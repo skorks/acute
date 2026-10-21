@@ -1,4 +1,4 @@
-require "tzinfo"
+require_relative "tables/zones"
 
 module Acute
   # The regional conventions one locale sets (D27): numeric date order, week start, hemisphere and which
@@ -15,7 +15,7 @@ module Acute
                                   SOUTH.include?(country)).freeze
 
     # Built once at load, frozen and shareable, so any Ractor can read them
-    ALL = Ractor.make_shareable(TZInfo::Country.all_codes.to_h { [_1, build(_1)] })
+    ALL = Ractor.make_shareable(Tables::COUNTRIES.to_h { [_1, build(_1)] })
     US = ALL.fetch("US")
 
     TAG = /\A[a-z]{2,3}(?:[-_][a-z0-9]{2,8})*\z/i
@@ -28,7 +28,7 @@ module Acute
       ALL[country] || build(country)
     end
 
-    # tzinfo lists a zone under every country that uses it (America/Toronto under BS and CA), and lists none
+    # tzdata lists a zone under every country that uses it (America/Toronto under BS and CA), and lists none
     # for a zone tzdata made a link (Europe/Oslo to Europe/Berlin); these are the zone's own country, from zone.tab
     SHARED = {
       "Africa/Abidjan" => "CI", "Africa/Johannesburg" => "ZA", "Africa/Lagos" => "NG", "Africa/Maputo" => "MZ",
@@ -44,9 +44,7 @@ module Acute
     }.freeze
 
     # Zone name => its country's code
-    ZONE_COUNTRIES = Ractor.make_shareable(TZInfo::Country.all.each_with_object(SHARED.dup) do |c, h|
-      c.zone_identifiers.each { |z| h[z] ||= c.code }
-    end)
+    ZONE_COUNTRIES = Ractor.make_shareable(Tables::ZONE_COUNTRIES.merge(SHARED))
 
     # D27: from the zone's country; UTC and zones with no country fall back to en-US
     def self.for_zone(name) = ALL[ZONE_COUNTRIES[name]] || US
