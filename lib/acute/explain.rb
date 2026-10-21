@@ -30,7 +30,7 @@ module Acute
         ParseError.new("#{slice.inspect} names a wall time that happens twice as the clocks go back",
                        code: failure.code, position: first, hint: "dst: :earlier or :later picks one")
       else
-        ParseError.new("longer than #{MAX_LENGTH} characters", code: :too_long, position: first)
+        ParseError.new("longer than #{MAX_LENGTH} bytes", code: :too_long, position: first)
       end
     end
 
