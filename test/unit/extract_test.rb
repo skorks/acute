@@ -7,7 +7,7 @@ class ExtractTest < Minitest::Test
 
   def test_mentions_with_their_offsets
     x = extract("Dinner with Sam next Tuesday at 7pm, flight back on the 30th")
-    assert_equal([[:time, "next Tuesday at 7pm", 16...35], [:time, "the 30th", 52...60]],
+    assert_equal([[:time, "next Tuesday at 7pm", 16...35], [:time, "30th", 56...60]],
                  x.mentions.map { [_1.kind, _1.text, _1.offset] })
     assert_equal(["2026-10-20 19:00:00 -04:00", "2026-10-30 00:00:00 -04:00"], x.mentions.map { wall(_1.value.begin) })
     assert_equal "Dinner with Sam, flight back", x.remainder
@@ -24,12 +24,26 @@ class ExtractTest < Minitest::Test
 
   def test_no_mention_starts_inside_a_written_number
     assert_equal [], mentions("The ssn is 123-12-1234")
-    assert_equal [[:time, "in the morning", 24...38]], mentions("My temperature was 37.1 in the morning")
+    assert_equal [[:time, "morning", 31...38]], mentions("My temperature was 37.1 in the morning")
   end
 
   def test_remainder_drops_the_word_that_introduced_a_mention
     assert_equal "Pay rent", extract("Pay rent tomorrow 9am").remainder
     assert_equal "Call me; dinner.", extract("Call me tomorrow; dinner at 7pm.").remainder
+    assert_equal "She leaves", extract("She leaves in August").remainder
+  end
+
+  def test_e4_a_leading_in_or_the_is_left_out_when_the_rest_reads_the_same
+    assert_equal [[:time, "August", 14...20]], mentions("She leaves in August.")
+    assert_equal [[:time, "day before yesterday", 11...31]], mentions("I left the day before yesterday")
+    assert_equal [[:time, "afternoon", 18...27]], mentions("let's meet in the afternoon")
+    assert_equal [[:time, "Tuesday morning", 13...28]], mentions("Lets meet on Tuesday morning")
+  end
+
+  def test_e4_a_leading_word_that_changes_the_reading_stays
+    assert_equal [[:time, "in 3 days", 8...17]], mentions("see you in 3 days")
+    assert_equal [[:time, "in 2016", 16...23]], mentions("You can't leave in 2016")
+    assert_equal [[:time, "about 3pm", 5...14]], mentions("meet about 3pm")
   end
 
   def test_e5_an_abbreviation_dot_does_not_end_the_sentence
@@ -56,7 +70,7 @@ class ExtractTest < Minitest::Test
 
   def test_e3_a_word_with_something_else_to_say_it_is_a_time_is_a_mention
     assert_equal [[:time, "May 3", 0...5]], mentions("May 3 works")
-    assert_equal [[:time, "in May", 8...14]], mentions("See you in May.")
+    assert_equal [[:time, "May", 11...14]], mentions("See you in May.")
   end
 
   def test_offsets_count_characters
