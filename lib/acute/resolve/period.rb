@@ -87,6 +87,7 @@ module Acute
       end
 
       LIMIT = 10_000
+      class Limit < StandardError; end
 
       # D17: Monday to Friday, or D47: the days business_days: or holidays: give; D38: the time of day is kept.
       # D49: more than LIMIT business days, or LIMIT days in a row that aren't, is a failure.
@@ -94,13 +95,13 @@ module Acute
         days = ctx.business_days
         step = n < 0 ? -1 : 1
         n = n.abs
-        throw :failure, Failure.new(:business_day_limit, 0, 0) if n > LIMIT
+        raise Limit if n > LIMIT
         while n > 0
           t += step * DAY
           if days
             skipped = 0
             until days.business_day?(::Date.jd(t / DAY + 2_440_588))
-              throw :failure, Failure.new(:business_day_limit, 0, 0) if (skipped += 1) > LIMIT
+              raise Limit if (skipped += 1) > LIMIT
               t += step * DAY
             end
           else
