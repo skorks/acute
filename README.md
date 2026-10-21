@@ -113,7 +113,7 @@ tool.call("parse", { "text" => "next friday 3pm" }) # => {"kind" => "time", ...}
 chat.with_tools(*tool.ruby_llm)                    # require "acute/tool/ruby_llm"
 ```
 
-The tools, their failures and how zone and now are set: [docs/agents.md](docs/agents.md).
+The tools, their failures and how zone and now are set: [docs/agents.md](docs/agents.md); setting up RubyLLM: [docs/agents.md#rubyllm](docs/agents.md#rubyllm).
 
 ## Coming from chronic
 
