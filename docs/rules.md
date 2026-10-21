@@ -51,7 +51,6 @@ When a rule leaves another reasonable reading, that reading is an **alternative*
 - **Options win over the locale:** `week_start:` and `hemisphere:`.
 - **D42.** A zone's country is its primary country in the tz database, also for zones that several countries share.
 - **D44.** A zone the tz database turned into a link keeps its own country: `Europe/Oslo` is Norway.
-- **E5.** A dot right after a month, weekday or meridiem ends its abbreviation, not the sentence: "Oct. 2", "Dec. 2021", "1p.m. to 4" are one mention each, unless a capital follows. A meridiem written with dots keeps its last one ("4 a.m.", "3 p . m ."), and a decade its apostrophe ("'40s").
 - **D43.** The locale follows the zone passed, or `locale:`. A zone or offset written in the text never changes it.
 
 ### D39. Locale data comes from CLDR
@@ -708,8 +707,12 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 - **E2.** A duration's mention includes its "for": "for 2 hours". "4pm for 30 mins" is two mentions, a time and a duration. As one phrase to `parse` it is nil.
 - **E3.** A mention needs something beyond plain lowercase English words. "may" in "this may or may not work" is not a date, and a lone number is not a mention.
   - A capital at the start of a sentence doesn't count: "Lunch with Sam" has no mention, but "May 3" does.
-  - "on" and "at" don't start a mention. **D48.** "during" does.
-  - The remainder drops an "on", "at", "for" or "by" left dangling before a mention.
+  - **D48.** "during" doesn't start a mention.
+  - The remainder drops an "on", "at", "for", "by", "in" or "the" left dangling before a mention: "flight back on the 30th" leaves "flight back".
+- **E4.** A mention starts at its first word that changes the reading. A leading "in" or "the", once or more ("in the"), is left out when the rest reads the same: the same begin and end for every reading, and the same alternatives. "She is leaving in August" mentions "August", "the day before yesterday" is "day before yesterday". It stays when dropping it changes or breaks the reading: "in 3 days" is a shift, and "in 2016" without its "in" is a lone number.
+  - "on" and "at" never start a mention: "on Tuesday" is "Tuesday", "at 4 a.m." is "4 a.m.". Where what follows is no mention by itself, nothing is found ("at 6.45", as in "at 6.45 percent").
+  - Words that change the reading by meaning stay: "from", "between", "within", "after", "before", "since", "until", "by", "about", "around".
+- **E5.** A dot right after a month, weekday or meridiem ends its abbreviation, not the sentence: "Oct. 2", "Dec. 2021", "1p.m. to 4" are one mention each, unless a capital follows. A meridiem written with dots keeps its last one ("4 a.m.", "3 p . m ."), and a decade its apostrophe ("'40s").
 - **D43.** A malformed clock ("4:3") is one unknown word, so the rest of the text is still searched.
 - **D44.** No mention starts inside a written number: nothing in "123-12-1234".
 - **D44.** A mention includes its "this", "next" or "last": "this Q3".

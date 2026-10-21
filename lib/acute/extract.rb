@@ -12,12 +12,12 @@ module Acute
       @mentions = mentions.freeze
     end
 
-    # The text without its mentions, nor the "on", "at", "for" or "by" left dangling before one
+    # The text without its mentions, nor the "on", "at", "for", "by", "in" or "the" left dangling before one (E4)
     def remainder
       out = +""
       at = 0
       @mentions.each do |m|
-        out << @text[at...m.offset.begin].sub(/\b(?:on|at|for|by)\s*\z/i, "")
+        out << @text[at...m.offset.begin].sub(/(?:\b(?:on|at|for|by|in|the)\s*)+\z/i, "")
         at = m.offset.end
       end
       out << @text[at..]
@@ -57,8 +57,16 @@ module Acute
           found = starts_mention?(tokens, i) &&
                   longest(text, tokens[(i * S)...(w * S)], make_context, whole, spent)
           if found
+            k = i
+            # E4: a leading "in" or "the" is left out when the rest reads the same
+            while tokens[k * S] == L::WORD && LEADS[tokens[k * S + 1]]
+              shorter = longest(text, tokens[((k + 1) * S)...(w * S)], make_context, whole, spent)
+              break unless shorter && shorter[0].offset.end == found[0].offset.end && same?(shorter[0].value, found[0].value)
+              found = shorter
+              k += 1
+            end
             mentions << found[0]
-            i += found[1] / S
+            i = k + found[1] / S
           else
             i += 1
           end
@@ -137,10 +145,11 @@ module Acute
     def self.capital?(byte) = byte && byte >= 65 && byte <= 90
 
     START_WORDS = { on: true, and: true, to: true, for: true, during: true }.freeze
+    LEADS = { in: true, the: true }.freeze
 
     # "on", "at", "for" and "during" introduce a mention without being part of it (E2 gives a duration its
-    # "for"). None starts inside a written number, as "12-1234" in "123-12-1234" or "1 in the morning" in
-    # "37.1 in the morning".
+    # "for", E4 leaves out "on" and "at"). None starts inside a written number, as "12-1234" in "123-12-1234"
+    # or "1 in the morning" in "37.1 in the morning".
     def self.starts_mention?(tokens, i)
       k = tokens[i * S]
       if i >= 2 && GLUE[tokens[(i - 1) * S]] && tokens[(i - 2) * S] == L::NUM &&
@@ -148,6 +157,12 @@ module Acute
         return false
       end
       k != L::AT && !(k == L::WORD && START_WORDS[tokens[i * S + 1]])
+    end
+
+    # E4: the same begin and end for every reading, and the same alternatives
+    def self.same?(a, b)
+      return a == b unless a.kind == :time && b.kind == :time
+      [a, *a.alternatives].map { |r| [r.begin, r.end] } == [b, *b.alternatives].map { |r| [r.begin, r.end] }
     end
 
     # Nor does one end inside a written number, as "2010-2015" in "2010-2015-86"
