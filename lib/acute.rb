@@ -30,7 +30,7 @@ module Acute
                   fiscal_year_start: nil, strict: true, dst: nil, holidays: nil, business_days: nil, year_bias: nil)
     out = run(text, Context.new(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst,
                                 holidays, business_days, year_bias))
-    raise Explain.error(out, text) if Failure === out
+    raise Explain.error(out, utf8(text) || text) if Failure === out
     out
   end
 
@@ -45,12 +45,13 @@ module Acute
   def self.duration!(text, now: nil, zone: nil, context: :future, locale: nil, week_start: nil, hemisphere: nil,
                      fiscal_year_start: nil, strict: true, dst: nil, holidays: nil, business_days: nil, year_bias: nil)
     out = length(text)
-    raise Explain.error(out, text) if Failure === out
+    raise Explain.error(out, utf8(text) || text) if Failure === out
     out
   end
 
-  def self.length(text)
-    raise ArgumentError, "text must be a String, got #{text.class}" unless String === text
+  def self.length(given)
+    raise ArgumentError, "text must be a String, got #{given.class}" unless String === given
+    text = utf8(given) or return Failure.new(:invalid_encoding, 0, given.bytesize)
     return Failure.new(:too_long, 0, text.bytesize) if text.bytesize > MAX_LENGTH
     tokens = Lexer.lex(text)
     return tokens if Failure === tokens
@@ -68,8 +69,22 @@ module Acute
     Extract.call(text, -> { Context.new(now, zone, context, *options) })
   end
 
-  def self.run(text, ctx)
-    raise ArgumentError, "text must be a String, got #{text.class}" unless String === text
+  # The text as UTF-8, or nil when it can't be read as UTF-8: broken bytes, or an encoding such as UTF-16 whose
+  # bytes the lexer would misread. Binary text that is valid UTF-8 is taken as it is.
+  def self.utf8(text)
+    case text.encoding
+    when Encoding::UTF_8, Encoding::US_ASCII then text if text.valid_encoding?
+    when Encoding::BINARY
+      utf = text.dup.force_encoding(Encoding::UTF_8)
+      utf if utf.valid_encoding?
+    else text if text.ascii_only?
+    end
+  end
+  private_class_method :utf8
+
+  def self.run(given, ctx)
+    raise ArgumentError, "text must be a String, got #{given.class}" unless String === given
+    text = utf8(given) or return Failure.new(:invalid_encoding, 0, given.bytesize)
     return Failure.new(:too_long, 0, text.bytesize) if text.bytesize > MAX_LENGTH
     tokens = Lexer.lex(text)
     return ctx.strict ? tokens : skipping(text, ctx, tokens) if Failure === tokens

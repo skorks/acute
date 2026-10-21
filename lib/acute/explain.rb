@@ -8,6 +8,7 @@ module Acute
   # path comes here, so it can afford to rescan the text.
   module Explain
     def self.error(failure, text)
+      return ParseError.new("the text is not valid UTF-8", code: :invalid_encoding, position: 0...0) if failure.code == :invalid_encoding
       first = chars(text, failure.start)...chars(text, failure.stop)
       slice = text.byteslice(failure.start, failure.stop - failure.start)
       case failure.code
