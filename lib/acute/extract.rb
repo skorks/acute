@@ -30,16 +30,32 @@ module Acute
     S = Lexer::STRIDE
     PUNCT = [44, 46, 59, 33, 63].freeze
     GLUE = { L::DASH => true, L::SLASH => true, L::DOT => true }.freeze
+    BUDGET = 20_000
+    FEW = 8
 
     # whole: the text each Result is for, when it is not the mention's own (parse with strict: false)
     def self.call(text, make_context, whole = nil)
+      text = text.scrub unless text.valid_encoding?
       unknown = []
       tokens = Lexer.lex(text, unknown)
       mentions = []
+      from = Chars.new(text)
+      to = Chars.new(text)
+      spent = [0]
+      budget = BUDGET + 32 * tokens.size
       runs(text, tokens, unknown).each do |a, b|
         i = a
+        e = a
         while i < b
-          found = starts_mention?(tokens, i) && longest(text, tokens[(i * S)...(b * S)], make_context, whole)
+          # No mention is longer than a phrase parse takes, so the grammar sees no more than that
+          start = from[tokens[i * S + 3]]
+          e = i + 1 if e <= i
+          e += 1 while e < b && to[tokens[e * S + 4]] - start <= MAX_LENGTH
+          # Text that makes every start parse far and fail, as "the the the…", has the grammar see a few words
+          # at each once it has cost far more than prose does
+          w = spent[0] > budget && e > i + FEW ? i + FEW : e
+          found = starts_mention?(tokens, i) &&
+                  longest(text, tokens[(i * S)...(w * S)], make_context, whole, spent)
           if found
             mentions << found[0]
             i += found[1] / S
@@ -48,16 +64,36 @@ module Acute
           end
         end
       end
+      chars = Chars.new(text)
+      mentions.each { |m| m.offset = chars[m.offset.begin]...chars[m.offset.end] }
       Extraction.new(text, mentions)
+    end
+
+    # Character offsets of byte offsets, counted from the last one asked for: a walk through the text costs
+    # its length once
+    class Chars
+      def initialize(text)
+        @text = text
+        @ascii = text.ascii_only?
+        @byte = 0
+        @char = 0
+      end
+
+      def [](byte)
+        return byte if @ascii
+        @char += byte >= @byte ? @text.byteslice(@byte, byte - @byte).length : -@text.byteslice(byte, @byte - byte).length
+        @byte = byte
+        @char
+      end
     end
 
     # The longest mention at the start of the tokens, as [mention, its length in entries]. Only the prefixes
     # the grammar accepts are tried, longest first: a phrase's, then a duration's.
-    def self.longest(text, all, make_context, whole)
+    def self.longest(text, all, make_context, whole, spent)
       tokens = all
       until tokens.empty?
-        tree, t = Grammar.longest(tokens)
-        units, d = Grammar.longest(tokens, duration: true)
+        tree, t = Grammar.longest(tokens, spent:)
+        units, d = Grammar.longest(tokens, duration: true, spent:)
         return unless tree || units
         j = t.to_i > d.to_i ? t : d
         slice = j == tokens.size ? tokens : tokens[0, j]
@@ -82,7 +118,8 @@ module Acute
     end
 
     def self.split?(text, from, to, gaps)
-      return true if gaps.any? { |g| g >= from && g < to }
+      gaps.shift while gaps.any? && gaps[0] < from
+      return true if gaps.any? && gaps[0] < to
       text.byteslice(from, to - from).each_byte.any? { |c| PUNCT.include?(c) && c != 44 }
     end
 
@@ -114,11 +151,11 @@ module Acute
       value = (tree && time(piece, tree, make_context, whole)) || (units && Duration.from_units(units))
       return unless value
       # E2: "for 2 hours" is the duration's mention, "for" included
-      if value.kind == :duration && (m = text.byteslice(0, st).match(/\bfor\s+\z/i))
-        st = m.begin(0)
+      if value.kind == :duration && (f = for_before(text, st))
+        st = f
         piece = text.byteslice(st, stop - st)
       end
-      Extraction::Mention.new(value.kind, piece, chars(text, st)...chars(text, stop), value)
+      Extraction::Mention.new(value.kind, piece, st...stop, value)
     end
 
     def self.time(piece, tree, make_context, whole)
@@ -136,8 +173,26 @@ module Acute
       end
     end
 
-    def self.sentence_start?(text, byte) = text.byteslice(0, byte).match?(/(?:\A|[.!?])\s*\z/)
+    SPACE = [32, 9, 10, 11, 12, 13].freeze
 
-    def self.chars(text, byte) = text.ascii_only? ? byte : text.byteslice(0, byte).length
+    def self.space_before(text, byte)
+      byte -= 1 while byte > 0 && SPACE.include?(text.getbyte(byte - 1))
+      byte
+    end
+
+    def self.sentence_start?(text, byte)
+      byte = space_before(text, byte)
+      byte == 0 || [46, 33, 63].include?(text.getbyte(byte - 1))
+    end
+
+    # Where the "for" just before the byte starts, with a space or more between
+    def self.for_before(text, byte)
+      word = space_before(text, byte)
+      return if word == byte || word < 3 || !text.byteslice(word - 3, 3).casecmp?("for")
+      return 0 if word == 3
+      before = word - 4
+      before -= 1 while before > 0 && text.getbyte(before) & 0xC0 == 0x80
+      word - 3 unless text.byteslice(before, word - 3 - before).match?(/\p{Word}/)
+    end
   end
 end

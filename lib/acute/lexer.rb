@@ -209,11 +209,10 @@ module Acute
           st = i
           v = 0
           while i < n && CLASS[c = s.getbyte(i)] == DIGIT
-            v = v * 10 + c - 48
+            v = v * 10 + c - 48 if i - st < 9 # the first nine digits
             i += 1
           end
           nd = i - st
-          v /= 10**(nd - 9) if nd > 9 # the first nine digits
           flags = nd > DIGITS ? DIGITS : nd
           flags |= ZERO if nd > 1 && s.getbyte(st) == 48
           if (i == n || CLASS[c] == SPACE) && nd < 12
@@ -354,7 +353,11 @@ module Acute
             i += 1
             i += 1 while i < n && CLASS[s.getbyte(i)] == PUNCT
             # D44: "tomorrow!", "at 5?": a sentence's end mark after the phrase says nothing of the time
-            next if (c == 33 || c == 63) && (i == n || s.byteslice(i, n - i).strip.empty?)
+            if c == 33 || c == 63
+              j = i
+              j += 1 while j < n && ((b = s.getbyte(j)) == 32 || (b >= 9 && b <= 13) || b == 0)
+              next if j == n
+            end
             return Failure.new(:unknown_word, st, i) unless unknown
             unknown << st << i
           end

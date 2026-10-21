@@ -82,4 +82,13 @@ class ParserTest < Minitest::Test
     end
     assert_equal ["2027-02-01", "Sun 18 Oct, 9am"], out
   end
+
+  def test_a_long_nesting_parses_quickly
+    text = "#{"the day after " * 36}tomorrow"
+    assert_equal 512, text.bytesize
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    r = Acute.parse(text, now: "2026-10-21T12:00", zone: NY)
+    assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 0.05
+    assert_equal "2026-11-27 00:00:00 -05:00", wall(r.begin)
+  end
 end
