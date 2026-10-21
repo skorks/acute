@@ -27,6 +27,12 @@ class HardeningTest < Minitest::Test
   File.singleton_class.prepend(Opened)
   IO.singleton_class.prepend(Opened)
 
+  def test_a_huge_zone_name_is_quoted_only_in_part
+    e = assert_raises(Acute::OptionError) { Acute.parse("tomorrow", zone: "A" * 1_000_000) }
+    assert_equal "unknown zone \"#{"A" * 64}…\"", e.message
+    assert_equal 1_000_000, e.value.size
+  end
+
   def test_hostile_zone_names_raise_and_are_not_cached
     Acute::Zone.for("UTC")
     before = Acute::Zone.instance_variable_get(:@zones).keys
