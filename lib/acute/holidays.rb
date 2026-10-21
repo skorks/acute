@@ -38,6 +38,9 @@ module Acute
 
       def holiday?(date) = !::Holidays.on(date, *@regions).empty?
 
+      # Its days in year y, as days since 1970
+      def days_in(year) = ::Holidays.between(Date.new(year, 1, 1), Date.new(year, 12, 31), *@regions).map { _1[:date].jd - 2_440_588 }
+
       # The gem's names are English titles: "Christmas Day" is :christmas, "Thanksgiving" :thanksgiving
       def named(name, year)
         name = name.to_s
@@ -46,6 +49,38 @@ module Acute
           key == name || key == "#{name}_day"
         end
         found && found[:date]
+      end
+    end
+
+    def self.workdays(holidays) = Region === holidays ? RegionDays.new(holidays) : Workdays.new(holidays)
+
+    # Monday to Friday, less a holidays-gem region's days, counted rather than stepped through, with the region
+    # asked once a year (T17). It is made for one call, so its cache is never shared.
+    class RegionDays
+      def initialize(region)
+        @region = region
+        @years = {}
+      end
+
+      # The day n business days from day d: n weekdays on, then one more for each holiday passed, until none is
+      def add(d, n)
+        to = Calendar.add_weekdays(d, n)
+        k = n > 0 ? off(d + 1, to + 1) : off(to, d)
+        while k > 0
+          from = to
+          to = Calendar.add_weekdays(from, n > 0 ? k : -k)
+          k = n > 0 ? off(from + 1, to + 1) : off(to, from)
+        end
+        to
+      end
+
+      private
+
+      # The holidays from Monday to Friday, from day lo up to but not including hi
+      def off(lo, hi)
+        (Calendar.year_of(lo)..Calendar.year_of(hi - 1)).sum do |y|
+          (@years[y] ||= @region.days_in(y).reject { (_1 + 4) % 7 % 6 == 0 }.uniq).count { lo <= _1 && _1 < hi }
+        end
       end
     end
 

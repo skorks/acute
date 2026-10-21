@@ -66,7 +66,8 @@ module Acute
     raise ArgumentError, "text must be a String, got #{text.class}" unless String === text
     options = [locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays, business_days, year_bias]
     Context.new(now, zone, context, *options) # bad options raise here, before any mention is found
-    Extract.call(text, -> { Context.new(now, zone, context, *options) })
+    budget = Resolve::Period::Budget.new # D49: one for the call, not one a mention (T17)
+    Extract.call(text, -> { Context.new(now, zone, context, *options).tap { _1.budget = budget } })
   end
 
   # The text as UTF-8, or nil when it can't be read as UTF-8: broken bytes, or an encoding such as UTF-16 whose
