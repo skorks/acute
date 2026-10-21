@@ -10,6 +10,7 @@ class ToolCompactTest < Minitest::Test
   CASES = Dir[File.expand_path("../cases/*.jsonl", __dir__)].flat_map { File.readlines(_1) }
   SEED = 20_261_021
   SAMPLE = 300
+  SHORT = Acute::Assumption.for(:bare_hour_window).short
 
   def call(name, args, tool = TOOL) = tool.call(name, args).tap { assert_tool_valid(name, _1) }
 
@@ -32,7 +33,7 @@ class ToolCompactTest < Minitest::Test
                    "mentions" => [{ "text" => "tomorrow at 1", "offset" => [15, 28],
                                     "value" => { "kind" => "time", "time" => "2026-10-18T13:00:00-04:00", "end" => "2026-10-18T13:01:00-04:00",
                                                  "grain" => "minute", "zone" => NY,
-                                                 "assumptions" => [Acute.parse("at 1", **OPTS).as_json["assumptions"][0]],
+                                                 "assumptions" => [{ "code" => "bare_hour_window", "rule" => "D4", "message" => SHORT }],
                                                  "alternatives" => [{ "time" => "2026-10-18T01:00:00-04:00",
                                                                       "end" => "2026-10-18T01:01:00-04:00", "grain" => "minute" }] } },
                                   { "text" => "for an hour", "offset" => [29, 40],
@@ -60,6 +61,13 @@ class ToolCompactTest < Minitest::Test
     assert_equal({ "kind" => "failure", "code" => "too_long", "error" => "the text is longer than 512 bytes" },
                  call("parse", { "text" => "é" * 300 }))
     assert_equal ["tomorow"], call("parse", { "text" => "tomorow" })["unread"]
+  end
+
+  def test_an_assumption_message_is_its_short_form_and_the_library_keeps_the_long_one
+    short = [{ "code" => "bare_hour_window", "rule" => "D4", "message" => SHORT }]
+    assert_equal short, call("parse", { "text" => "at 4" })["assumptions"]
+    assert_equal short, call("verify", { "text" => "at 4", "value" => "2026-10-20" }).dig("expected", "assumptions")
+    assert_equal Acute::Assumption.for(:bare_hour_window).message, Acute.parse("at 4", **OPTS).as_json.dig("assumptions", 0, "message")
   end
 
   def test_the_library_json_keeps_every_field
