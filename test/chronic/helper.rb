@@ -29,6 +29,7 @@ module ChronicRun
 
   module Recorder
     def parse(text, options = {})
+      return super unless Ractor.current == Ractor.main # the record lives in the main Ractor
       got = super
       loc = caller_locations.find { _1.path.start_with?(__dir__) && _1.base_label.start_with?("test_") }
       ChronicRun.call(ChronicRun::Call.new(loc&.lineno, text, options.except(:now), got))

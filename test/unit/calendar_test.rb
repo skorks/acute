@@ -51,6 +51,20 @@ class CalendarTest < Minitest::Test
     end
   end
 
+  # D15: every Gregorian year against Oudin's algorithm (1940), a different derivation of the same computus
+  def test_easter_against_oudin
+    wrong = (1583..9999).reject do |y|
+      g = y % 19
+      c = y / 100
+      h = (c - c / 4 - (8 * c + 13) / 25 + 19 * g + 15) % 30
+      i = h - (h / 28) * (1 - (29 / (h + 1)) * ((21 - g) / 11))
+      l = i - (y + y / 4 + i + 2 - c + c / 4) % 7
+      month = 3 + (l + 40) / 44
+      Date.new(y, month, l + 28 - 31 * (month / 4), Date::GREGORIAN).jd - EPOCH == C.easter(y)
+    end
+    assert_empty wrong
+  end
+
   # D17: stepping one weekday at a time, a weekend first moved to the Friday before (forward) or Monday after (back)
   def test_add_weekdays_against_stepping
     weekend = ->(d) { [0, 6].include?(C.weekday(d)) }
