@@ -64,11 +64,7 @@ module Acute
     end
     private_class_method :main_ractor?, :ractor_zones
 
-    # The name is quoted only in part, so a huge one costs nothing to report
-    def self.unknown(name)
-      quoted = name.length > 64 ? "#{name[0, 64].inspect[0..-2]}…\"" : name.inspect
-      OptionError.new("unknown zone #{quoted}", option: :zone, value: name)
-    end
+    def self.unknown(name) = OptionError.new("unknown zone #{Acute.quote(name)}", option: :zone, value: name)
 
     def self.build(name, zone)
       raise unknown(name) unless name.ascii_only?

@@ -1,5 +1,6 @@
 require_relative "../test_helper"
 require "stringio"
+require "tmpdir"
 require_relative "../../lib/acute/cli"
 require_relative "../../lib/acute/chronic_duration"
 require_relative "../../lib/acute/tool"
@@ -33,6 +34,47 @@ class HardeningTest < Minitest::Test
     e = assert_raises(Acute::OptionError) { Acute.parse("tomorrow", zone: "A" * 1_000_000) }
     assert_equal "unknown zone \"#{"A" * 64}…\"", e.message
     assert_equal 1_000_000, e.value.size
+  end
+
+  def test_t33_every_option_message_quotes_a_huge_value_only_in_part
+    huge = "x" * 1_000_000
+    [{ now: huge }, { now: "2026-10-22T12:00:00.#{"9" * 1_000_000}x" }, { holidays: huge }, { holidays: [huge] * 3 }].each do |opts|
+      e = assert_raises(Acute::OptionError) { Acute.parse("in 2 business days", **opts) }
+      assert_operator e.message.bytesize, :<, 200, opts.keys.first
+    end
+  end
+
+  # T31: a host whose /etc/localtime names a zone acute doesn't ship made every parse without zone: raise
+  def test_t31_the_system_zone_is_always_one_acute_ships
+    skip "symlinks need privileges on Windows" if Gem.win_platform?
+    Dir.mktmpdir do |dir|
+      links = 0
+      link = lambda do |target|
+        path = File.join(dir, "localtime#{links += 1}")
+        File.symlink(target, path)
+        path
+      end
+      { "/usr/share/zoneinfo/Asia/Tokyo" => "Asia/Tokyo", "/usr/share/zoneinfo/posix/Europe/Berlin" => "Europe/Berlin",
+        "/usr/share/zoneinfo/right/UTC" => "UTC", "/usr/share/zoneinfo/US/Pacific-New" => "UTC",
+        "/etc/zoneinfo/localtime" => "UTC", "../usr/share/zoneinfo/../../../etc/passwd" => "UTC",
+        "/var/db/timezone/zoneinfo/Europe/Kyiv" => "Europe/Kyiv" }.each do |target, zone|
+        assert_equal zone, Acute::Context.system_zone(nil, link.(target)), target
+      end
+      tokyo = link.("/usr/share/zoneinfo/Asia/Tokyo")
+      assert_equal "America/New_York", Acute::Context.system_zone(":America/New_York", tokyo)
+      assert_equal "Asia/Tokyo", Acute::Context.system_zone("Mars/Olympus", tokyo)
+      plain = File.join(dir, "copied")
+      File.write(plain, "TZif")
+      assert_equal "UTC", Acute::Context.system_zone(nil, plain)
+    end
+  end
+
+  # T32: an ISO 8601 now with an offset past ±23:59 moved now by days, silently
+  def test_t32_now_offsets_are_held_to_a_day
+    %w[+99:99 -24:00 +23:60 +2400].each do |offset|
+      assert_raises(Acute::OptionError, offset) { Acute.parse("tomorrow", now: "2026-10-22T12:00#{offset}", zone: "UTC") }
+    end
+    assert_equal Time.utc(2026, 10, 22, 12, 1), Acute.parse("now", now: "2026-10-23T12:00+23:59", zone: "UTC").time
   end
 
   def test_hostile_zone_names_raise_and_are_not_cached

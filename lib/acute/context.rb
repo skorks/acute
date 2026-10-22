@@ -12,11 +12,13 @@ module Acute
   class Context
     ISO = /\A(\d{4})-(\d\d)-(\d\d)(?:[T ](\d\d):(\d\d)(?::(\d\d)(?:\.\d+)?)?)?(Z|[+-]\d\d:?\d\d)?\z/
 
-    def self.system_zone
-      tz = ENV["TZ"]
+    # TZ may start with POSIX's ":", and /etc/localtime may link into posix/ or right/, or to a zone the shipped
+    # data doesn't hold: only a name acute ships is used, so a parse without zone: never raises for it
+    def self.system_zone(tz = ENV["TZ"], link = "/etc/localtime")
+      tz = tz&.delete_prefix(":")
       return tz if tz && Zone.known?(tz)
-      target = File.readlink("/etc/localtime")
-      target[%r{zoneinfo/(.+)\z}, 1] || "UTC"
+      name = File.readlink(link)[%r{zoneinfo/(?:posix/|right/)?(.+)\z}, 1]
+      name && Zone.known?(name) ? name : "UTC"
     rescue SystemCallError
       "UTC"
     end
@@ -185,17 +187,19 @@ value: business_days)
     end
 
     def iso_epoch(str)
-      m = str.valid_encoding? && ISO.match(str) or raise OptionError.new("now: #{str.inspect} is not ISO 8601", option: :now, value: str)
+      m = str.valid_encoding? && ISO.match(str) or raise OptionError.new("now: #{Acute.quote(str)} is not ISO 8601", option: :now, value: str)
       y, mo, d, h, mi, s = m.captures.first(6).map(&:to_i)
-      unless mo.between?(1, 12) && d.between?(1, Calendar.days_in_month(y, mo)) && h < 24 && mi < 60 && s < 60
-        raise OptionError.new("now: #{str.inspect} is not a valid time", option: :now, value: str)
+      offset = m[7]&.delete(":")
+      # an offset is within ±23:59, as a zone's is
+      unless mo.between?(1, 12) && d.between?(1, Calendar.days_in_month(y, mo)) && h < 24 && mi < 60 && s < 60 &&
+             (offset.nil? || offset == "Z" || (offset[1, 2].to_i < 24 && offset[3, 2].to_i < 60))
+        raise OptionError.new("now: #{Acute.quote(str)} is not a valid time", option: :now, value: str)
       end
       local = Calendar.days_from_civil(y, mo, d) * 86_400 + h * 3600 + mi * 60 + s
-      return @zone.local_to_utc(local, self) unless m[7]
-      return local if m[7] == "Z"
-      sign = m[7].start_with?("-") ? -1 : 1
-      digits = m[7].delete(":")
-      local - sign * (digits[1, 2].to_i * 3600 + digits[3, 2].to_i * 60)
+      return @zone.local_to_utc(local, self) unless offset
+      return local if offset == "Z"
+      sign = offset.start_with?("-") ? -1 : 1
+      local - sign * (offset[1, 2].to_i * 3600 + offset[3, 2].to_i * 60)
     end
   end
 end

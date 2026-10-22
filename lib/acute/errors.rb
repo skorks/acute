@@ -11,6 +11,9 @@ module Acute
     message.gsub(INVISIBLE) { _1.ord < 128 ? _1.inspect[1..-2] : format("\\u%04X", _1.ord) }
   end
 
+  # A value a message quotes, cut so a huge one costs nothing to report or log
+  def self.quote(string, limit = 64) = string.length > limit ? "#{string[0, limit].inspect[0..-2]}…\"" : string.inspect
+
   class ParseError < StandardError
     include Error
 

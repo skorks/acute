@@ -27,12 +27,12 @@ module Acute
         begin
           require "holidays" unless defined?(::Holidays)
         rescue LoadError
-          raise OptionError.new("holidays: #{regions.join(", ")} is a region of the holidays gem, " \
+          raise OptionError.new("holidays: #{Acute.quote(regions.join(", "))} is a region of the holidays gem, " \
                                 "which is not installed", option: :holidays, value: given)
         end
         regions.map!(&:to_sym)
         if ::Holidays.respond_to?(:available_regions) && (unknown = regions - ::Holidays.available_regions).any?
-          raise OptionError.new("holidays: unknown region #{unknown.join(", ")}", option: :holidays, value: given)
+          raise OptionError.new("holidays: unknown region #{Acute.quote(unknown.join(", "))}", option: :holidays, value: given)
         end
         @regions = regions
       end
