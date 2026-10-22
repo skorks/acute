@@ -73,6 +73,15 @@ class ExtractTest < Minitest::Test
     assert_equal [[:time, "May", 11...14]], mentions("See you in May.")
   end
 
+  def test_d18_each_day_of_a_list_of_weekdays_is_a_mention
+    assert_equal [[:time, "mon", 0...3], [:time, "wed", 5...8], [:time, "fri", 13...16]], mentions("mon, wed and fri")
+    assert_equal [[:time, "mon", 12...15], [:time, "wed", 20...23]], mentions("we can meet mon and wed")
+    assert_equal [[:time, "Mon", 0...3], [:time, "Wed", 5...8]], mentions("Mon, Wed")
+    assert_equal(%w[2026-10-19 2026-10-21], extract("mon or wed").mentions.map { _1.value.begin.to_date.to_s })
+    assert_equal [], mentions("she will wed on sat")
+    assert_equal [], mentions("mon wed")
+  end
+
   def test_offsets_count_characters
     assert_equal [[:time, "tomorrow at 9am", 5...20]], mentions("café tomorrow at 9am")
   end

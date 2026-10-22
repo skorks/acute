@@ -290,7 +290,7 @@ More:
 - **D44.** "this past X" is "last X". **D48.** "this last" is "this past": "this last hour" is the hour before now.
 - **D44.** Looking back, a "this X" that is over is the one just passed: "since this august" said in November → from 1 August this year.
 - **D44.** "following" is "next". "current" is "this".
-- **D44.** "<X> after next" is the one after "next X", for each of its readings: "friday after next" said on a Tuesday → next week's Friday or the one after. "before last" is the one before "last X".
+- **D44.** "<X> after next" is the one after "next X", for each of its readings: "friday after next" said on a Tuesday → next week's Friday or the one after. "before last" is the one before "last X": "week before last".
 - **D44.** "the day after tomorrow" and "the day before yesterday" are one day from the day named.
 - **D44.** "<X> after/before <a day>" is the first X past it: "the monday before christmas".
 - **D44.** "<weekday|part of day|holiday> of <period>" is the one inside it: "tuesday of next week", "morning of xmas", "labor day of last year". **D48.** So is "sunday from last week", and a possessive: "last week's sunday".
@@ -695,7 +695,7 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 
 - **D47.** `strict: false` returns the first time in the text, found as `extract` finds it, with `unknown_words_skipped`. "meet bob tuesday" → Tuesday. `text` is the input and `matched` the part used. It applies only when there is an unknown word: a phrase acute knows every word of and refuses for its meaning stays nil.
 - **D18.** Misspellings come from a small fixed table ("tommorow", "wensday", "febuary", "untill"). There is no fuzzy matching.
-- **D18.** Lists of dates ("mon, wed and fri") → nil. Extraction finds each one.
+- **D18.** Lists of dates ("mon, wed and fri") → nil. Extraction finds each one, "mon" and "wed" included, though alone they are words (E3).
 - **D43.** Words have no length limit. A number keeps its first nine digits.
 - **D44.** "right now", "just now", "at the moment" and "at present" are now. **D48.** "ATM" is not.
 - **D44.** Unicode spaces and dashes are spaces and dashes: "8 pm" with a narrow no-break space, "tue – thu".

@@ -76,13 +76,13 @@ module Acute
         end
         if (w = t[i + S + 1]) == :after || w == :before # "the day after tomorrow"
           @i += S
-          # "the week after next", "the month after the next": the one after next week, when "next" has
-          # nothing of its own
+          # D44: "the week after next", "the month after the next", "week before last": the one after next
+          # week or before last week, when "next" or "last" has nothing of its own
           j = i + 2 * S
           j += S if t[j] == L::WORD && t[j + 1] == :the
-          if w == :after && t[j + 1] == :next && t[j] == L::REL && nothing_own?(j + S)
+          if t[j] == L::REL && (r = t[j + 1]) == (w == :after ? :next : :last) && nothing_own?(j + S)
             @i = j + S
-            return Shift.new(1, v, Rel.new(:next, Unit.new(v, nil)))
+            return Shift.new(w == :after ? 1 : -1, v, Rel.new(r, Unit.new(v, nil)))
           end
           return shift_tail(Unit.new(v, 1))
         end

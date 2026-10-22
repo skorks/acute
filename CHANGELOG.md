@@ -4,6 +4,7 @@
 
 - **Fixed:** Cairo kept standard time all year after 2076. Its summer, which ends at 24:00 on the last Thursday of October, now carries on to 2200 (D47).
 - **Fixed:** an hourly or finer rule kept an excepted time: "every hour except october 17 at 4pm" still listed 4pm. A time is now that instant, and a date leaves out each of the rule's occurrences that day; one needing more than 24 is `:conflict` (R12).
+- **Fixed:** "week before last" and "the month before last" were incomplete; they are now the one before last week or month (D44). `extract` found only "fri" in "mon, wed and fri": a weekday in a list of weekdays is now a day, though "mon" and "wed" are also words (D18).
 
 ## 1.0.0
 
