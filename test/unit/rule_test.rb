@@ -2,6 +2,8 @@ require_relative "../test_helper"
 require "json"
 
 class RuleTest < Minitest::Test
+  cover "Acute::Rule*"
+  cover "Acute::Resolve::Recur*"
   OPTS = { now: "2026-10-17T14:00", zone: NY }.freeze
 
   def rule(text, **opts) = Acute.recurrence(text, **OPTS, **opts)

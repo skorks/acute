@@ -1,0 +1,12 @@
+# Mutation testing before a release: bin/mutant SUBJECT (slow, so not a bin/check stage)
+usage: opensource
+integration:
+  name: minitest
+includes:
+  - lib
+  - test
+  - test/chronic # the integration loads every test_*.rb; chronic's say require "helper"
+requires:
+  - mutant/integration/minitest # first, so minitest/autorun in the helper is a no-op
+  - acute
+  - ./test/test_helper

@@ -2,6 +2,7 @@ require_relative "../test_helper"
 
 # D13: week numbers are ISO 8601 weeks, Monday to Sunday, week 1 holding January 4th
 class IsoWeeksTest < Minitest::Test
+  cover "Acute::Resolve*"
   def span(text, **opts)
     r = parse(text, **opts)
     "#{r.begin.strftime("%F")}..#{r.end.strftime("%F")}"

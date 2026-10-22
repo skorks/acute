@@ -2,6 +2,7 @@ require_relative "../test_helper"
 
 # More of the details settled in the depth pass (D44)
 class DepthMoreTest < Minitest::Test
+  cover "Acute::Resolve*"
   def span(text, **opts)
     r = parse(text, **opts)
     [r.begin && wall(r.begin), r.end && wall(r.end)]

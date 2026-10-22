@@ -35,6 +35,8 @@ text ──lex──▶ tokens ──grammar──▶ tree ──resolve(ctx)─
 
 Options: `--only STAGE`, `--skip STAGE,STAGE`, `--grep TEXT` / `--file NAME` (corpus only), `--rule D20` (the cases and unit tests about one rule, plus the rules no case covers), `--record`.
 
+Before a release, `bin/mutant [SUBJECT]` runs mutation testing (too slow for bin/check): a unit test class reaches mutant only through its `cover "Acute::Zone*"` line.
+
 ## Adding a phrase
 
 1. Find its case in `test/cases/*.jsonl`, or add one. The format is in `test/cases/FORMAT.md`. `bin/case "phrase" --now ... --zone ...` appends acute's current answer to `test/cases/new.jsonl` as a starting point; correct it from the rules.

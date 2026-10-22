@@ -2,6 +2,7 @@ require_relative "../test_helper"
 
 # The details settled in the tail pass (D48)
 class TailTest < Minitest::Test
+  cover "Acute::Resolve*"
   def day(text, **opts) = parse(text, **opts).begin.strftime("%F")
 
   def test_d48_a_possessive_reads_as_the_word

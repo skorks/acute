@@ -1,6 +1,7 @@
 require_relative "../test_helper"
 
 class ResolveTest < Minitest::Test
+  cover "Acute::Resolve*"
   def assert_reads(text, main, alts = [], assumptions = [], **opts)
     r = parse(text, **opts)
     assert_equal main, wall(r.begin), text
