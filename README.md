@@ -11,19 +11,20 @@ Acute.parse("next tuesday at 3pm", now: "2026-10-17T14:00", zone: "America/New_Y
 # => 2026-10-20 15:00:00 -0400
 ```
 
-chronic is unmaintained, has one global time zone, and silently guesses at words it doesn't know. acute is a rewrite from scratch: every call takes its own `now` and zone, daylight saving is handled properly, it reads a wide range of phrases (checked against more than 18,000 cases), it says which reading it chose and why, and it runs tens of times faster. Why, with examples, and the name: [docs/chronic.md](docs/chronic.md#why-acute-exists).
+Ruby's own `Time.parse` reads formats, not phrases: it takes "next tuesday at 3pm" as 3pm today. chronic reads phrases, but it is unmaintained, has one global time zone, and silently guesses at words it doesn't know. acute is a rewrite from scratch: every call takes its own `now` and zone, daylight saving is handled properly, it reads a wide range of phrases (checked against more than 18,000 cases), it says which reading it chose and why, and it runs tens of times faster. Why, with examples, and the name: [docs/chronic.md](docs/chronic.md#why-acute-exists).
 
 ## Installation
 
+<!-- no-doc-test -->
 ```ruby
 gem "acute"
 ```
 
-acute needs Ruby 3.3 or later and has no runtime dependencies. Its zone data is IANA 2026e, shipped with the gem (`Acute::TZDATA`).
+Or `gem install acute`. acute needs Ruby 3.3 or later and has no runtime dependencies. Its zone data is IANA 2026e, shipped with the gem (`Acute::TZDATA`).
 
 ## Usage
 
-The examples are said on Saturday 17 October 2026 at 14:00 in New York. Every call takes the same options (`now:`, `zone:`, `context:`, `locale:`, `strict:`, `dst:`…), and `Acute.with` checks them once and returns a frozen parser to share across threads and Ractors. Every call, option and result field: [docs/usage.md](docs/usage.md).
+The examples pin `now:` to Saturday 17 October 2026, 14:00, in New York. `now:` takes a Time or an ISO 8601 string, and without it acute uses the clock. Every call takes the same options (`now:`, `zone:`, `context:`, `locale:`, `strict:`, `dst:`…), and `Acute.with` checks them once and returns a frozen parser to share across threads and Ractors. Every call, option and result field: [docs/usage.md](docs/usage.md).
 
 ```ruby
 now = "2026-10-17T14:00"
@@ -39,7 +40,7 @@ A phrase means the whole period it names: `time` is its start, and `end` is the 
 
 ### Ambiguity
 
-When a phrase can be read more than one way, acute settles it with a numbered rule, records the rule, and keeps the other readings:
+When a phrase can be read more than one way, acute settles it with a numbered rule, records the rule, and keeps the other readings. Said at 14:00, "at 9" is 9am tomorrow by rule D4, and 9pm tonight is the alternative:
 
 ```ruby
 r = Acute.parse("at 9", now:, zone:)
@@ -119,13 +120,15 @@ $ claude mcp add acute -- acute mcp --zone America/New_York    # an MCP server o
 ```
 
 ```ruby
-tool = Acute::Tool.new(zone: user.zone)            # require "acute/tool"
-tool.definitions(:anthropic)                       # or :openai: seven tools for any SDK
-tool.call("parse", { "text" => "next friday 3pm" }) # => {"kind" => "time", ...}
-chat.with_tools(*tool.ruby_llm)                    # require "acute/tool/ruby_llm"
+require "acute/tool"
+tool = Acute::Tool.new(now:, zone:)   # the app sets the zone and now, never the model
+tool.definitions(:anthropic).map { _1[:name] }   # or :openai, for any SDK
+# => ["parse", "duration", "recurrence", "extract", "verify", "describe", "now"]
+tool.call("parse", { "text" => "next friday 3pm" })
+# => {"kind" => "time", "time" => "2026-10-23T15:00:00-04:00", "end" => "2026-10-23T15:01:00-04:00", "grain" => "minute", "zone" => "America/New_York"}
 ```
 
-The tools, their failures and how zone and now are set: [docs/agents.md](docs/agents.md); setting up RubyLLM: [docs/agents.md#rubyllm](docs/agents.md#rubyllm).
+The tools, their failures and how zone and now are set: [docs/agents.md](docs/agents.md). With RubyLLM it is `chat.with_tools(*tool.ruby_llm)`: [docs/agents.md#rubyllm](docs/agents.md#rubyllm).
 
 ## Coming from chronic
 

@@ -1,5 +1,7 @@
 # The acute command
 
+`acute` reads phrases in a shell or a script and prints when they are. The examples are said on Saturday 17 October 2026 at 14:00; add `--now 2026-10-17T14:00` to get the same answers.
+
 ```
 $ acute --zone America/New_York "next friday 3pm"
 Fri, Oct 23, 3pm EDT
