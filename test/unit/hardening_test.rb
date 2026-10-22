@@ -113,14 +113,20 @@ class HardeningTest < Minitest::Test
     Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
   end
 
+  # Linear means 4x the text costs about 4x the time; quadratic would cost 16x. Absolute limits fail on a slow runner.
+  def best_of_three(&) = Array.new(3) { seconds(&) }.min
+
   # T23: each lone frequency word asked whether a determiner came before it by matching all the text before
   # it, so 100 KB of "daily weekly monthly" took 30 s
   def test_t23_lone_frequency_words_keep_extract_linear
     now = Time.new(2026, 10, 22, 12, 0, 0, "-04:00")
     ["daily weekly monthly ", "daily "].each do |unit|
-      text = (unit * (100_000 / unit.size))
-      assert_operator seconds { Acute.extract(text, now: now) }, :<, 3.0, unit
-      assert_operator seconds { Acute.extract(text[0, 4096], now: now) }, :<, 0.5, unit
+      small = unit * (25_000 / unit.size)
+      large = unit * (100_000 / unit.size)
+      t1 = best_of_three { Acute.extract(small, now: now) }
+      t4 = best_of_three { Acute.extract(large, now: now) }
+      assert_operator t4 / t1, :<, 8, "#{unit}: 4x the text took #{(t4 / t1).round(1)}x as long (#{t1}s, #{t4}s)"
+      assert_operator seconds { Acute.extract(large[0, 4096], now: now) }, :<, 0.5, unit
     end
     text = "#{"日本 " * 2000}the weekly sync, our daily standup, take it daily with food"
     assert_equal ["daily"], Acute.extract(text, now: now).mentions.map(&:text)
@@ -152,9 +158,6 @@ class HardeningTest < Minitest::Test
   # T29: each byte of a word multiplied its key, a bignum by then, so one unbroken 64 KB word took 0.6 s to
   # lex and a megabyte of base64 in extract's text minutes. Text over 512 bytes reaches the lexer only from
   # extract, which blanks such a run's middle.
-  # Linear means 4x the text costs about 4x the time; quadratic would cost 16x. Absolute limits fail on a slow runner.
-  def best_of_three(&) = Array.new(3) { seconds(&) }.min
-
   def test_t29_a_long_unbroken_word_lexes_in_linear_time
     shapes = {
       "letters" => ->(n) { "a" * n },

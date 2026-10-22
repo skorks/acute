@@ -103,15 +103,22 @@ class ExtractTest < Minitest::Test
     Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
   end
 
+  # Linear means 4x the text costs about 4x the time; quadratic would cost 16x. Absolute limits fail on a slow runner.
+  def best_of_three(&) = Array.new(3) { seconds(&) }.min
+
   def test_long_text_takes_time_in_proportion_to_its_length
-    prose = "We met on the 3rd and talked about the plan for next friday at 3pm before lunch. " * 1200
-    dense = "next friday tomorrow 3pm june 5th " * 3000
-    limit = defined?(Coverage) && Coverage.running? ? 8 : 2 # line coverage slows Ruby severalfold
-    [[prose, 2400], [dense, 9000], ["the day after " * 2000, 0], ["5" * 100_000, 0]].each do |text, count|
+    prose = "We met on the 3rd and talked about the plan for next friday at 3pm before lunch. "
+    dense = "next friday tomorrow 3pm june 5th "
+    [[prose, 150, 1200], [dense, 375, 4500], ["the day after ", 500, 0]].each do |unit, n, count|
       x = nil
-      assert_operator seconds { x = extract(text) }, :<, limit, text[0, 20]
+      t1 = best_of_three { extract(unit * n) }
+      t4 = best_of_three { x = extract(unit * 4 * n) }
+      assert_operator t4 / t1, :<, 8, "#{unit[0, 20]}: 4x the text took #{(t4 / t1).round(1)}x as long (#{t1}s, #{t4}s)"
       assert_equal count, x.mentions.size
     end
+    x = nil
+    assert_operator seconds { x = extract("5" * 100_000) }, :<, 2
+    assert_equal 0, x.mentions.size
   end
 
   def test_a_mention_is_never_longer_than_a_phrase_parse_takes
