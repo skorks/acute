@@ -6,6 +6,7 @@ module Acute
   # generated from CLDR.
   Locale = Struct.new(:country, :day_first, :week_start, :south)
 
+  # @api private
   class Locale
     SUNDAY_WEEKS = Ractor.make_shareable(%w[US CA JP IN PK BR NP ZA PH MX IL KR TW HK]) # D19, D39
     MONTH_FIRST = Ractor.make_shareable(%w[US CA JP CN PH NP])                          # D10, D37

@@ -4,6 +4,7 @@ require_relative "tables/words"
 module Acute
   # Bytes to tokens. The result is one flat Array, STRIDE entries per token:
   # kind, value, flags, start, stop (byte offsets, stop exclusive). Failures come back as a Failure value.
+  # @api private
   module Lexer
     STRIDE = 5
 

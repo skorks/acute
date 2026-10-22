@@ -10,7 +10,8 @@ class OptionErrorsTest < Minitest::Test
       assert_equal option, e.option
       assert_equal v.inspect, e.value.inspect
       assert_raises(Acute::OptionError) { Acute.with(**AT, option => v) }
-      assert_raises(Acute::OptionError) { Acute.extract("tomorrow", **AT, option => v) }
+      # extract takes no strict: (Ruby rejects it as an unknown keyword)
+      assert_raises(Acute::OptionError) { Acute.extract("tomorrow", **AT, option => v) } unless option == :strict
     end
   end
 

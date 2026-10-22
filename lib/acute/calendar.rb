@@ -1,5 +1,6 @@
 # Proleptic Gregorian dates as day numbers (days since 1970-01-01), after Howard Hinnant's algorithms.
 module Acute
+  # @api private
   module Calendar
     MONTH_DAYS = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31].freeze
 

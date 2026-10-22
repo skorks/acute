@@ -7,6 +7,7 @@ module Acute
   #
   # Inside resolve, times are local wall seconds (Zone's "local"), so day and month arithmetic is plain
   # Integer maths; the readings are converted to UTC once, at the end.
+  # @api private
   module Resolve
     G = Grammar
     # begin and end are epochs, end exclusive, either nil when open; dst is the code of a DST adjustment made

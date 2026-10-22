@@ -3,6 +3,7 @@ require "json"
 module Acute
   # A length of time as the parts said, so "1 month" stays a month rather than a guess at its seconds
   class Duration
+    # @api private
     UNIT_PART = Ractor.make_shareable(
       { year: [:years, 1], decade: [:years, 10], century: [:years, 100], quarter: [:months, 3], season: [:months, 3], month: [:months, 1],
         week: [:weeks, 1], fortnight: [:weeks, 2], day: [:days, 1], business_day: [:business_days, 1],
@@ -14,6 +15,7 @@ module Acute
     LONG = Ractor.make_shareable({ years: "year", months: "month", weeks: "week", business_days: "business day",
                                    days: "day", hours: "hour", minutes: "minute", seconds: "second" })
     ORDER = SHORT.keys.freeze
+    private_constant :FIXED, :SHORT, :LONG, :ORDER
     UNIT = { years: :year, months: :month, weeks: :week, business_days: :business_day, days: :day, hours: :hour,
              minutes: :minute }.freeze
 
@@ -41,6 +43,7 @@ module Acute
       unknown = parts.keys - ORDER
       raise ArgumentError, "unknown duration parts: #{unknown.join(", ")}" if unknown.any?
       @parts = ORDER.filter_map { |k| [k, whole(parts[k])] if parts[k] && parts[k] != 0 }.to_h.freeze
+      freeze
     end
 
     def kind = :duration

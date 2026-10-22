@@ -3,11 +3,11 @@ module Acute
                     fiscal_year_start: nil, strict: true, dst: nil, holidays: nil, business_days: nil, year_bias: nil,
                     style: :relative)
     raise OptionError.new("style: must be :relative or :calendar", option: :style, value: style) unless Describe::STYLES.include?(style)
-    return Describe.duration(value) if Duration === value
-    return value.to_s if Rule === value
     zone ||= value.zone if Result === value
     ctx = Context.new(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays,
                       business_days, year_bias)
+    return Describe.duration(value) if Duration === value
+    return value.to_s if Rule === value
     # strict: is left out: what describe writes always reads back strictly
     opts = { now: Time.at(ctx.now), zone: zone || ctx.zone.name, context: context, locale: locale,
              week_start: week_start, hemisphere: hemisphere, fiscal_year_start: fiscal_year_start, dst: dst,
@@ -18,6 +18,7 @@ module Acute
   # English that Acute.parse reads back as the value given (D45). Candidates come most natural first; each is
   # parsed with the same now, zone and options, and the first that gives the value as its only reading wins.
   # The last candidates write the date, the year, the zone and finally ISO 8601, which always read back.
+  # @api private
   class Describe
     STYLES = %i[relative calendar].freeze
     MONTHS = Result::MONTHS
@@ -310,4 +311,6 @@ module Acute
 
     def iso(epoch) = Time.at(epoch, in: @zone.offset_at(epoch)).strftime("%FT%T%:z")
   end
+
+  private_constant :Describe
 end

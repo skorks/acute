@@ -16,6 +16,7 @@ require_relative "acute/verify"
 require_relative "acute/parser"
 
 module Acute
+  # @api private
   MAX_LENGTH = 512
 
   SKIPPED = Assumption.for(:unknown_words_skipped)
@@ -36,16 +37,20 @@ module Acute
     out
   end
 
-  # A length of time, or nil when the text is not one ("next friday" is a time). The options are taken for
-  # the same calls as everything else; a length doesn't depend on them.
+  # A length of time, or nil when the text is not one ("next friday" is a time). The options are taken, and
+  # checked, for the same calls as everything else; a length doesn't depend on them.
   def self.duration(text, now: nil, zone: nil, context: :future, locale: nil, week_start: nil, hemisphere: nil,
                     fiscal_year_start: nil, strict: true, dst: nil, holidays: nil, business_days: nil, year_bias: nil)
+    Context.new(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays,
+                business_days, year_bias)
     out = length(text)
     Duration === out ? out : nil
   end
 
   def self.duration!(text, now: nil, zone: nil, context: :future, locale: nil, week_start: nil, hemisphere: nil,
                      fiscal_year_start: nil, strict: true, dst: nil, holidays: nil, business_days: nil, year_bias: nil)
+    Context.new(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays,
+                business_days, year_bias)
     out = length(text)
     raise Explain.error(out, utf8(text) || text) if Failure === out
     out
@@ -83,6 +88,7 @@ module Acute
   # The failures a rule that says how often but not when (R15) meets first: "twice" is no word, "3 times a day"
   # has no rule word, "every morning" no clock
   VAGUE_CODES = { unknown_word: true, not_rule: true, conflict: true }.freeze
+  private_constant :SKIPPED, :VAGUE_CODES
 
   def self.rule(given, ctx, tokens = nil, tree = nil)
     unless tokens
@@ -99,11 +105,11 @@ module Acute
   end
   private_class_method :rule
 
-  # strict: is taken and has no effect: extract always skips the words it doesn't know
+  # No strict: extract always skips the words it doesn't know, so it is no option here
   def self.extract(text, now: nil, zone: nil, context: :future, locale: nil, week_start: nil, hemisphere: nil,
-                   fiscal_year_start: nil, strict: true, dst: nil, holidays: nil, business_days: nil, year_bias: nil)
+                   fiscal_year_start: nil, dst: nil, holidays: nil, business_days: nil, year_bias: nil)
     raise ArgumentError, "text must be a String, got #{text.class}" unless String === text
-    options = [locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays, business_days, year_bias]
+    options = [locale, week_start, hemisphere, fiscal_year_start, true, dst, holidays, business_days, year_bias]
     Context.new(now, zone, context, *options) # bad options raise here, before any mention is found
     budget = Resolve::Period::Budget.new # D49: one for the call, not one a mention (T17)
     Extract.call(utf8(text) || text, -> { Context.new(now, zone, context, *options).tap { _1.budget = budget } })

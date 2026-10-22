@@ -2,6 +2,7 @@ require "date"
 
 module Acute
   class Rule
+    # @api private
     MAX_OCCURRENCES = 1_000 # R19
     STEPS = 100_000 # R19
 
@@ -394,5 +395,7 @@ module Acute
 
       def year(d) = Calendar.civil_from_days(d) / 10_000
     end
+
+    private_constant :Expand
   end
 end

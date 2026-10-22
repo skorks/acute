@@ -8,6 +8,7 @@ require_relative "holidays"
 module Acute
   # Everything a parse depends on besides the text: now, the zone and the direction. It also collects the
   # assumptions the resolver makes, so it is built fresh for every parse.
+  # @api private
   class Context
     ISO = /\A(\d{4})-(\d\d)-(\d\d)(?:[T ](\d\d):(\d\d)(?::(\d\d)(?:\.\d+)?)?)?(Z|[+-]\d\d:?\d\d)?\z/
 

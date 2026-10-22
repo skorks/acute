@@ -3,22 +3,27 @@ require "json"
 require_relative "calendar"
 
 module Acute
-  # A parsed time or span. Epochs are kept as Integers; Time objects are built on first use.
+  # A parsed time or span. Frozen; epochs are kept as Integers and each Time is built when asked for, so a parse
+  # that only wants one field pays for no others.
   class Result
+    # @api private
     DAY_GRAINS = %i[day weekend week month quarter season year decade century].freeze
+    # @api private
     MONTHS = Ractor.make_shareable(%w[Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec])
     WEEKDAYS = Ractor.make_shareable(%w[Sun Mon Tue Wed Thu Fri Sat])
     NO_ASSUMPTIONS = [].freeze
     GRAIN_SECONDS = { second: 1, minute: 60, hour: 3600 }.freeze
+    private_constant :DAY_GRAINS, :NO_ASSUMPTIONS, :GRAIN_SECONDS
 
     attr_reader :text, :grain, :assumptions
 
-    # readings: the main reading first; the rest become alternatives. matched: the part of the text used (A12)
+    # @api private: results come from the calls. readings: the main reading first; the rest become alternatives.
+    # matched: the part of the text used (A12)
     def initialize(text, readings, zone, assumptions, matched = nil)
       main = readings[0]
       @text = text
       @matched = matched
-      @readings = readings
+      @readings = readings.freeze
       @point = main.point || main.begin || main.end
       @begin_epoch = main.begin
       @end_epoch = main.end
@@ -26,30 +31,31 @@ module Acute
       @frac = main.frac
       @zone = zone
       @assumptions = assumptions
+      freeze
     end
 
     def kind = :time
 
     def matched = @matched || @text
 
-    def time = @time ||= at(@point, @frac)
+    def time = at(@point, @frac)
 
-    def begin = @begin_epoch && (@begin ||= at(@begin_epoch, @frac))
+    def begin = @begin_epoch && at(@begin_epoch, @frac)
 
-    def end = @end_epoch && (@end ||= at(@end_epoch, @frac))
+    def end = @end_epoch && at(@end_epoch, @frac)
 
     def range = self.begin...self.end
 
     def zone = @zone.name
 
+    # The local date of the start, or of the time when the start is open, at any grain
     def date
-      return unless DAY_GRAINS.include?(@grain) && @begin_epoch
-      ymd = Calendar.civil_from_days(local(@begin_epoch).div(86_400))
+      ymd = Calendar.civil_from_days(local(@begin_epoch || @point).div(86_400))
       Date.new(ymd / 10_000, ymd / 100 % 100, ymd % 100)
     end
 
     def alternatives
-      @alternatives ||= @readings.drop(1).map { |r| Result.new(@text, [r], @zone, NO_ASSUMPTIONS, @matched) }.freeze
+      @readings.drop(1).map! { |r| Result.new(@text, [r], @zone, NO_ASSUMPTIONS, @matched) }.freeze
     end
 
     def ambiguous? = @readings.size > 1

@@ -3,6 +3,7 @@ require "date"
 module Acute
   # The holidays: option (D47): an object that answers holiday?(date) and named(name, year), or a region of the
   # holidays gem, which is loaded only then
+  # @api private
   module Holidays
     def self.for(given)
       case given

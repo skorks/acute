@@ -6,6 +6,7 @@ module Acute
     # only its dtstart and rrule, whichever of cron and cron_reason is null, and empty lists. An assumption's
     # message is its short form, the gist in about half the chars. The schema rules make the same cuts in the output
     # schemas, so the two can't drift.
+    # @api private
     module Compact
       def self.call(out)
         case out["kind"]

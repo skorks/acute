@@ -5,6 +5,7 @@ module Acute
   # acute mcp: Acute::Tool as an MCP server, one JSON-RPC message per line of stdin and stdout. Dual-era: a request
   # whose _meta names a modern version is served statelessly as that version; an initialize opens a legacy session.
   # T5: no error message quotes the input. The tool's own failures put it in unread.
+  # @api private
   class MCP
     MODERN = %w[2026-07-28].freeze
     LEGACY = %w[2025-11-25 2025-06-18].freeze

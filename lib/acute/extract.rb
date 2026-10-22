@@ -3,13 +3,15 @@ module Acute
   # known ones. Each run is cut into the longest pieces the strict grammar accepts, leftmost first (E2, E3).
   class Extraction
     # offset: a character Range into the text; value: a Result, a Duration or a Rule
-    Mention = Struct.new(:kind, :text, :offset, :value)
+    Mention = Data.define(:kind, :text, :offset, :value)
 
     attr_reader :text, :mentions
 
+    # @api private
     def initialize(text, mentions)
       @text = text
       @mentions = mentions.freeze
+      freeze
     end
 
     # The text without its mentions, nor the "on", "at", "for", "by" or "in" left dangling before one (E4)
@@ -34,6 +36,7 @@ module Acute
     def as_json(*) = JSON.parse(to_json)
   end
 
+  # @api private
   module Extract
     L = Lexer
     S = Lexer::STRIDE
@@ -109,7 +112,7 @@ module Acute
         end
       end
       chars = Chars.new(text)
-      mentions.each { |m| m.offset = chars[m.offset.begin]...chars[m.offset.end] }
+      mentions.map! { |m| m.with(offset: chars[m.offset.begin]...chars[m.offset.end]) }
       Extraction.new(text, mentions)
     end
 
@@ -448,4 +451,6 @@ module Acute
       word - 3 unless text.byteslice(before, word - 3 - before).match?(/\p{Word}/)
     end
   end
+
+  private_constant :Extract
 end
