@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/skorks/acute/v0.0.1/schema/duration.json",
+  "$id": "https://raw.githubusercontent.com/skorks/acute/v1.0.0/schema/duration.json",
   "title": "Acute::Duration",
   "description": "A length of time as the parts said. seconds is null when a part (years, months, business days) has no fixed length; iso8601 is null for business days.",
   "type": "object",

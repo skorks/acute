@@ -10,6 +10,7 @@ Gem::Specification.new do |s|
   s.metadata["source_code_uri"] = "https://github.com/skorks/acute"
   s.metadata["changelog_uri"] = "https://github.com/skorks/acute/blob/main/CHANGELOG.md"
   s.metadata["bug_tracker_uri"] = "https://github.com/skorks/acute/issues"
+  s.metadata["documentation_uri"] = "https://github.com/skorks/acute/tree/main/docs"
   files = Dir["lib/**/*.rb", "data/*.yml", "schema/**/*.json", "exe/*", "LICENSE"]
   # An untracked file under lib/ is no part of the release, so a checkout packs only what git tracks
   tracked = begin
