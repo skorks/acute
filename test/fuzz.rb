@@ -72,6 +72,8 @@ module Fuzz
     phrases = Corpus.load.map { _1["text"] }
     inputs = Array.new(count) { random_text(rng) } + Array.new(count) { mutate(phrases.sample(random: rng), rng) }
     failing = inputs.filter_map { |text| (p = check(text)).empty? ? nil : [text, p] }
+    # On a shared runner a million inputs meet a stall now and then; a slow input counts only if it stays slow
+    failing.reject! { |text, p| p.all? { _1.start_with?("took") } && Array.new(3) { check(text) }.any?(&:empty?) }
     failures = failing.map { |text, p| "FUZZ #{text.inspect}: #{p.join("; ")}" }
     if (i = argv.index("--out"))
       File.write(argv[i + 1], failing.map { |text, p| "#{JSON.generate(text: text.b.inspect[1..-2], problems: p, seed: seed)}\n" }.join)
