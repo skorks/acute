@@ -79,6 +79,19 @@ class CLITest < Minitest::Test
     assert_equal ["", "", 0], acute("--json", *AT, stdin: "\n \n")
   end
 
+  def test_a_failure_prints_its_hint_naming_the_flag
+    assert_equal ["", "acute: unknown word \"fridya\"\nhint: did you mean \"friday\"?\n", 1], acute("next", "fridya", *AT)
+    _, err, = acute(*AT, "--dst", "reject", "2026-03-08 02:30")
+    assert_equal "hint: --dst earlier, later or compatible picks an instant for it", err.lines(chomp: true)[1]
+  end
+
+  def test_d45_batch_prints_a_hint_on_the_failures_line
+    out, = acute(*AT, "--dst", "reject", stdin: "next fridya\n2026-11-01 01:30\nbanana\n")
+    assert_equal ["error: unknown word \"fridya\"   hint: did you mean \"friday\"?",
+                  "error: \"2026-11-01 01:30\" names a wall time that happens twice as the clocks go back   hint: --dst earlier or later picks one",
+                  "error: unknown word \"banana\""], out.lines(chomp: true)
+  end
+
   # The tools' shape (schema/failure.json), with the input, a hint and where it points
   def test_json_failures
     out, err, status = acute("--json", *AT, "next", "fridya")

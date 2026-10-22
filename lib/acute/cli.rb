@@ -99,7 +99,7 @@ module Acute
       return show(value) || 0 if value
       @parser.parse!(text)
     rescue ParseError => e
-      @json ? @out.puts(failure(e, text)) : @err.puts("acute: #{e.message}")
+      @json ? @out.puts(failure(e, text)) : @err.puts(["acute: #{e.message}", *hint(e)].join("\n"))
       1
     end
 
@@ -108,7 +108,7 @@ module Acute
       return show(value, batch: true) || true if value
       @parser.parse!(text)
     rescue ParseError => e
-      @out.puts @json ? failure(e, text) : "error: #{e.message}"
+      @out.puts @json ? failure(e, text) : ["error: #{e.message}", *hint(e)].join("   ")
       false
     end
 
@@ -118,9 +118,13 @@ module Acute
       text = text.dup.force_encoding(Encoding::UTF_8).scrub
       json = { kind: "failure", text:, code: e.code.to_s, error: e.message }
       json[:position] = [e.position.begin, e.position.end] unless whole?(e.position, text)
-      json[:hint] = DST_HINTS.fetch(e.code, e.hint) if e.hint
+      json[:hint] = flag_hint(e) if e.hint
       JSON.generate(json)
     end
+
+    def flag_hint(e) = DST_HINTS.fetch(e.code, e.hint)
+
+    def hint(e) = e.hint && "hint: #{flag_hint(e)}"
 
     def whole?(span, text) = text[0...span.begin].strip.empty? && text[span.end..].to_s.strip.empty?
 
