@@ -18,7 +18,8 @@ Ruby's own `Time.parse` reads formats, not phrases: it takes "next tuesday at 3p
 ### When to use something else
 
 - Your input is always ISO 8601 or one fixed format: Ruby's `Time.iso8601` and `Time.strptime` read it, with nothing to install.
-- You need languages other than English: acute's locales (en-US, en-GB, en-AU…) set date order, week start and holidays, not the words.
+- You need languages other than English: acute reads English only. Its locales (en-US, en-GB, en-AU…) set date order, week start and holidays, not the words.
+- You want a best guess at vague or garbled text: acute fails rather than guess. "soon", "the day after the meeting", "mon, wed and fri" and "satterday" return nil; it corrects only a small table of common misspellings, with no fuzzy matching. Everything it won't read: [gotchas](docs/gotchas.md#soon-gave-nil).
 - You need meaning beyond dates, times, lengths and repeats, such as intents or places: that's a job for an NLP library or an LLM, which can call acute for the dates ([agents](docs/agents.md)).
 - You need chronic's answers exactly: acute differs where chronic is wrong or ambiguous ([the differences](docs/chronic.md#moving-over)).
 
@@ -162,7 +163,7 @@ Over ten everyday phrases on Ruby 4.0.7, acute takes 5–19 µs a parse to chron
 - [docs/cli.md](docs/cli.md): the `acute` command and its options.
 - [docs/agents.md](docs/agents.md): acute as tools for an LLM, through `Acute::Tool` or `acute mcp`.
 - [docs/chronic.md](docs/chronic.md): why acute exists, moving from chronic, and speed.
-- [docs/gotchas.md](docs/gotchas.md): the answers people don't expect, why, and the option that changes each.
+- [docs/gotchas.md](docs/gotchas.md): the answers people don't expect, why, the option that changes each, and what acute won't read.
 - [docs/rules.md](docs/rules.md): every convention acute follows, by topic, with examples.
 - [docs/stability.md](docs/stability.md): what SemVer covers, and what a minor or patch release may change.
 - [schema/](schema): JSON Schemas for the JSON of a Result, Duration, Extraction and Verdict, and for the agent tools.

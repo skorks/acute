@@ -60,7 +60,7 @@ r.each.first(2)   # lazy; stops when the rule ends
 # => [2026-10-19 09:00:00 -0400, 2026-10-20 09:00:00 -0400]
 ```
 
-- `next(after: now)` gives the next occurrence after `after`, or nil when the rule has ended. `next(n, after: now)` gives the next `n` as an Array, as `first` and `first(n)` do; fewer come back when the rule ends. `after` defaults to the now the rule was read at, not the clock, so a rule read with `now:` lists the same occurrences whenever it is asked. An occurrence equal to `after` isn't after it.
+- `next(after: now)` gives the next occurrence after `after`, or nil when the rule has ended. `next(n, after: now)` gives the next `n` as an Array, as Ruby's `first(n)` does; fewer come back when the rule ends. `after` defaults to the now the rule was read at, not the clock, so a rule read with `now:` lists the same occurrences whenever it is asked. An occurrence equal to `after` isn't after it.
 - `between(from, to)` gives those from `from` up to `to`, leaving `to` out, so windows laid end to end list each occurrence once. A Date stands for its whole day.
 - `each(after: nil)` lists every occurrence, lazily, from DTSTART or after `after`. DTSTART is on or after now, so `each.first(n)` is `next(n)` except when DTSTART is now itself, which only `each` lists.
 
