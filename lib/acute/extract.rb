@@ -131,13 +131,16 @@ module Acute
     end
 
     # D50: a number written as a word doesn't start one: "one every 8 hours" is "every 8 hours"
+    # The grammar goes first: it says no the most cheaply, and hostile text has it asked at every word
     def self.rule_mention(text, slice, make_context)
+      tree = Grammar.rule(slice)
+      return if Failure === tree
       st = slice[3]
       return if plain_english?(slice, sentence_start?(text, st)) || in_word?(text, st, slice[-1]) ||
                 adjective?(text, slice) || (slice[0] == L::NUM && slice[2] & L::WORDY != 0)
       stop = meridiem_dot(text, slice) || slice[-1]
       piece = text.byteslice(st, stop - st)
-      value = Acute.send(:rule, piece, make_context.(), slice)
+      value = Acute.send(:rule, piece, make_context.(), slice, tree)
       Extraction::Mention.new(:rule, piece, st...stop, value) if Rule === value
     end
 
@@ -157,9 +160,17 @@ module Acute
     DETERMINERS = %w[the a an this our my your their his its].freeze
 
     # E6: "read the daily", "our weekly with the team": after a determiner it is a noun phrase
+    # Walks back over the word byte by byte, no further than the longest determiner and one more: a regex on all
+    # the text before would make extract quadratic
     def self.determined?(text, start)
-      DETERMINERS.include?(text.byteslice(0, start)[/([a-z]+)\s+\z/i, 1]&.downcase)
+      stop = space_before(text, start)
+      word = stop
+      word -= 1 while word > 0 && stop - word < 6 && letter?(text.getbyte(word - 1))
+      stop < start && word < stop && !(word > 0 && letter?(text.getbyte(word - 1))) &&
+        DETERMINERS.include?(text.byteslice(word, stop - word).downcase)
     end
+
+    def self.letter?(byte) = (byte | 32).between?(97, 122)
 
     # E6: "to-do", "on-call": a word joined by a hyphen is a compound noun, not a word that continues a rule
     def self.hyphenated?(text, stop)
@@ -277,8 +288,11 @@ module Acute
     LABEL = /\b(?:building|room|floor|level|gate|platform|terminal|suite|unit|table|track|bay|page|chapter)\s+\z/i
 
     # Whether the text just before the byte matches
+    # The window can start inside a multibyte character, which a regex refuses to match: "会議は日本 tomorrow"
     def self.after?(text, byte, pattern)
-      byte > 0 && text.byteslice([byte - 12, 0].max, [byte, 12].min).match?(pattern)
+      return false unless byte > 0
+      before = text.byteslice([byte - 12, 0].max, [byte, 12].min)
+      (before.valid_encoding? ? before : before.scrub("")).match?(pattern)
     end
 
     TRAILING = { on: true, the: true, at: true, and: true, of: true, to: true, in: true, for: true, by: true }.freeze
