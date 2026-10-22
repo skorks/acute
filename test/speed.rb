@@ -60,7 +60,7 @@ module Speed
     times = quiet_mean = slow = nil
     loop do
       passes << pass(slowest)
-      loads << File.read("/proc/loadavg").split[0]
+      loads << (File.exist?("/proc/loadavg") ? File.read("/proc/loadavg").split[0] : "n/a")
       times = PHRASES.to_h { |text| [text, passes.map { _1[text] }.transpose.map { median(_1) }] }
       quiet_mean = median(passes.map { mean(_1) })
       slow = times.select { |_, (us, _)| us > slowest }
