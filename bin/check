@@ -41,7 +41,7 @@ end
 
 STAGES = {
   "tables" => [[RUBY, "bin/generate", "--check"], ->(out) { out.lines.last }],
-  "lint" => [[RUBY, "-S", "bundle", "exec", "rubocop", "--no-color"], ->(out) { out.lines.last }],
+  "lint" => [[RUBY, "-S", "bundle", "exec", "rubocop", "--no-color", "--ignore-parent-exclusion"], ->(out) { out.lines.last }],
   "unit" => if rule && (names = tests_naming(rule)).empty?
               [[RUBY, "-e", "puts 'no unit tests mention #{rule}'"], ->(out) { out }]
             else

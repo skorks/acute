@@ -85,7 +85,12 @@ module Chronic
       end
       if codes.include?(:bare_hour_window)
         # :none sets no window: the next (or in the past, latest) occurrence of the hour on either half of the day
-        all = @options[:ambiguous_time_range] == :none ? all.sort_by { _1.begin.to_i * (@options[:context] == :past ? -1 : 1) } : prefer(all) { |r| hour_window.include?(wall(r.point, zone) / 3600 % 24) }
+        all = if @options[:ambiguous_time_range] == :none
+                sign = @options[:context] == :past ? -1 : 1
+                all.sort_by { _1.begin.to_i * sign }
+              else
+                prefer(all) { |r| hour_window.include?(wall(r.point, zone) / 3600 % 24) }
+              end
       end
       # only when given: without it the locale decides, as D10 says
       if @endian && codes.include?(:numeric_date_order) && (m = NUMERIC_DATE.match(text))
