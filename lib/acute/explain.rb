@@ -33,6 +33,11 @@ module Acute
       when :business_day_limit
         ParseError.new("more than #{Resolve::Period::LIMIT} business days in one call is too many to count", code: :business_day_limit,
                        position: first)
+      when :occurrence_limit
+        ParseError.new("more than #{Rule::MAX_OCCURRENCES} occurrences in one call is too many to list; each lists them lazily",
+                       code: :occurrence_limit, position: first)
+      when :step_limit
+        ParseError.new("no occurrence within #{Rule::STEPS} steps of the search", code: :step_limit, position: first)
       else
         ParseError.new("longer than #{MAX_LENGTH} bytes", code: :too_long, position: first)
       end

@@ -34,8 +34,8 @@ module Acute
     attr_reader :zone
 
     # start: local wall seconds when timed, else a day number; until_: a UTC epoch when timed, else a day number;
-    # exdates: as start
-    def initialize(parts, zone, start, timed, count, until_, exdates, started)
+    # exdates: as start; dst: the dst: policy occurrences follow (R18)
+    def initialize(parts, zone, start, timed, count, until_, exdates, started, dst = nil)
       @parts = parts
       @zone = zone
       @start = start
@@ -44,6 +44,7 @@ module Acute
       @until = until_
       @exdates = exdates
       @started = started
+      @dst = dst
       Ractor.make_shareable(self)
     end
 
