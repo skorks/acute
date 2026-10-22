@@ -23,6 +23,32 @@ class RuleTest < Minitest::Test
     assert_equal "DTSTART;VALUE=DATE:20261019\nRRULE:FREQ=WEEKLY;BYDAY=MO\nEXDATE;VALUE=DATE:20261102", r.to_ical
   end
 
+  def test_r12_an_hourly_rule_leaves_out_every_occurrence_of_an_excepted_date
+    [[Date.new(2026, 11, 1), 25], [Date.new(2027, 3, 14), 23]].product(%i[compatible reject]).each do |(day, hours), dst|
+      all = rule("every hour", dst: dst).between(day, day)
+      assert_equal hours, all.size
+      excepted = rule("every hour except #{day.strftime("%B %-d")}", dst: dst)
+      assert_equal all.map { _1.strftime("%Y%m%dT%H%M%S") }.uniq.join(","), excepted.to_ical[/EXDATE.*:(.*)/, 1]
+      assert_empty excepted.between(day, day)
+      assert_equal 24, excepted.between(day + 1, day + 1).size
+    end
+  end
+
+  def test_r12_an_excepted_time_is_that_instant
+    r = rule("every hour except october 17 at 4pm")
+    assert_equal [15, 17], r.between(Time.new(2026, 10, 17, 15, 0, 0, "-04:00"), Time.new(2026, 10, 17, 18, 0, 0, "-04:00")).map(&:hour)
+    missed = rule("every 2 hours except october 18 at 5pm")
+    assert_includes missed.to_ical, "EXDATE;TZID=America/New_York:20261018T170000"
+    assert_equal 12, missed.between(Date.new(2026, 10, 18), Date.new(2026, 10, 18)).size
+  end
+
+  def test_r12_an_excepted_date_needing_more_than_24_exdates_is_a_conflict
+    assert_nil rule("every 15 minutes except october 18")
+    e = assert_raises(Acute::ParseError) { Acute.recurrence!("every second except october 18", **OPTS) }
+    assert_equal :conflict, e.code
+    assert_equal 12, rule("every 2 hours except october 18").to_ical[/EXDATE.*/].count(",") + 1
+  end
+
   def test_r10_until_is_utc_with_a_clock
     assert_equal "FREQ=DAILY;BYHOUR=9;BYMINUTE=0;UNTIL=20261024T035959Z", rule("every day at 9am until friday").rrule
     assert_equal "FREQ=WEEKLY;BYDAY=MO;UNTIL=20261231", rule("every monday until december").rrule
@@ -41,7 +67,9 @@ class RuleTest < Minitest::Test
       "every 20 minutes between 9pm and midnight" => "every 20 minutes from 9pm to midnight",
       "every day at 9 and 9:30" => "every day at 9am and 9:30am",
       "every weekday except nov 2" => "every weekday except Nov 2, 2026",
-      "every day at 9am except nov 2 and nov 3" => "every day at 9am except Nov 2, 2026 and Nov 3, 2026" }.each do |text, english|
+      "every day at 9am except nov 2 and nov 3" => "every day at 9am except Nov 2, 2026 and Nov 3, 2026",
+      "every hour except oct 18 at 4pm and oct 19" => "every hour except Oct 18, 2026 4pm and Oct 19, 2026",
+      "every minute except oct 17 at 4:30pm" => "every minute except Oct 17, 2026 4:30pm" }.each do |text, english|
       r = rule(text)
       assert_equal english, r.to_s, text
       assert_equal r, rule(r.to_s), english

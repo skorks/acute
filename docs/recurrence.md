@@ -68,6 +68,12 @@ For a rule of whole days they are Dates: `Acute.recurrence("every monday", now:,
 
 One call to `next` or `between` gives at most 1,000 occurrences and takes at most 100,000 steps. Past either it returns nil, `next` without `n` too. `next!` and `between!` raise a `ParseError` with the code `:occurrence_limit` or `:step_limit`, which says why. `each` has no cap on how many it lists, so take what you need from it ([R19](rules.md#recurrence)).
 
+## Exceptions
+
+"except" leaves weekdays out of the rule and dates out of its occurrences, as EXDATEs ([R12](rules.md#recurrence)). "every weekday except fridays" is Monday to Thursday; "every day at 9am except halloween" leaves out 31 October at 9:00.
+
+An hourly or finer rule takes a time as that instant: "every hour except october 17 at 4pm" leaves out 16:00 that day. A time the rule doesn't reach, such as 4:30pm, is written as said and leaves nothing out. A date leaves out every occurrence that day, one EXDATE each: 24 for "every hour except october 18", 23 on the day clocks go forward, and 24 on the day they go back, where the repeated hour's two occurrences share a wall time. A date that would need more than 24 is `:conflict`: "every 15 minutes except october 18" is nil, and `recurrence!` raises.
+
 ## Daylight saving
 
 Clock changes don't change the rule. "Every weekday at 9am" is 9:00 in EDT and in EST. A wall time that is skipped or repeated follows `dst:`, as a one-off time does ([D23](rules.md#d23-future-context-two-digit-years-whole-units-arithmetic-and-dst)): by default a skipped time moves forward by the gap and a repeated one is the earlier.

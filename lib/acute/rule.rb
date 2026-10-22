@@ -136,7 +136,8 @@ module Acute
     private
 
     Notes = Struct.new(:dst)
-    private_constant :DAY, :DAYS, :DAY_NAMES, :MONTH_NAMES, :ORDINALS, :UNITS, :Notes
+    FINE = { hourly: true, minutely: true, secondly: true }.freeze
+    private_constant :DAY, :FINE, :DAYS, :DAY_NAMES, :MONTH_NAMES, :ORDINALS, :UNITS, :Notes
 
     # The count, start and end, as to_s ends with them
     def tail
@@ -144,7 +145,7 @@ module Acute
       out << " #{@count} times" if @count
       out << " starting #{date(@timed ? @start.div(DAY) : @start)}" if @started
       out << " until #{@timed ? until_local : date(@until)}" if @until
-      out << " except #{list(@exdates.map { date(@timed ? _1.div(DAY) : _1) }.uniq)}" unless @exdates.empty?
+      out << " except #{list(exceptions)}" unless @exdates.empty?
       out
     end
 
@@ -177,6 +178,14 @@ module Acute
     def date(day)
       y, m, d = civil(day)
       "#{Result::MONTHS[m - 1]} #{d}, #{y}"
+    end
+
+    # R12: the excepted dates; an hourly or finer rule's lone instant on a day keeps its time
+    def exceptions
+      return @exdates.map { date(@timed ? _1.div(DAY) : _1) }.uniq unless FINE[@parts.freq]
+      @exdates.group_by { _1.div(DAY) }.map do |day, walls|
+        walls.size == 1 ? "#{date(day)} #{Describe.clock(walls[0] % DAY)}" : date(day)
+      end
     end
 
     # The day an UNTIL ends, or the instant when it isn't a day's last second (R10)

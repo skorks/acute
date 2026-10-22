@@ -11,6 +11,7 @@ module Acute
       FINE_GRAIN = { second: true, minute: true, hour: true }.freeze
       SEARCH = 8 * 366 + 1 # R9: the next 29 February can be 8 years away
       EVERY_DAY = [0, 1, 2, 3, 4, 5, 6].freeze
+      MAX_EXDATES = 24
 
       # A Rule, or a Failure's code
       # text: the input, which the Rule carries and nothing here reads
@@ -81,11 +82,18 @@ module Acute
         elsif r.length
           until_ = length(r.length, start, timed, ctx)
         end
+        bare = nil
         exdates = r.except.map do |node|
           x = first(node, ctx)
           return x if Symbol === x
+          next ctx.local(x.begin) if FINE[freq] && FINE_GRAIN[x.grain] # R12: that instant, an occurrence or not
           day = ctx.local(x.begin).div(DAY)
-          timed ? secs.map { day * DAY + _1 } : day
+          next day unless timed
+          next secs.map { day * DAY + _1 } unless FINE[freq]
+          bare ||= Rule.new(rule, ctx.zone.name, start, true, nil, nil, [], false, ctx.dst_policy, now: ctx.now, text: text)
+          walls = day_walls(bare, day, ctx)
+          return :conflict if walls.size > MAX_EXDATES # R12: "every 15 minutes except october 18"
+          walls
         end
         Rule.new(rule, ctx.zone.name, start, timed, r.count, until_, exdates.flatten, r.start || r.within ? true : false,
                  ctx.dst_policy, now: ctx.now, text: text)
@@ -136,6 +144,17 @@ module Acute
           end
           day += 1
         end
+      end
+
+      # R12: the wall times of an hourly or finer rule's occurrences on a local day, however many hours DST gives
+      # it; past MAX_EXDATES, more than that. The rule's end is left out, as a daily rule's times are.
+      def self.day_walls(rule, day, ctx)
+        from = ctx.zone.local_to_utc(day * DAY, ctx) - 1
+        walls = rule.next(MAX_EXDATES + 2, after: Time.at(from)).filter_map do |t|
+          wall = t.to_i + t.utc_offset
+          wall if wall < (day + 1) * DAY
+        end
+        walls.uniq
       end
 
       # R10, R14: through the end of x, inclusive; a clock is that instant
