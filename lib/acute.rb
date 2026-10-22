@@ -86,9 +86,8 @@ module Acute
       tokens = Lexer.lex(text)
       return tokens if Failure === tokens
     end
-    return Failure.new(:not_rule, 0, given.bytesize) unless Grammar.rule?(tokens)
     tree = Grammar.rule(tokens)
-    return tree if Failure === tree
+    return Grammar.rule?(tokens) ? tree : Failure.new(:not_rule, 0, given.bytesize) if Failure === tree
     out = Resolve::Recur.call(tree, ctx)
     Symbol === out ? Failure.new(out, 0, given.bytesize) : out
   end
