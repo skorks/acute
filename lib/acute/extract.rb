@@ -148,9 +148,22 @@ module Acute
     def self.adjective?(text, slice)
       content = slice.each_slice(S).reject { |k, v| k == L::ART || (k == L::WORD && v == :the) }
       return false unless content.size == 1 && content[0][0] == L::WORD && Grammar::FREQUENCY[content[0][1]]
+      return true if content.size < slice.size / S || determined?(text, slice[3]) || hyphenated?(text, slice[-1])
       at = space_after(text, slice[-1])
       at > slice[-1] && (c = text.getbyte(at)) && (c | 32).between?(97, 122) &&
         !CONTINUES.include?(text.byteslice(at, 12)[/\A[a-z]+/i]&.downcase)
+    end
+
+    DETERMINERS = %w[the a an this our my your their his her its].freeze
+
+    # E6: "read the daily", "our weekly with the team": after a determiner it is a noun phrase
+    def self.determined?(text, start)
+      DETERMINERS.include?(text.byteslice(0, start)[/([a-z]+)\s+\z/i, 1]&.downcase)
+    end
+
+    # E6: "to-do", "on-call": a word joined by a hyphen is a compound noun, not a word that continues a rule
+    def self.hyphenated?(text, stop)
+      text.getbyte(stop) == 45 && (c = text.getbyte(stop + 1)) && (c | 32).between?(97, 122)
     end
 
     # Character offsets of byte offsets, counted from the last one asked for: a walk through the text costs
