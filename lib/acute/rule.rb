@@ -136,7 +136,7 @@ module Acute
     protected
 
     # What next, each, to_s and to_h answer from, but not the text. No dst: policy acts as :compatible (R18).
-    def state = [to_ical, @zone, @dst || :compatible, @started, @now]
+    def state = [to_ical, @zone, @dst || :compatible, @started]
 
     private
 
