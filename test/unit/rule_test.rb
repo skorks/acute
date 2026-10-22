@@ -184,7 +184,6 @@ class RuleTest < Minitest::Test
     spring = Date.new(2027, 3, 14)
     [[rule("every day at 2:30am", dst: :earlier), rule("every day at 2:30am", dst: :reject), -> { _1.between(spring, spring) }],
      [rule("every monday starting jan 4 2027"), rule("every monday", now: "2027-01-04T00:00"), :to_s.to_proc],
-     [rule("every monday starting jan 4 2027"), rule("every monday starting jan 4 2027", now: "2027-02-01T00:00"), :next.to_proc],
      [rule("every monday", now: Time.utc(2026, 10, 17, 20)), rule("every monday", now: Time.utc(2026, 10, 17, 20), zone: "Asia/Tokyo"),
       -> { _1.next(after: Time.utc(2026, 10, 19, 16)) }]].each do |a, b, differs|
       assert_equal a.to_ical, b.to_ical
@@ -193,6 +192,15 @@ class RuleTest < Minitest::Test
       refute a.eql?(b)
       refute_equal a.hash, b.hash
     end
+  end
+
+  def test_now_is_not_part_of_equality
+    a = rule("every monday at 9am", now: "2026-10-17T14:00")
+    b = rule("every monday at 9am", now: "2026-10-17T14:00:01")
+    assert_equal a, b
+    assert_equal a.hash, b.hash
+    assert_equal 1, [a, b].uniq.size
+    assert_equal Acute.recurrence("every monday at 9am"), Acute.recurrence("every monday at 9am")
   end
 
   def test_r15_not_rules_are_nil
