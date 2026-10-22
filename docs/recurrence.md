@@ -58,7 +58,7 @@ r.each.first(2)   # lazy; stops when the rule ends
 - `between(from, to)` gives those from `from` up to `to`, leaving `to` out, so windows laid end to end list each occurrence once. A Date stands for its whole day.
 - `each(after: nil)` lists every occurrence, lazily, from DTSTART or after `after`.
 
-For a rule of whole days they are Dates: `Acute.recurrence("every monday", now:, zone:).next(2, after: Date.new(2026, 10, 17))` gives `[#<Date: 2026-10-19>, #<Date: 2026-10-26>]`.
+For a rule of whole days they are Dates: `Acute.recurrence("every monday", now:, zone:).next(2, after: Date.new(2026, 10, 17))` gives the Dates 2026-10-19 and 2026-10-26.
 
 One call to `next` or `between` gives at most 1,000 occurrences and takes at most 100,000 steps. Past either it returns nil. `next!` and `between!` raise a `ParseError` with the code `:occurrence_limit` or `:step_limit`, which says why. `each` has no cap on how many it lists, so take what you need from it ([R19](rules.md#recurrence)).
 
@@ -76,7 +76,8 @@ The 14th, whose 2:30 doesn't exist, comes back at 3:30. With `dst: :reject` that
 
 ```ruby
 r = Acute.recurrence("every day at 2:30am", now: "2027-03-10T12:00", zone:, dst: :reject)
-# the same window => [2027-03-13 02:30:00 -0500, 2027-03-15 02:30:00 -0400]
+r.between(Time.new(2027, 3, 13, 0, 0, 0, "-05:00"), Time.new(2027, 3, 16, 0, 0, 0, "-04:00"))
+# => [2027-03-13 02:30:00 -0500, 2027-03-15 02:30:00 -0400]
 ```
 
 ## Cron
@@ -131,12 +132,12 @@ A lone frequency word such as "daily" is a rule only when a rule's words go with
 
 ## What isn't a rule
 
-These return nil from `recurrence`, as [R15](rules.md#recurrence) says:
+`recurrence` returns nil for a count per period with no day, a part of the day with no clock, and a one-off time ([R15](rules.md#recurrence)):
 
 ```ruby
-Acute.recurrence("twice a week", now:, zone:)    # => nil: a count per period, with no day
-Acute.recurrence("every morning", now:, zone:)   # => nil: a part of the day, with no clock
-Acute.recurrence("next friday", now:, zone:)     # => nil: a one-off time
+Acute.recurrence("twice a week", now:, zone:)    # => nil
+Acute.recurrence("every morning", now:, zone:)   # => nil
+Acute.recurrence("next friday", now:, zone:)     # => nil
 ```
 
 So is "every day at 9am and 5:30pm": BYHOUR and BYMINUTE would add 9:30 and 17:00, and one rule can't hold only the two ([R4](rules.md#recurrence)).

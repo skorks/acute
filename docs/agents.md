@@ -1,6 +1,15 @@
 # acute for agents
 
-acute offers itself to an LLM as seven tools. `Acute::Tool` gives them to an app that calls a model through an SDK; `acute mcp` serves the same tools to any MCP client. Both take their names, descriptions and argument schemas from [schema/tools/](../schema/tools), and both return the hashes described in [schema/](../schema), with what repeats left out, since the model pays for every char of a result on every call. A result leaves out the input's `text` (on a parse, extract or verify result, a mention's value and a verdict's `expected`); a `begin` equal to `time`; a mention's `kind`, which its value's `kind` repeats; a verdict's `expected` when `ok` is true; `now`'s `offset`, which the `now` string ends with; a rule's `ical` unless it has an EXDATE, since `dtstart` and `rrule` hold the rest, and whichever of `cron` and `cron_reason` is null; and `assumptions`, `alternatives` and `unread` when they're empty, a failure's `unread` included. An assumption's `message` is its short form, `short` in [data/assumptions.yml](../data/assumptions.yml): the gist in about 50 chars rather than 80. The library's own JSON keeps them all, and the long messages.
+Use this page to let an LLM hand date phrases to acute instead of working out dates itself. acute offers itself as seven tools. `Acute::Tool` gives them to an app that calls a model through an SDK; `acute mcp` serves the same tools to any MCP client. Both take their names, descriptions and argument schemas from [schema/tools/](../schema/tools).
+
+Said on Saturday 17 October 2026 at 14:00 in New York:
+
+```ruby
+require "acute/tool"
+tool = Acute::Tool.new(now: "2026-10-17T14:00", zone: "America/New_York")
+tool.call("verify", { "text" => "next friday at noon", "value" => "2026-10-24T12:00" })
+# => {"kind" => "verdict", "status" => "mismatch", "ok" => false, "message" => "The text is Fri 23 Oct, 12pm, not Sat 24 Oct, 12pm.", "expected" => {"kind" => "time", "time" => "2026-10-23T12:00:00-04:00", "end" => "2026-10-23T12:01:00-04:00", "grain" => "minute", "zone" => "America/New_York"}}
+```
 
 ## The tools
 
@@ -18,12 +27,17 @@ Any of them may instead return a [failure](../schema/failure.json).
 
 `recurrence`'s `next` is the rule's first three occurrences, from `dtstart` on, as ISO 8601 times, or dates for a rule of whole days. A rule that ends sooner lists fewer. `cron`, when the rule has one, runs in the wall time of `zone` (`CRON_TZ`).
 
+## Compact results
+
+The tools return the hashes described in [schema/](../schema), with what repeats left out, since the model pays for every char of a result on every call. A result leaves out the input's `text` (on a parse, extract or verify result, a mention's value and a verdict's `expected`); a `begin` equal to `time`; a mention's `kind`, which its value's `kind` repeats; a verdict's `expected` when `ok` is true; `now`'s `offset`, which the `now` string ends with; a rule's `ical` unless it has an EXDATE, since `dtstart` and `rrule` hold the rest, and whichever of `cron` and `cron_reason` is null; and `assumptions`, `alternatives` and `unread` when they're empty, a failure's `unread` included. An assumption's `message` is its short form, `short` in [data/assumptions.yml](../data/assumptions.yml): the gist in about 50 chars rather than 80. The library's own JSON keeps them all, and the long messages.
+
 ## Failures and `unread`
 
 A tool never raises on what the model sends. Wrong arguments, or text acute can't read, come back as `{kind: "failure", code, error, unread}`. `error` is acute's own words and never quotes the input: text from the arguments could carry instructions, so the words a failure points at go in `unread`, which every tool's description marks as user data. This holds for every `error`, `message` and `description` acute writes, including the MCP server's JSON-RPC errors.
 
 ## In an app: `Acute::Tool`
 
+<!-- no-doc-test -->
 ```ruby
 require "acute/tool"
 tool = Acute::Tool.new(zone: user.zone, locale: user.locale)
@@ -43,6 +57,7 @@ acute/tool/ruby_llm needs the ruby_llm gem; add it to your Gemfile (cannot load 
 
 Build the tool per user or per request, with their zone:
 
+<!-- no-doc-test -->
 ```ruby
 require "acute/tool/ruby_llm"
 
@@ -56,7 +71,7 @@ It's per user because the app, not the model, fixes the zone and now: the schema
 
 An app that already has a tool called `parse` can rename acute's with `prefix:`: `Acute::Tool.new(zone: current_user.time_zone, prefix: "dates_")` gives the chat `dates_parse`, `dates_extract`, `dates_now` and so on.
 
-Each call hands the model the compact hash [described at the top](#acute-for-agents). A failure is a value too, never an exception, so ruby_llm passes it back and the model can correct its arguments and try again ([Failures and `unread`](#failures-and-unread)).
+Each call hands the model the compact hash [described above](#compact-results). A failure is a value too, never an exception, so ruby_llm passes it back and the model can correct its arguments and try again ([Failures and `unread`](#failures-and-unread)).
 
 One caveat: when the model calls a tool name the chat doesn't have, ruby_llm answers, not acute, with ``Model tried to call unavailable tool `<name>`. Available tools: [...]``. That message quotes the name the model sent, and acute can't change it.
 

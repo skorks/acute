@@ -1,5 +1,7 @@
 # acute and chronic
 
+Read this if you use chronic: why acute replaces it, how to move over, and how much faster it is.
+
 ## Why acute exists
 
 chronic made parsing "next tuesday at 3pm" a one-liner for more than a decade, and it has over 130 million downloads. But it has stood still:

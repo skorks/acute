@@ -783,7 +783,7 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 
 ### Cron
 
-`rule.cron` writes a rule as a standard 5-field cron line, and `Acute::Rule.from_cron` reads one back. R16–R19 are left for the rest of recurrence.
+`rule.cron` writes a rule as a standard 5-field cron line, and `Acute::Rule.from_cron` reads one back.
 
 - **R20.** `cron` is minute, hour, day of the month, month and day of the week, Sunday 0: "every weekday at 9am" → `0 9 * * 1-5`. It is nil when cron can't express the rule, and `cron_reason` says why: `cron can't express "every other"`. Each field is written the shortest way: `*`, then `*/n` or `a-high/n` when the values are every nth to the field's end, then ranges of three or more and single values. Weekdays are listed, never stepped: "weekends" → `0 0 * * 0,6`. Cron has no zone: the line is the wall time in the rule's zone (DTSTART's TZID), so run it with `CRON_TZ=<zone>` or on a host in that zone. How a cron daemon runs a time the clocks skip or repeat is its own; the rule keeps the wall time (R14).
 - **R21.** Cron has no start, end or exceptions, so a rule with any is nil, checked in this order: "until" (or a length, R11), a count (`cron can't express "8 times"`), "starting" or "in X" (R13), and an excepted date (R12). A weekday left out of BYDAY is not an exception: "every weekday except fridays" → `0 0 * * 1-4`.

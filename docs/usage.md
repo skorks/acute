@@ -38,7 +38,7 @@ A phrase means the whole period it names. `time` is its start, and `begin` and `
 r = Acute.parse("tomorrow", now:, zone:)
 r.begin    # => 2026-10-18 00:00:00 -0400
 r.end      # => 2026-10-19 00:00:00 -0400
-r.date     # => #<Date: 2026-10-18>
+r.date.to_s  # => "2026-10-18"
 r.iso8601  # => "2026-10-18T00:00:00-04:00/2026-10-19T00:00:00-04:00"
 
 Acute.parse("last 14 days", now:, zone:).range
@@ -181,7 +181,7 @@ Every call takes the same options:
 
 ```ruby
 PARSER = Acute.with(zone: "Australia/Sydney")
-PARSER.parse("1/2/2027").date  # => #<Date: 2027-02-01>
+PARSER.parse("1/2/2027").date.to_s  # => "2027-02-01"
 ```
 
 ## JSON
