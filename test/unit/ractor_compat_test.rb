@@ -31,6 +31,13 @@ class RactorCompatTest < Minitest::Test
     assert_equal [5400, 9000, "1 hr", "1 hour 30 minutes"], out
   end
 
+  def test_a_named_zone_resolves_in_a_ractor
+    parse_zoned = -> { Acute.parse!("tomorrow 3pm", now: "2026-10-17T14:00", zone: "Asia/Kathmandu").iso8601 }
+    assert_equal "2026-10-18T15:00:00+05:45", parse_zoned.call
+    inside = in_ractor { Acute.parse!("tomorrow 3pm", now: "2026-10-17T14:00", zone: "Asia/Kathmandu").iso8601 }
+    assert_equal parse_zoned.call, inside
+  end
+
   def test_the_constants_are_shareable
     [Chronic::Parser::DEFAULT_OPTIONS, ChronicDuration::UNITS, ChronicDuration::MAPPINGS, ChronicDuration::DIVIDERS,
      ChronicDuration.const_get(:Numerizer)::DIRECT_NUMS].each { assert Ractor.shareable?(_1) }
