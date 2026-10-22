@@ -137,3 +137,5 @@
 {"id":"recurrence-0137","text":"the weekly report","now":"2026-10-17T14:00:00","tz":"America/New_York","expect":{"extract":[]},"source":"hand","tags":["extract","recurrence","E6"]}
 {"id":"recurrence-0138","text":"Every second counts","now":"2026-10-17T14:00:00","tz":"America/New_York","expect":{"extract":[]},"source":"hand","tags":["extract","recurrence","E3"]}
 {"id":"recurrence-0139","text":"Send the daily summary to Sam","now":"2026-10-17T14:00:00","tz":"America/New_York","expect":{"extract":[]},"source":"hand","tags":["extract","recurrence","E6"]}
+{"id":"recurrence-0140","text":"take it daily with food","now":"2026-10-17T14:00:00","tz":"America/New_York","expect":{"extract":[{"start":8,"end":13,"rrule":"DTSTART;VALUE=DATE:20261017\nRRULE:FREQ=DAILY"}]},"source":"hand","tags":["extract","recurrence","E6"]}
+{"id":"recurrence-0141","text":"back up hourly, please","now":"2026-10-17T14:00:00","tz":"America/New_York","expect":{"extract":[{"start":8,"end":14,"rrule":"DTSTART;TZID=America/New_York:20261017T140000\nRRULE:FREQ=HOURLY"}]},"source":"hand","tags":["extract","recurrence","E6"]}

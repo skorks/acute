@@ -141,12 +141,16 @@ module Acute
       Extraction::Mention.new(:rule, piece, st...stop, value) if Rule === value
     end
 
-    # E6: a lone frequency word directly before another word is an adjective: "hourly rate", "the weekly report"
+    CONTINUES = %w[at with from until till for and or on in by to before after during through].freeze
+
+    # E6: a lone frequency word before a noun-like word is an adjective: "hourly rate", "the weekly report". Not
+    # before a word that goes on with a rule: "take it daily with food"
     def self.adjective?(text, slice)
       content = slice.each_slice(S).reject { |k, v| k == L::ART || (k == L::WORD && v == :the) }
       return false unless content.size == 1 && content[0][0] == L::WORD && Grammar::FREQUENCY[content[0][1]]
       at = space_after(text, slice[-1])
-      at > slice[-1] && (c = text.getbyte(at)) && (c | 32).between?(97, 122)
+      at > slice[-1] && (c = text.getbyte(at)) && (c | 32).between?(97, 122) &&
+        !CONTINUES.include?(text.byteslice(at, 12)[/\A[a-z]+/i]&.downcase)
     end
 
     # Character offsets of byte offsets, counted from the last one asked for: a walk through the text costs
