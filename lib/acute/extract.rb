@@ -2,7 +2,7 @@ module Acute
   # Times and durations mentioned inside prose. Lexing is lenient: unknown words split the text into runs of
   # known ones. Each run is cut into the longest pieces the strict grammar accepts, leftmost first (E2, E3).
   class Extraction
-    # offset: a character Range into the text; value: a Result or a Duration
+    # offset: a character Range into the text; value: a Result, a Duration or a Rule
     Mention = Struct.new(:kind, :text, :offset, :value)
 
     attr_reader :text, :mentions
@@ -55,6 +55,8 @@ module Acute
       runs(text, tokens, unknown).each do |a, b|
         i = a
         e = a
+        # The words in the run that make a rule. Lenient parse (whole) wants a time, so it looks for none.
+        marks = whole ? [] : (a...b).select { |k| Grammar.rule?(tokens[k * S, S]) }
         while i < b
           # No mention is longer than a phrase parse takes, so the grammar sees no more than that
           start = from[tokens[i * S + 3]]
@@ -63,9 +65,14 @@ module Acute
           # Text that makes every start parse far and fail, as "the the the…", has the grammar see a few words
           # at each once it has cost far more than prose does
           w = spent[0] > budget && e > i + FEW ? i + FEW : e
-          found = starts_mention?(text, tokens, i) &&
-                  longest(text, tokens[(i * S)...(w * S)], make_context, whole, spent)
-          if found
+          starts = starts_mention?(text, tokens, i)
+          found = starts && longest(text, tokens[(i * S)...(w * S)], make_context, whole, spent)
+          marks.shift while marks.any? && marks[0] < i
+          rule = starts && marks.any? && marks[0] < w && rule_at(text, tokens, i, w, marks[0], make_context, spent)
+          if rule && (!found || rule[0].offset.end >= found[0].offset.end)
+            mentions << rule[0]
+            i = rule[1]
+          elsif found
             k = i
             look = ->(n) { longest(text, tokens[(n * S)...(w * S)], make_context, whole, spent) }
             # D51: "for 3 days from today" is a span with its "for", where "3 days from today" is a shift
@@ -104,6 +111,42 @@ module Acute
       chars = Chars.new(text)
       mentions.each { |m| m.offset = chars[m.offset.begin]...chars[m.offset.end] }
       Extraction.new(text, mentions)
+    end
+
+    # The longest rule from token i, as [mention, the index after it]: the run up to w, then shorter, while it
+    # keeps the rule word at mark and doesn't end in a word that only introduces what follows (D50)
+    def self.rule_at(text, tokens, i, w, mark, make_context, spent)
+      j = w
+      FEW.times do
+        j -= 1 while j > mark + 1 && tokens[(j - 1) * S] == L::WORD && TRAILING[tokens[(j - 1) * S + 1]]
+        break if j <= mark
+        next j -= 1 if glued?(tokens, j * S)
+        slice = tokens[(i * S)...(j * S)]
+        spent[0] += slice.size
+        found = rule_mention(text, slice, make_context)
+        return [found, j] if found
+        j -= 1
+      end
+      nil
+    end
+
+    # D50: a number written as a word doesn't start one: "one every 8 hours" is "every 8 hours"
+    def self.rule_mention(text, slice, make_context)
+      st = slice[3]
+      return if plain_english?(slice, sentence_start?(text, st)) || in_word?(text, st, slice[-1]) ||
+                adjective?(text, slice) || (slice[0] == L::NUM && slice[2] & L::WORDY != 0)
+      stop = meridiem_dot(text, slice) || slice[-1]
+      piece = text.byteslice(st, stop - st)
+      value = Acute.send(:rule, piece, make_context.(), slice)
+      Extraction::Mention.new(:rule, piece, st...stop, value) if Rule === value
+    end
+
+    # E6: a lone frequency word directly before another word is an adjective: "hourly rate", "the weekly report"
+    def self.adjective?(text, slice)
+      content = slice.each_slice(S).reject { |k, v| k == L::ART || (k == L::WORD && v == :the) }
+      return false unless content.size == 1 && content[0][0] == L::WORD && Grammar::FREQUENCY[content[0][1]]
+      at = space_after(text, slice[-1])
+      at > slice[-1] && (c = text.getbyte(at)) && (c | 32).between?(97, 122)
     end
 
     # Character offsets of byte offsets, counted from the last one asked for: a walk through the text costs

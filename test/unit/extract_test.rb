@@ -251,4 +251,28 @@ class ExtractTest < Minitest::Test
     assert_equal [Time.utc(2008), Time.utc(2009)], [at.("the year of 2008", "2016-11-07T00:00").begin, at.("the year of 2008", "2016-11-07T00:00").end]
     assert_equal at.("in a fortnight", "2021-05-20T00:00").begin, at.("in a fortnight\u2019s time", "2021-05-20T00:00").begin
   end
+
+  def test_e6_a_rule_is_one_mention
+    x = extract("remind me every 2 weeks until June, then call Sam tomorrow")
+    assert_equal([[:rule, "every 2 weeks until June", 10...34], [:time, "tomorrow", 50...58]], x.mentions.map { [_1.kind, _1.text, _1.offset] })
+    assert_kind_of Acute::Rule, x.mentions[0].value
+    assert_equal "rule", x.to_h[:mentions][0][:kind]
+    assert_equal "remind me, then call Sam", x.remainder
+  end
+
+  def test_e6_a_rule_wins_unless_a_time_reaches_further
+    assert_equal([[:rule, "the 1st of every month"]], mentions("pay rent on the 1st of every month").map { _1.take(2) })
+    assert_equal([[:rule, "every weekday at 9:30"]], mentions("standup every weekday at 9:30 in room 4").map { _1.take(2) })
+  end
+
+  def test_e6_no_rule
+    ["hourly rate", "the weekly report", "every second counts", "every time I call"].each do |text|
+      assert_empty mentions(text).select { _1[0] == :rule }, text
+    end
+    assert_equal([[:rule, "every 8 hours"]], mentions("take one every 8 hours").map { _1.take(2) })
+  end
+
+  def test_e6_lenient_parse_finds_no_rule
+    assert_equal Time.new(2026, 11, 1, 0, 0, 0, "-04:00"), Acute.parse("pay on the 1st of every month", now: "2026-10-17T14:00", zone: NY, strict: false).begin
+  end
 end
