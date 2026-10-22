@@ -96,6 +96,7 @@ class CLITest < Minitest::Test
 
   def test_next_errors
     assert_equal ["", "acute: not a repeating time\n", 1], acute("tomorrow", "--next", "2", *AT)
+    assert_equal ["", "acute: \"twice a week\" says how often, not when\n", 1], acute("twice a week", "--next", "2", *AT)
     assert_equal ["", "acute: invalid argument: --next 0\n", 2], acute("every day", "--next", "0", *AT)
     assert_equal ["", "acute: invalid argument: --next 1001\n", 2], acute("every day", "--next", "1001", *AT)
     assert_match(/invalid argument: --next three/, acute("every day", "--next", "three", *AT)[1])

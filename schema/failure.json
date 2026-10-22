@@ -10,7 +10,7 @@
     "kind": { "const": "failure" },
     "code": {
       "enum": ["unknown_tool", "unknown_argument", "missing_argument", "invalid_argument", "unknown_word", "invalid_date",
-               "incomplete", "conflict", "not_rule", "no_occurrence", "dst_skipped_time", "dst_repeated_time", "business_day_limit", "too_long",
+               "incomplete", "conflict", "not_rule", "vague_rule", "no_occurrence", "dst_skipped_time", "dst_repeated_time", "business_day_limit", "too_long",
                "invalid_encoding"]
     },
     "error": { "type": "string" },

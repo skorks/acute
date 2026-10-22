@@ -67,6 +67,8 @@ class ToolTest < Minitest::Test
     assert_equal({ "kind" => "failure", "code" => "not_rule", "error" => "not a repeating time" },
                  call("recurrence", { "text" => "next friday" }))
     assert_equal "no_occurrence", call("recurrence", { "text" => "every monday until last week" })["code"]
+    assert_equal({ "kind" => "failure", "code" => "vague_rule", "error" => "the phrase says how often, not when: ask the user which days or times" },
+                 call("recurrence", { "text" => "every morning" }))
     assert_equal ["invalid_date", "February has 28 days, 29 in a leap year", ["every feb 30"]],
                  call("recurrence", { "text" => "every feb 30" }).values_at("code", "error", "unread")
     assert_equal ["unknown_word", ["flurb"]], call("recurrence", { "text" => "flurb weekly" }).values_at("code", "unread")

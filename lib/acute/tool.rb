@@ -20,6 +20,7 @@ module Acute
       incomplete: "the phrase is incomplete",
       conflict: "the words in unread don't fit with the rest of the phrase",
       not_rule: "not a repeating time",
+      vague_rule: "the phrase says how often, not when: ask the user which days or times",
       no_occurrence: "the rule ends before it starts",
       dst_skipped_time: "the time in unread is skipped as the clocks go forward: ask the user for a time either side of it",
       dst_repeated_time: "the time in unread happens twice as the clocks go back: ask the user which they meant",
