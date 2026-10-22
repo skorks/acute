@@ -148,7 +148,7 @@ module Acute
             return "#{values[0]}-#{high}/#{n}" if values.size > 2
           end
         end
-        values.slice_when { _2 != _1 + 1 }.map { _1.size > 2 ? "#{_1[0]}-#{_1[-1]}" : _1.join(",") }.join(",")
+        values.slice_when { _2 != _1 + 1 }.map { |run| run.size > 2 ? "#{run[0]}-#{run[-1]}" : run.join(",") }.join(",")
       end
     end
 

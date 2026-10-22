@@ -192,7 +192,7 @@ module Acute
       s = plural ? "s" : ""
       return "weekday#{s}" if days == [1, 2, 3, 4, 5]
       return "weekend#{s}" if days == [6, 0]
-      list(days.map { "#{DAY_NAMES[_1]}#{s}" })
+      list(days.map { |day| "#{DAY_NAMES[day]}#{s}" })
     end
 
     # "every month", "every other week", "every 3 days"; unit nil for weekdays, which take the interval in weeks
