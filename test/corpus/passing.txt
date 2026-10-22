@@ -15981,6 +15981,11 @@ recurrence-0138
 recurrence-0139
 recurrence-0140
 recurrence-0141
+recurrence-0142
+recurrence-0143
+recurrence-0144
+recurrence-0145
+recurrence-0146
 rust-parsers-0001
 rust-parsers-0002
 rust-parsers-0003
