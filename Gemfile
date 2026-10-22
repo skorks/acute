@@ -4,6 +4,7 @@ gemspec
 
 group :development do
   gem "benchmark"
+  gem "bundler-audit", "0.9.3", require: false
   gem "minitest"
   gem "rubocop", "1.92.0", require: false
   gem "rubocop-minitest", "0.41.0", require: false

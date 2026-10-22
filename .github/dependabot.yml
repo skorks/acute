@@ -1,0 +1,7 @@
+# Actions only: the development gems are pinned on purpose, and bundle-audit watches them
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
