@@ -5,12 +5,12 @@ module Acute
   # A repeating time as an iCalendar rule (RFC 5545): a DTSTART, an RRULE and any EXDATE (R1). Frozen and
   # Ractor-shareable.
   class Rule
-    DAYS = %w[SU MO TU WE TH FR SA].freeze
-    DAY_NAMES = %w[Sunday Monday Tuesday Wednesday Thursday Friday Saturday].freeze
-    MONTH_NAMES = %w[_ January February March April May June July August September October November December].freeze
-    ORDINALS = %w[_ first second third fourth fifth].freeze
-    UNITS = { secondly: "second", minutely: "minute", hourly: "hour", daily: "day", weekly: "week", monthly: "month",
-              yearly: "year" }.freeze
+    DAYS = Ractor.make_shareable(%w[SU MO TU WE TH FR SA])
+    DAY_NAMES = Ractor.make_shareable(%w[Sunday Monday Tuesday Wednesday Thursday Friday Saturday])
+    MONTH_NAMES = Ractor.make_shareable(%w[_ January February March April May June July August September October November December])
+    ORDINALS = Ractor.make_shareable(%w[_ first second third fourth fifth])
+    UNITS = Ractor.make_shareable({ secondly: "second", minutely: "minute", hourly: "hour", daily: "day", weekly: "week",
+                                    monthly: "month", yearly: "year" })
     DAY = 86_400
 
     # What repeats: secs are seconds of the day, the same minute (R4)
@@ -174,3 +174,4 @@ module Acute
     def list(items) = items.size == 1 ? items[0] : "#{items[0..-2].join(", ")} and #{items[-1]}"
   end
 end
+require_relative "rule/cron"
