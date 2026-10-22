@@ -40,7 +40,7 @@ class ZoneTest < Minitest::Test
       trans = TZDATA.get_timezone_info(name).create_timezone.transitions_up_to(Time.utc(2200), Time.utc(1800))
       trans.each_index.filter_map do |k|
         before = trans[k].previous_offset.observed_utc_offset
-        expected = trans[k..].find { it.offset.observed_utc_offset != before }&.timestamp_value
+        expected = trans[k..].find { |t| t.offset.observed_utc_offset != before }&.timestamp_value
         got = zone.next_change(trans[k].timestamp_value - 1)
         [name, k] unless expected ? got == expected : got.nil? || got >= limit
       end
