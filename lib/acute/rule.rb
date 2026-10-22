@@ -180,12 +180,21 @@ module Acute
       "#{Result::MONTHS[m - 1]} #{d}, #{y}"
     end
 
-    # R12: the excepted dates; an hourly or finer rule's lone instant on a day keeps its time
+    # R12: the excepted dates. On an hourly or finer rule a day keeps each excepted time unless they are all
+    # of that day's occurrences, so it reads back to the same EXDATEs.
     def exceptions
       return @exdates.map { date(@timed ? _1.div(DAY) : _1) }.uniq unless FINE[@parts.freq]
-      @exdates.group_by { _1.div(DAY) }.map do |day, walls|
-        walls.size == 1 ? "#{date(day)} #{Describe.clock(walls[0] % DAY)}" : date(day)
+      @exdates.group_by { _1.div(DAY) }.flat_map do |day, walls|
+        walls.sort == day_walls(day) ? date(day) : walls.map { "#{date(day)} #{Describe.clock(_1 % DAY)}" }
       end
+    end
+
+    # The wall times this rule, without its exceptions, occurs at on a local day
+    def day_walls(day)
+      base = Rule.new(@parts, @zone, @start, @timed, @count, @until, [], @started, @dst, now: @now, text: @text)
+      lead = Time.at(day * DAY - 15 * 3600)
+      base.each(after: lead).lazy.map { _1.to_i + _1.utc_offset }.select { _1 >= day * DAY }
+          .take_while { _1 < (day + 1) * DAY }.to_a.uniq
     end
 
     # The day an UNTIL ends, or the instant when it isn't a day's last second (R10)
