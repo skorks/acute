@@ -13,6 +13,11 @@ class ToolsTest < Minitest::Test
   end
 
   def test_case_records_acutes_answer_as_a_passing_case
+    begin
+      TZInfo::DataSources::ZoneinfoDataSource.new
+    rescue TZInfo::DataSources::ZoneinfoDirectoryNotFound
+      skip "bin/case checks against the system zoneinfo, which this system lacks"
+    end
     Dir.mktmpdir do |dir|
       to = File.join(dir, "new.jsonl")
       first = record("at 9", "--now", "2026-10-17T14:00", to: to)
