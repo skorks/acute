@@ -683,7 +683,7 @@ An abbreviation that names more than one zone gives each one's offset as a readi
 
 **Zone data:**
 - **D43.** Zone tables start in 1800. Before standard time, a zone uses local mean time: "1530" in New York starts at −04:56:02.
-- **D47.** Clock changes continue to 2200, past where the shipped data stops, for zones whose yearly rule is regular. "2079-07-04 12:00" in New York is −04:00. A zone whose changes stopped stays as it ends.
+- **D47.** Clock changes continue to 2200, past where the shipped data stops, for zones whose yearly rule is regular. "2079-07-04 12:00" in New York is −04:00. A zone whose changes stopped stays as it ends. A change at 24:00 counts too: Cairo's summer ends at the end of the last Thursday of October. Palestine's, which breaks for Ramadan, stays standard time after 2076, where the shipped data stops.
 - **D43.** A wall time the clocks repeat keeps its side when it comes from an instant: "in 3 hours" said at 23:30 on 31 October 2026 in New York is the second 01:30 (EST), and "2026-11-01 01:30 EST" is that one too.
 - **D43.** Retired: a zone once had to be loaded in the main Ractor before another Ractor used it. The zone data now ships with acute, so any Ractor can use any zone.
 

@@ -7,6 +7,7 @@ require_relative "../../lib/acute/mcp"
 # errors_test, R19's occurrences and steps in rule_occurrences_test, business days in business_limit_test,
 # --next in cli_test, the MCP line in mcp_test, the tool's text and unread in tool_test.
 class LimitsTest < Minitest::Test
+  cover "Acute::Zone*" # T13, the zone cache
   OPTS = { now: "2026-10-22T12:00", zone: "America/New_York" }.freeze
 
   def padded(text, size) = text + (" " * (size - text.bytesize))
