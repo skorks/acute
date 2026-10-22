@@ -96,8 +96,8 @@ class RuleTest < Minitest::Test
   end
 
   def test_to_h_and_json
-    r = rule("every day at 9am")
-    h = { kind: "rule", text: "every day at 9am", rrule: "FREQ=DAILY;BYHOUR=9;BYMINUTE=0",
+    r = rule("Every day at 9")
+    h = { kind: "rule", text: "Every day at 9", description: "every day at 9am", rrule: "FREQ=DAILY;BYHOUR=9;BYMINUTE=0",
           dtstart: "2026-10-18T09:00:00-04:00", zone: "America/New_York", ical: r.to_ical,
           cron: "0 9 * * *", cron_reason: nil }
     assert_equal h, r.to_h
@@ -105,6 +105,17 @@ class RuleTest < Minitest::Test
     assert_equal h.transform_keys(&:to_s), r.as_json
     assert_equal "2026-10-19", rule("every monday").to_h[:dtstart]
     assert_equal [nil, "cron can't express \"until\""], rule("every monday until june").to_h.values_at(:cron, :cron_reason)
+  end
+
+  def test_text_is_the_input_and_to_s_the_wording
+    input = +"Every day at 9"
+    r = rule(input)
+    assert_equal ["Every day at 9", "every day at 9am"], [r.text, r.to_s]
+    refute_predicate input, :frozen?
+    x = Acute.extract("standup every weekday at 9:30 sharp", **OPTS)
+    assert_equal "every weekday at 9:30", x.mentions[0].value.text
+    assert_equal "*/15 9-17 * * 1-5", Acute::Rule.from_cron("*/15 9-17 * * 1-5", **OPTS).text
+    assert_equal "every day at 9", Acute.read("every day at 9", **OPTS).text
   end
 
   def test_frozen_and_shareable

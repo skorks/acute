@@ -94,7 +94,7 @@ module Acute
     end
     tree ||= Grammar.rule(tokens)
     return Grammar.rule?(tokens) ? tree : Failure.new(:not_rule, 0, given.bytesize) if Failure === tree
-    out = Resolve::Recur.call(tree, ctx)
+    out = Resolve::Recur.call(tree, ctx, text || given)
     Symbol === out ? Failure.new(out, 0, given.bytesize) : out
   end
   private_class_method :rule

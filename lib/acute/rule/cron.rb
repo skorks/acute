@@ -43,7 +43,7 @@ module Acute
         end
         sunday = sets[4].pop # R25: 7 is Sunday too
         sets[4][0] ||= sunday
-        out = build(sets, fields[2][0].start_with?("*"), fields[4][0].start_with?("*"), ctx)
+        out = build(sets, fields[2][0].start_with?("*"), fields[4][0].start_with?("*"), ctx, line)
         Rule === out ? out : [*out, whole]
       end
 
@@ -78,7 +78,7 @@ module Acute
       end
 
       # R25, R26: cron's fields as the shapes acute's own rules take
-      def self.build(sets, dom_star, dow_star, ctx)
+      def self.build(sets, dom_star, dow_star, ctx, line)
         minutes, hours, doms, months, dows = sets.map { |s| (0...s.size).select { s[_1] } }
         all_doms = doms.size == 31
         all_dows = dows.size == 7
@@ -94,9 +94,9 @@ module Acute
         every_day = all_doms && all_dows && all_months
 
         if every_day && hours.size == 24 && (n = grid(minutes, 0, 59)) && n < 60
-          return fine(:minutely, n, ctx)
+          return fine(:minutely, n, ctx, line)
         elsif every_day && minutes == [0] && (n = grid(hours, 0, 23)) && n < 24
-          return fine(:hourly, n, ctx)
+          return fine(:hourly, n, ctx, line)
         end
         secs = hours.flat_map { |h| minutes.map { h * 3600 + _1 * 60 } } # R25: each hour with each minute (R4)
         step = grid(months, 1, 12, offset: true)
@@ -108,7 +108,7 @@ module Acute
         return [:unsupported_cron, "a rule can't hold those days and months together"] unless parts
         rule = Parts.new(*parts, [], nil, secs)
         start = first(rule, rule.interval > 1 && months, ctx) or return [:invalid_cron, "the line never runs"]
-        Rule.new(rule, ctx.zone.name, start, true, nil, nil, [], false)
+        Rule.new(rule, ctx.zone.name, start, true, nil, nil, [], false, now: ctx.now, text: line)
       end
 
       # The step n when values are every nth through high, from low or (offset) from less than n past it, and n
@@ -120,11 +120,12 @@ module Acute
       end
 
       # R23: a step finer than a day starts on cron's grid, counted from the top of the hour
-      def self.fine(freq, n, ctx)
+      def self.fine(freq, n, ctx, line)
         step = n * FINE[freq]
         local = ctx.local(ctx.now)
         start = (local + step - 1).div(step) * step
-        Rule.new(Parts.new(freq, n, nil, [], [], [], nil, []), ctx.zone.name, start, true, nil, nil, [], false)
+        Rule.new(Parts.new(freq, n, nil, [], [], [], nil, []), ctx.zone.name, start, true, nil, nil, [], false, now: ctx.now,
+                 text: line)
       end
 
       # R2: the first run on or after now, as local wall seconds; with a step of months, only in those months

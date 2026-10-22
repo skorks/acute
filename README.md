@@ -98,7 +98,8 @@ More: [docs/usage.md](docs/usage.md#writing-and-checking-dates).
 r = Acute.recurrence("every weekday at 9am", now:, zone:)
 r.rrule  # => "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0"
 r.cron   # => "0 9 * * 1-5"
-r.next(2, after: Time.new(2026, 10, 17, 14, 0, 0, "-04:00"))
+r.next   # => 2026-10-19 09:00:00 -0400
+r.next(2)
 # => [2026-10-19 09:00:00 -0400, 2026-10-20 09:00:00 -0400]
 ```
 

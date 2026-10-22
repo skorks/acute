@@ -74,7 +74,7 @@ class MCPTest < Minitest::Test
       assert_equal "failure", schema["oneOf"][1].dig("properties", "kind", "const")
       refs(schema).each { assert schema.fetch("$defs", {}).key?(_1.delete_prefix("#/$defs/")), "#{tool["name"]}: #{_1}" }
       schema.fetch("$defs", {}).each_key { assert_operator refs(schema).count("#/$defs/#{_1}"), :>, 1, "#{tool["name"]}: #{_1}" }
-      refute_match(/"(description|title|examples|\$comment)":/, JSON.generate(schema), tool["name"])
+      refute_match(/"(description|title|\$comment)":"|"examples":/, JSON.generate(schema), tool["name"]) # a rule's description property is kept
     end
   end
 

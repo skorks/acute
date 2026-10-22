@@ -42,6 +42,7 @@ module Acute
       private_class_method :result
 
       def self.rule(r)
+        r.delete("text")
         r.delete("ical") unless r["ical"].include?("\nEXDATE")
         r.delete(r["cron"] ? "cron_reason" : "cron")
       end
@@ -56,7 +57,7 @@ module Acute
         trim(defs.dig("extraction", "properties", "mentions", "items"), drop: %w[kind])
         trim(defs["verdict"], drop: %w[text], optional: %w[expected unread])
         if (rule = defs["rule"])
-          trim(rule, optional: %w[ical cron cron_reason])
+          trim(rule, drop: %w[text], optional: %w[ical cron cron_reason])
           rule["properties"] = rule["properties"].merge("cron" => { "type" => "string" }, "cron_reason" => { "type" => "string" })
         end
         if tool == "recurrence"

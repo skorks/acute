@@ -25,25 +25,41 @@ class RuleOccurrencesTest < Minitest::Test
     assert(out.all? { Date === _1 })
   end
 
-  def test_r16_next_gives_an_array_and_defaults_to_one_from_now
-    out = rule("every 15 minutes").next
-    assert_equal 1, out.size
-    assert_operator out[0], :>, Time.now
+  def test_r16_next_gives_one_occurrence_and_next_n_an_array
+    r = rule("every 15 minutes")
+    assert_equal "2026-10-17 14:15:00 -04:00", wall(r.next)
+    assert_equal ["2026-10-17 14:15:00 -04:00"], walls(r.next(1))
+    assert_equal "2026-10-17 14:15:00 -04:00", wall(r.next!)
     assert_equal [], rule("daily").next(0)
+  end
+
+  def test_r16_next_counts_from_the_now_the_rule_was_read_at
+    r = rule("every day at 9am")
+    assert_equal "2026-10-17 14:00:00 -04:00", wall(r.now)
+    assert_equal "2026-10-18 09:00:00 -04:00", wall(r.next)
+    c = Acute::Rule.from_cron("0 9 * * *", now: "2026-10-17T14:00", zone: NY)
+    assert_equal "2026-10-18 09:00:00 -04:00", wall(c.next)
+    assert_equal ["2026-10-18 09:00:00 -04:00", "2026-10-19 09:00:00 -04:00"], walls(c.next(2))
+  end
+
+  def test_r16_each_starts_at_dtstart_and_next_after_now
+    r = rule("every 15 minutes")
+    assert_equal ["2026-10-17 14:00:00 -04:00", "2026-10-17 14:15:00 -04:00"], walls(r.each.first(2))
+    assert_equal ["2026-10-17 14:15:00 -04:00", "2026-10-17 14:30:00 -04:00"], walls(r.next(2))
   end
 
   def test_r16_next_is_strictly_after_an_instant
     r = rule("every day at 9am")
-    assert_equal ["2026-10-20 09:00:00 -04:00"], walls(r.next(after: Time.new(2026, 10, 19, 9, 0, 0, "-04:00")))
-    assert_equal ["2026-10-19 09:00:00 -04:00"], walls(r.next(after: Time.new(2026, 10, 19, 8, 59, 59.5r, "-04:00")))
-    assert_equal ["2026-10-19 09:00:00 -04:00"], walls(r.next(after: Time.utc(2026, 10, 19, 12, 59, 59)))
+    assert_equal "2026-10-20 09:00:00 -04:00", wall(r.next(after: Time.new(2026, 10, 19, 9, 0, 0, "-04:00")))
+    assert_equal "2026-10-19 09:00:00 -04:00", wall(r.next(after: Time.new(2026, 10, 19, 8, 59, 59.5r, "-04:00")))
+    assert_equal "2026-10-19 09:00:00 -04:00", wall(r.next(after: Time.utc(2026, 10, 19, 12, 59, 59)))
   end
 
   def test_r16_a_day_under_way_counts_and_a_date_means_after_it
     r = rule("every monday")
-    assert_equal %w[2026-10-19], dates(r.next(after: Time.new(2026, 10, 19, 23, 0, 0, "-04:00")))
-    assert_equal %w[2026-10-26], dates(r.next(after: Date.new(2026, 10, 19)))
-    assert_equal ["2026-10-20 09:00:00 -04:00"], walls(rule("every day at 9am").next(after: Date.new(2026, 10, 19)))
+    assert_equal %w[2026-10-19], dates(r.next(1, after: Time.new(2026, 10, 19, 23, 0, 0, "-04:00")))
+    assert_equal %w[2026-10-26], dates(r.next(1, after: Date.new(2026, 10, 19)))
+    assert_equal ["2026-10-20 09:00:00 -04:00"], walls(rule("every day at 9am").next(1, after: Date.new(2026, 10, 19)))
   end
 
   def test_r16_between_includes_from_and_leaves_out_to
@@ -80,7 +96,7 @@ class RuleOccurrencesTest < Minitest::Test
     assert_raises(ArgumentError) { r.next(-1) }
     assert_raises(ArgumentError) { r.next("3") }
     assert_raises(ArgumentError) { r.next(after: "tomorrow") }
-    assert_equal %w[2026-10-18], dates(r.next(after: DateTime.new(2026, 10, 18, 12))) # 8am in New York
+    assert_equal "2026-10-18", r.next(after: DateTime.new(2026, 10, 18, 12)).iso8601 # 8am in New York
   end
 
   # R17: each RRULE part
@@ -89,7 +105,7 @@ class RuleOccurrencesTest < Minitest::Test
     r = rule("every other friday")
     assert_equal %w[2026-11-06 2026-11-20], dates(r.next(2, after: Date.new(2026, 10, 30)))
     assert_equal %w[2026-10-20 2026-10-23], dates(rule("every 3 days").next(2, after: Date.new(2026, 10, 17)))
-    assert_equal ["2026-10-17 16:00:00 -04:00"], walls(rule("every 2 hours").next(after: Time.new(2026, 10, 17, 15, 0, 0, "-04:00")))
+    assert_equal ["2026-10-17 16:00:00 -04:00"], walls(rule("every 2 hours").next(1, after: Time.new(2026, 10, 17, 15, 0, 0, "-04:00")))
   end
 
   def test_r17_a_huge_interval_is_one_step_a_period
@@ -129,7 +145,7 @@ class RuleOccurrencesTest < Minitest::Test
 
   def test_r17_frequencies_finer_than_a_day
     assert_equal ["2026-10-17 15:00:00 -04:00", "2026-10-17 16:00:00 -04:00"], walls(rule("every hour").next(2, after: AFTER))
-    assert_equal ["2026-10-17 14:01:00 -04:00"], walls(rule("every minute").next(after: AFTER))
+    assert_equal ["2026-10-17 14:01:00 -04:00"], walls(rule("every minute").next(1, after: AFTER))
   end
 
   def test_r17_a_part_left_out_comes_from_dtstart
@@ -143,7 +159,8 @@ class RuleOccurrencesTest < Minitest::Test
     r = rule("every other friday 5 times")
     assert_equal %w[2026-10-23 2026-11-06 2026-11-20 2026-12-04 2026-12-18], dates(r.next(10, after: Date.new(2026, 10, 1)))
     assert_equal %w[2026-12-04 2026-12-18], dates(r.next(10, after: Date.new(2026, 11, 20)))
-    assert_equal [], r.next(after: Date.new(2026, 12, 18))
+    assert_nil r.next(after: Date.new(2026, 12, 18))
+    assert_equal [], r.next(1, after: Date.new(2026, 12, 18))
     assert_equal 3, rule("every 10 minutes 3 times").next(5, after: Time.utc(2020)).size
   end
 
@@ -156,7 +173,7 @@ class RuleOccurrencesTest < Minitest::Test
     assert_equal "2026-10-23 09:00:00 -04:00", wall(rule("every day at 9am until friday").each.to_a.last)
     assert_equal "2026-12-28", rule("every monday until december").each.to_a.last.iso8601
     assert_equal 6, rule("every 10 minutes for an hour").each.count
-    assert_equal [], rule("every monday until december").next(after: Date.new(2026, 12, 28))
+    assert_nil rule("every monday until december").next(after: Date.new(2026, 12, 28))
   end
 
   def test_r17_exdate
@@ -197,7 +214,7 @@ class RuleOccurrencesTest < Minitest::Test
     lon = Acute.recurrence("every day at 1:30am", now: "2027-03-26T12:00", zone: "Europe/London")
     assert_equal ["2027-03-27 01:30:00 +00:00", "2027-03-28 02:30:00 +01:00", "2027-03-29 01:30:00 +01:00"], walls(lon.next(3, after: Time.utc(2027, 3, 26)))
     lon = Acute.recurrence("every sunday at 1:30am", now: "2026-10-20T12:00", zone: "Europe/London")
-    assert_equal "2026-10-25 01:30:00 +01:00", wall(lon.next(after: Time.utc(2026, 10, 20))[0])
+    assert_equal "2026-10-25 01:30:00 +01:00", wall(lon.next(after: Time.utc(2026, 10, 20)))
   end
 
   def test_r18_two_times_on_one_instant_are_one_occurrence
@@ -219,7 +236,7 @@ class RuleOccurrencesTest < Minitest::Test
     parts = Acute::Rule::Parts.new(freq, interval, month, monthdays, days, nths, nil, secs)
     timed = start.size > 3
     start = timed ? Time.utc(*start).to_i : Date.new(*start).jd - 2_440_588
-    Acute::Rule.new(parts, NY, start, timed, count, until_, [], false)
+    Acute::Rule.new(parts, NY, start, timed, count, until_, [], false, now: AFTER.to_i, text: "built")
   end
 
   def first(r, n) = r.each.first(n).map { Date === _1 ? _1.iso8601 : _1.strftime("%FT%R") }
@@ -246,7 +263,7 @@ class RuleOccurrencesTest < Minitest::Test
     all = first(r, 100)
     assert_equal %w[2026-10-17T22:00 2026-10-17T22:45 2026-10-17T23:30 2026-10-24T00:15], all.first(4)
     assert_equal "2026-10-24T23:30", all.last
-    assert_equal ["2026-10-24 00:15:00 -04:00"], walls(r.next(after: Time.new(2026, 10, 18, 0, 0, 0, "-04:00")))
+    assert_equal ["2026-10-24 00:15:00 -04:00"], walls(r.next(1, after: Time.new(2026, 10, 18, 0, 0, 0, "-04:00")))
   end
 
   def test_r17_finer_than_a_day_at_set_times
@@ -284,12 +301,12 @@ class RuleOccurrencesTest < Minitest::Test
     assert_nil r.next(after: Time.utc(2600))
     assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - t, :<, 1
     assert_equal :step_limit, assert_raises(Acute::ParseError) { r.next!(after: Time.utc(2600)) }.code
-    assert_equal 1, r.next(after: Time.utc(2100)).size
+    assert_equal 1, r.next(1, after: Time.utc(2100)).size
   end
 
   def test_r19_a_rule_that_never_occurs_ends_at_the_budget
     parts = Acute::Rule::Parts.new(:yearly, 1, 2, [30], [], [], nil, [])
-    r = Acute::Rule.new(parts, "UTC", 20_000, false, nil, nil, [], false)
+    r = Acute::Rule.new(parts, "UTC", 20_000, false, nil, nil, [], false, now: AFTER.to_i, text: "built")
     assert_nil r.next
     assert_nil r.between(Date.new(2026, 1, 1), Date.new(2400, 1, 1))
     assert_equal [], r.each.first(1)
@@ -312,7 +329,7 @@ class RuleOccurrencesTest < Minitest::Test
     cases.each do |c|
       r = Acute.recurrence(c["text"], now: c["now"], zone: c["tz"])
       start = r.dtstart
-      assert_equal [start], r.next(after: start - 1), "#{c["id"]} #{c["text"]}"
+      assert_equal start, r.next(after: start - 1), "#{c["id"]} #{c["text"]}"
       assert_equal [start], r.each.first(1), c["id"]
     end
   end
