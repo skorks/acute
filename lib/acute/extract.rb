@@ -49,6 +49,7 @@ module Acute
     def self.call(text, make_context, whole = nil)
       unknown = []
       tokens = Lexer.lex(lexable(text), unknown)
+      listed_days(text, tokens)
       mentions = []
       from = Chars.new(text)
       to = Chars.new(text)
@@ -373,6 +374,25 @@ module Acute
       piece = text.byteslice(st, stop - st)
       value = tree && time(piece, tree, make_context, whole)
       Extraction::Mention.new(value.kind, piece, st...stop, value) if value
+    end
+
+    LIST_GAP = /\A\s*(?:,\s*|(?:,\s*)?(?:and|or)\s+)\z/i
+
+    # D18: a weekday in a list of weekdays is a day, though it is also a word: "mon, wed and fri", "mon and
+    # wed" mention each day
+    def self.listed_days(text, tokens)
+      prev = nil
+      (0...tokens.size).step(S) do |j|
+        if tokens[j] == L::WDAY
+          if prev && LIST_GAP.match?(text.byteslice(tokens[prev + 4], tokens[j + 3] - tokens[prev + 4]))
+            tokens[prev + 2] &= ~L::ENGLISH
+            tokens[j + 2] &= ~L::ENGLISH
+          end
+          prev = j
+        elsif !(tokens[j] == L::WORD && ((w = tokens[j + 1]) == :and || w == :or))
+          prev = nil
+        end
+      end
     end
 
     # E5: "4 a.m.", "3 p . m .": the last dot of a meridiem written with dots is part of it
