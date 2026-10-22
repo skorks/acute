@@ -3,6 +3,7 @@ name: check
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -51,7 +52,8 @@ jobs:
           TZ: ${{ matrix.tz }}
           LC_ALL: ${{ matrix.locale }}
 
-  # Windows has no system zoneinfo for the corpus's oracle, so the corpus stage is left out
+  # Windows has no system zoneinfo for the corpus's oracle, so the corpus stage is left out, and the unit
+  # test of bin/case, which checks against it, skips
   windows:
     name: bin/check (windows-latest, Ruby 4.0, no corpus)
     runs-on: windows-latest
@@ -64,8 +66,10 @@ jobs:
         with:
           ruby-version: "4.0"
           bundler-cache: true
-      # The speed stages' CPU clocks give NaN here; they are report-only in CI anyway
-      - run: bundle exec ruby bin/check --skip lint,corpus,coverage,gem,speed,yjit
+      # The chronic stage's oracle is chronic's system-local Times under TZ=America/New_York, which Windows' C
+      # runtime doesn't read, so its Times stay UTC. The speed stages' CPU clocks give NaN here; they are
+      # report-only in CI anyway
+      - run: bundle exec ruby bin/check --skip lint,corpus,chronic,coverage,gem,speed,yjit
 
   once:
     name: lint, coverage and the gem

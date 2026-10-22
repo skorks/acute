@@ -11,6 +11,8 @@ class ChronicTest < Minitest::Test
   def setup
     @tz = ENV["TZ"]
     ENV["TZ"] = NY
+    # Chronic's Times are system-local; Windows' C runtime reads no IANA name from TZ, so Time.local stays UTC
+    skip "this Ruby's Time.local ignores TZ=#{NY}" unless Time.local(2026, 10, 17).utc_offset == -4 * 3600
     @now = Time.local(2026, 10, 17, 14)
   end
 

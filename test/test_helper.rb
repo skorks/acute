@@ -1,3 +1,6 @@
+# Minitest starts a thread per CPU for parallel tests, which this suite has none of. On Windows a Ractor started
+# while those threads wait on their queue never finishes (Ruby 4.0.7), though the same Ractor runs alone
+ENV["MT_CPU"] ||= "1" if Gem.win_platform?
 require "minitest/autorun"
 require "tzinfo" # the tests compare with it; acute never loads it
 require_relative "../lib/acute"
