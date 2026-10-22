@@ -4,9 +4,9 @@
   "title": "Acute.describe",
   "description": "A value written as English that acute reads back as that value.",
   "type": "object",
-  "required": ["kind", "text"],
+  "required": ["kind", "description"],
   "properties": {
     "kind": { "const": "description" },
-    "text": { "type": "string" }
+    "description": { "type": "string" }
   }
 }

@@ -58,8 +58,7 @@ class ToolCompactTest < Minitest::Test
   end
 
   def test_a_failure_drops_unread_only_when_empty
-    assert_equal({ "kind" => "failure", "code" => "too_long", "error" => "the text is longer than 512 bytes",
-                   "position" => [0, 300] },
+    assert_equal({ "kind" => "failure", "code" => "too_long", "error" => "the text is longer than 512 bytes" },
                  call("parse", { "text" => "é" * 300 }))
     assert_equal ["tomorow"], call("parse", { "text" => "tomorow" })["unread"]
   end

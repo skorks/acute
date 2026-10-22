@@ -29,7 +29,7 @@ acute is a rewrite from scratch, with a different design:
 - every call takes its own `now` and zone, and daylight saving is handled properly;
 - it reads a wide range of phrases, checked against more than 18,000 cases gathered from chronic and a dozen other date parsers;
 - when a phrase could mean more than one thing, it says which reading it chose, and why;
-- it runs tens of times faster than chronic.
+- it runs 25–100× faster than chronic, 80–300× under YJIT ([measured](#performance)).
 
 **About the name.** In medicine, a *chronic* condition lingers for years, and an *acute* one is short and sharp. chronic has lingered since 2013. acute is short, sharp and over in a few microseconds.
 
@@ -47,11 +47,11 @@ The answers follow acute's rules, so a few differ from chronic's. chronic's own 
 
 ## Performance
 
-These are CPU time per parse over ten everyday phrases ("tomorrow", "next tuesday 3pm", "3 days ago", "27/5/1979"…). They were measured on Ruby 4.0.7 on an i5-13600K:
+`bin/bench-chronic` times chronic 0.10.2, the gem itself, and acute on ten everyday phrases ("tomorrow", "next tuesday 3pm", "3 days ago", "27/5/1979"…), in CPU time per parse, best of five rounds. Run it with `ruby bin/bench-chronic`, then `ruby --yjit bin/bench-chronic`; it needs `gem install chronic -v 0.10.2`. On Ruby 4.0.7 on an i5-13600K:
 
 | | chronic 0.10.2 | acute | faster by |
 |---|---|---|---|
-| interpreter | 210–450 µs | 9–16 µs | about 20–25× |
-| YJIT | 175–420 µs | 3.5–4 µs | about 50–100× |
+| interpreter | 330–490 µs | 5–19 µs | 25–100×, median about 50× |
+| YJIT | 350–650 µs | 1.5–8 µs | 80–300×, median about 150× |
 
-The ranges come from repeated runs on a busy machine, so read the ratios rather than the last digit. Roughly, chronic manages a few thousand parses a second per core, and acute around a hundred thousand, or a quarter of a million with YJIT. acute's own speed budget is checked on every commit.
+The machine was busy, so read the ratios rather than the last digit; runs moved them by about 20%. Roughly, chronic manages two or three thousand parses a second per core, and acute around a hundred thousand, or several hundred thousand with YJIT. acute's own speed budget is checked on every commit.

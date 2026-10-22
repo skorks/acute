@@ -7,11 +7,20 @@ Plain-English date and time parsing for Ruby: a successor to [chronic](https://g
 ```ruby
 require "acute"
 
-Acute.parse("next tuesday at 3pm", now: "2026-10-17T14:00", zone: "America/New_York").time
-# => 2026-10-20 15:00:00 -0400
+r = Acute.parse("next friday at 3pm", now: "2026-10-17T14:00", zone: "America/New_York")
+r.time  # => 2026-10-23 15:00:00 -0400
 ```
 
-Ruby's own `Time.parse` reads formats, not phrases: it takes "next tuesday at 3pm" as 3pm today. chronic reads phrases, but it is unmaintained, has one global time zone, and silently guesses at words it doesn't know. acute is a rewrite from scratch: every call takes its own `now` and zone, daylight saving is handled properly, it reads a wide range of phrases (checked against more than 18,000 cases), it says which reading it chose and why, and it runs tens of times faster. Why, with examples, and the name: [docs/chronic.md](docs/chronic.md#why-acute-exists).
+`r.time` is a plain Ruby `Time` at the offset of the zone you asked for, here New York's -04:00. `parse` returns nil when the text isn't a time, and `parse!` raises.
+
+Ruby's own `Time.parse` reads formats, not phrases: it takes "next tuesday at 3pm" as 3pm today. chronic reads phrases, but it is unmaintained, has one global time zone, and silently guesses at words it doesn't know. acute is a rewrite from scratch: every call takes its own `now` and zone, daylight saving is handled properly, it reads a wide range of phrases (checked against more than 18,000 cases), it says which reading it chose and why, and it runs 25–100× faster ([measured](#performance)). Why, with examples, and the name: [docs/chronic.md](docs/chronic.md#why-acute-exists).
+
+### When to use something else
+
+- Your input is always ISO 8601 or one fixed format: Ruby's `Time.iso8601` and `Time.strptime` read it, with nothing to install.
+- You need languages other than English: acute's locales (en-US, en-GB, en-AU…) set date order, week start and holidays, not the words.
+- You need meaning beyond dates, times, lengths and repeats, such as intents or places: that's a job for an NLP library or an LLM, which can call acute for the dates ([agents](docs/agents.md)).
+- You need chronic's answers exactly: acute differs where chronic is wrong or ambiguous ([the differences](docs/chronic.md#moving-over)).
 
 ## Installation
 
@@ -38,7 +47,7 @@ Acute.parse("tomorrow 3pm PST", now:, zone:).time  # => 2026-10-18 19:00:00 -040
 
 A phrase means the whole period it names: `time` is its start, and `end` is the first moment after it. A zone written in the text wins, and the answer comes back in yours. Without `zone:` acute falls back to the zone of `now:`, Rails' `Time.zone`, then the system's; on a server, pass the zone you mean. Daylight saving and the options: [docs/usage.md](docs/usage.md#time-zones).
 
-Times come back as plain `Time` values with a fixed offset, even when `now:` is a `TimeWithZone`; under Rails, `r.time.in_time_zone(r.zone)` before adding days ([why](docs/usage.md#time-zones)).
+Times are plain `Time` values with a fixed offset, even when `now:` is a `TimeWithZone`; under Rails, `r.time.in_time_zone(r.zone)` before adding days ([why](docs/usage.md#time-zones)). Answers people trip on, such as "next friday", midnight, two-digit years and daylight saving, are on [the gotchas page](docs/gotchas.md).
 
 ### Ambiguity
 
@@ -110,11 +119,14 @@ iCalendar rules, their occurrences and cron: [docs/recurrence.md](docs/recurrenc
 ### Command line
 
 ```
-$ acute --zone America/New_York "next friday 3pm"
+$ acute --now 2026-10-17T14:00 --zone America/New_York "next friday at 3pm"
 Fri, Oct 23, 3pm EDT
+
+$ acute --now 2026-10-17T14:00 --zone America/New_York --json "next friday at 3pm"
+{"kind":"time","text":"next friday at 3pm","time":"2026-10-23T15:00:00-04:00","begin":"2026-10-23T15:00:00-04:00","end":"2026-10-23T15:01:00-04:00","grain":"minute","zone":"America/New_York","assumptions":[],"alternatives":[]}
 ```
 
-Every option, stdin and `--json`: [docs/cli.md](docs/cli.md).
+Without `--json` it prints the reading for people to read, in `describe`'s calendar style; with it, the Result's `to_json` for scripts. Every option, stdin and failures: [docs/cli.md](docs/cli.md).
 
 ### Agents and LLMs
 
@@ -127,7 +139,7 @@ require "acute/tool"
 tool = Acute::Tool.new(now:, zone:)   # the app sets the zone and now, never the model
 tool.definitions(:anthropic).map { _1[:name] }   # or :openai, for any SDK
 # => ["parse", "duration", "recurrence", "extract", "verify", "describe", "now"]
-tool.call("parse", { "text" => "next friday 3pm" })
+tool.call("parse", { "text" => "next friday at 3pm" })
 # => {"kind" => "time", "time" => "2026-10-23T15:00:00-04:00", "end" => "2026-10-23T15:01:00-04:00", "grain" => "minute", "zone" => "America/New_York"}
 ```
 
@@ -139,7 +151,7 @@ The tools, their failures and how zone and now are set: [docs/agents.md](docs/ag
 
 ## Performance
 
-Over ten everyday phrases on Ruby 4.0.7, acute takes 9–16 µs a parse to chronic's 210–450 µs, about 20–25× faster, and 3.5–4 µs under YJIT, about 50–100×. The measurements: [docs/chronic.md](docs/chronic.md#performance).
+Over ten everyday phrases on Ruby 4.0.7, acute takes 5–19 µs a parse to chronic 0.10.2's 330–490 µs, 25–100× faster (median about 50×), and 1.5–8 µs under YJIT, 80–300× faster. `bin/bench-chronic` measures it on your machine: [docs/chronic.md](docs/chronic.md#performance).
 
 ## Documentation
 
@@ -148,6 +160,7 @@ Over ten everyday phrases on Ruby 4.0.7, acute takes 9–16 µs a parse to chron
 - [docs/cli.md](docs/cli.md): the `acute` command and its options.
 - [docs/agents.md](docs/agents.md): acute as tools for an LLM, through `Acute::Tool` or `acute mcp`.
 - [docs/chronic.md](docs/chronic.md): why acute exists, moving from chronic, and speed.
+- [docs/gotchas.md](docs/gotchas.md): the answers people don't expect, why, and the option that changes each.
 - [docs/rules.md](docs/rules.md): every convention acute follows, by topic, with examples.
 - [schema/](schema): JSON Schemas for the JSON of a Result, Duration, Extraction and Verdict, and for the agent tools.
 

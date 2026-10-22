@@ -143,7 +143,7 @@ module Acute
     def describe(value, style)
       target = duration(value) || (@parser.parse(value, strict: true) if value.match?(ISO_TIME))
       return failure(:invalid_argument, "value must be an ISO 8601 time, date or duration", [value]) unless target
-      { "kind" => "description", "text" => @parser.describe(target, style: style) }
+      { "kind" => "description", "description" => @parser.describe(target, style: style) }
     end
 
     def duration(value)
@@ -165,11 +165,14 @@ module Acute
     def parse_failure(e, text)
       unread = e.code == :unknown_word ? e.unknown : POINTED.include?(e.code) ? [text[e.position]] : []
       found = failure(e.code, Explain.reason(e, text) || PARSE_ERRORS.fetch(e.code), unread)
-      found["position"] = [e.position.begin, e.position.end]
+      # a position over the whole phrase tells the model nothing the error doesn't
+      found["position"] = [e.position.begin, e.position.end] unless whole?(e.position, text)
       # only unknown_word's hint is for the model; the others name library options the app fixes
       found["hint"] = e.hint if e.hint && e.code == :unknown_word
       found
     end
+
+    def whole?(span, text) = text[0...span.begin].strip.empty? && text[span.end..].to_s.strip.empty?
 
     def failure(code, error, unread = [])
       words = unread.first(UNREAD).map { _1.to_s.dup.force_encoding(Encoding::UTF_8).scrub[0, UNREAD_LENGTH] }
