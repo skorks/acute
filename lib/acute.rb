@@ -112,7 +112,9 @@ module Acute
     options = [locale, week_start, hemisphere, fiscal_year_start, true, dst, holidays, business_days, year_bias]
     Context.new(now, zone, context, *options) # bad options raise here, before any mention is found
     budget = Resolve::Period::Budget.new # D49: one for the call, not one a mention (T17)
-    Extract.call(utf8(text) || text, -> { Context.new(now, zone, context, *options).tap { _1.budget = budget } })
+    # JSON can't hold invalid UTF-8, so such a text is read scrubbed
+    text = utf8(text) || text.dup.force_encoding(Encoding::UTF_8).scrub
+    Extract.call(text, -> { Context.new(now, zone, context, *options).tap { _1.budget = budget } })
   end
 
   # The text as UTF-8, or nil when it can't be read as UTF-8: broken bytes, or an encoding such as UTF-16 whose

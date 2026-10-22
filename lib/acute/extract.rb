@@ -47,9 +47,8 @@ module Acute
 
     # whole: the text each Result is for, when it is not the mention's own (parse with strict: false)
     def self.call(text, make_context, whole = nil)
-      text = text.scrub unless text.valid_encoding?
       unknown = []
-      tokens = Lexer.lex(text, unknown)
+      tokens = Lexer.lex(lexable(text), unknown)
       mentions = []
       from = Chars.new(text)
       to = Chars.new(text)
@@ -116,6 +115,24 @@ module Acute
       Extraction.new(text, mentions)
     end
 
+    # T29: a run of what the lexer's word loop carries a word over (letters, an apostrophe, a dot before a
+    # letter, a UTF-8 character but a space or dash), far too long to be a word: a URL, base64, CJK without
+    # spaces. The loop packs a word into one Integer, a bignum multiply a byte by then, so 64 KB of one took
+    # 0.6 s. parse and the rest reject text over MAX_LENGTH first; extract has the run's middle blanked
+    # for the lexer, byte for byte, so every offset stays and its ends still lex as the unknown words they were.
+    NOT_SPACE = "\\x00-\\x7F\\u00A0\\u2000-\\u200A\\u202F\\u205F\\u3000\\u2010-\\u2015\\u2212".freeze
+    LONG = /(?:[A-Za-z']|[^#{NOT_SPACE}\u00BD\u2019])(?:[A-Za-z']|\.(?=[A-Za-z])|[^#{NOT_SPACE}]){63,}/
+    KEEP = 24 # characters at each end, more than the longest word's 14
+
+    def self.lexable(text)
+      return text unless LONG.match?(text)
+      text.gsub(LONG) do |run|
+        head = run[0, run[KEEP - 1] == "." ? KEEP + 1 : KEEP] # a dot before a space would lex as a dot
+        tail = run[-KEEP..].sub(/\A[.½]+/, "") # so would a dot or "½" after one
+        head + (" " * (run.bytesize - head.bytesize - tail.bytesize)) + tail
+      end
+    end
+
     # The longest rule from token i, as [mention, the index after it]: the run up to w, then shorter, while it
     # keeps the rule word at mark and doesn't end in a word that only introduces what follows (D50)
     def self.rule_at(text, tokens, i, w, mark, make_context, spent)
@@ -157,7 +174,7 @@ module Acute
       return true if content.size < slice.size / S || determined?(text, slice[3]) || hyphenated?(text, slice[-1])
       at = space_after(text, slice[-1])
       at > slice[-1] && (c = text.getbyte(at)) && (c | 32).between?(97, 122) &&
-        !CONTINUES.include?(text.byteslice(at, 12)[/\A[a-z]+/i]&.downcase)
+        !CONTINUES.include?(text.byteslice(at, 12).scrub("")[/\A[a-z]+/i]&.downcase)
     end
 
     DETERMINERS = %w[the a an this our my your their his its].freeze
@@ -421,7 +438,7 @@ module Acute
     # D50: an ordinal before "time" or "times" counts occasions: "17th times", "the 5th time"
     def self.counted?(text, slice)
       slice.each_slice(S).count { |k, *| k != L::WORD && k != L::ART } == 1 && slice[-S] == L::ORD &&
-        text.byteslice(slice[-1], 8).match?(/\A\s+times?\b/i)
+        text.byteslice(slice[-1], 8).scrub("").match?(/\A\s+times?\b/i) # the 8 bytes can end inside a character
     end
 
     SPACE = [32, 9, 10, 11, 12, 13].freeze
@@ -444,7 +461,7 @@ module Acute
     # Where the "for" just before the byte starts, with a space or more between
     def self.for_before(text, byte)
       word = space_before(text, byte)
-      return if word == byte || word < 3 || !text.byteslice(word - 3, 3).casecmp?("for")
+      return if word == byte || word < 3 || !text.byteslice(word - 3, 3).b.casecmp?("for")
       return 0 if word == 3
       before = word - 4
       before -= 1 while before > 0 && text.getbyte(before) & 0xC0 == 0x80
