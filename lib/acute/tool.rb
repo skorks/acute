@@ -19,6 +19,8 @@ module Acute
       invalid_date: "the date or time in unread doesn't exist",
       incomplete: "the phrase is incomplete",
       conflict: "the words in unread don't fit with the rest of the phrase",
+      not_rule: "not a repeating time",
+      no_occurrence: "the rule ends before it starts",
       dst_skipped_time: "the time in unread is skipped as the clocks go forward: ask the user for a time either side of it",
       dst_repeated_time: "the time in unread happens twice as the clocks go back: ask the user which they meant",
       business_day_limit: "more than #{Resolve::Period::LIMIT} business days in one call is too many to count",

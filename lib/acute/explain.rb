@@ -24,6 +24,10 @@ module Acute
         ParseError.new("the phrase is incomplete", code: :incomplete, position: first)
       when :conflict
         ParseError.new("#{slice.inspect} doesn't fit with the rest of the phrase", code: :conflict, position: first)
+      when :no_occurrence
+        ParseError.new("the rule ends before it starts", code: :no_occurrence, position: first)
+      when :not_rule
+        ParseError.new("not a repeating time", code: :not_rule, position: first)
       when :dst_skipped_time
         ParseError.new("#{slice.inspect} names a wall time the clocks skip as they go forward", code: failure.code,
                        position: first, hint: "dst: :earlier, :later or :compatible picks an instant for it")
