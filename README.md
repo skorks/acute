@@ -13,7 +13,7 @@ r.time  # => 2026-10-23 15:00:00 -0400
 
 `r.time` is a plain Ruby `Time` at the offset of the zone you asked for, here New York's -04:00. `parse` returns nil when the text isn't a time, and `parse!` raises.
 
-Ruby's own `Time.parse` reads formats, not phrases: it takes "next tuesday at 3pm" as 3pm today. chronic reads phrases, but it is unmaintained, has one global time zone, and silently guesses at words it doesn't know. acute is a rewrite from scratch: every call takes its own `now` and zone, daylight saving is handled properly, it reads a wide range of phrases (checked against more than 18,000 cases), it says which reading it chose and why, and it runs 25–100× faster ([measured](#performance)). Why, with examples, and the name: [docs/chronic.md](docs/chronic.md#why-acute-exists).
+Ruby's own `Time.parse` reads formats, not phrases: it takes "next tuesday at 3pm" as 3pm today. chronic reads phrases, but it is unmaintained, has one global time zone, and silently guesses at words it doesn't know. acute is a rewrite from scratch: every call takes its own `now` and zone, daylight saving is handled properly, it reads a wide range of phrases (checked against more than 18,000 cases), it says which reading it chose and why, and it runs 20–100× faster ([measured](#performance)). Why, with examples, and the name: [docs/chronic.md](docs/chronic.md#why-acute-exists).
 
 ### When to use something else
 
@@ -151,7 +151,7 @@ The tools, their failures and how zone and now are set: [docs/agents.md](docs/ag
 
 ## Performance
 
-Over ten everyday phrases on Ruby 4.0.7, acute takes 5–19 µs a parse to chronic 0.10.2's 330–490 µs, 25–100× faster (median about 50×), and 1.5–8 µs under YJIT, 80–300× faster. `bin/bench-chronic` measures it on your machine: [docs/chronic.md](docs/chronic.md#performance).
+Over ten everyday phrases on Ruby 4.0.7, acute takes 5–19 µs a parse to chronic 0.10.2's 260–490 µs, 20–100× faster (median about 50×), and 1.5–8 µs under YJIT, 80–300× faster. `bin/bench-chronic` measures it on your machine: [docs/chronic.md](docs/chronic.md#performance).
 
 ## Documentation
 

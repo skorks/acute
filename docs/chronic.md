@@ -29,7 +29,7 @@ acute is a rewrite from scratch, with a different design:
 - every call takes its own `now` and zone, and daylight saving is handled properly;
 - it reads a wide range of phrases, checked against more than 18,000 cases gathered from chronic and a dozen other date parsers;
 - when a phrase could mean more than one thing, it says which reading it chose, and why;
-- it runs 25–100× faster than chronic, 80–300× under YJIT ([measured](#performance)).
+- it runs 20–100× faster than chronic, 80–300× under YJIT ([measured](#performance)).
 
 **About the name.** In medicine, a *chronic* condition lingers for years, and an *acute* one is short and sharp. chronic has lingered since 2013. acute is short, sharp and over in a few microseconds.
 
@@ -51,7 +51,7 @@ The answers follow acute's rules, so a few differ from chronic's. chronic's own 
 
 | | chronic 0.10.2 | acute | faster by |
 |---|---|---|---|
-| interpreter | 330–490 µs | 5–19 µs | 25–100×, median about 50× |
+| interpreter | 260–490 µs | 5–19 µs | 20–100×, median about 50× |
 | YJIT | 350–650 µs | 1.5–8 µs | 80–300×, median about 150× |
 
 The machine was busy, so read the ratios rather than the last digit; runs moved them by about 20%. Roughly, chronic manages two or three thousand parses a second per core, and acute around a hundred thousand, or several hundred thousand with YJIT. acute's own speed budget is checked on every commit.
