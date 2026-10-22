@@ -6,7 +6,7 @@ require_relative "../../lib/acute/mcp"
 class ToolSizeTest < Minitest::Test
   CAPS = {
     definitions: 3_400,
-    tools_list: 11_930, # open output schemas list no codes or grains; +15 twice: a rule's wording, then describe's, is under description, not text
+    tools_list: 11_955, # open output schemas list no codes or grains; +15 twice: a rule's wording, then describe's, is under description, not text; +25: more (T34)
     parse_result: 150,
     recurrence_result: 293, # 3 over the last cap: the same rename
     extract_result: 640,

@@ -161,6 +161,8 @@ x.remainder  # => "Lunch with Sam, then a review"
 
 An Extraction has `text`, `mentions` and `remainder`, the text with the mentions taken out. Each mention has `kind` (`:time`, `:duration` or `:rule`), `text`, `offset` (a Range of character positions in the text, counted in codepoints) and `value`, a Result, a Duration or a Rule. Its JSON is [schema/extraction.json](../schema/extraction.json), with `offset` as `[begin, end]`. What counts as a mention, and where one starts and ends, are the [E-rules](rules.md#extraction).
 
+`extract` takes time in proportion to the text: about 1.5 µs a byte for an email, and up to about 13 µs a byte for text made only of times, such as "3pm 3pm 3pm…", so 1 MB of that takes about 13 seconds. It has no cap of its own. Bound text from users before you pass it in, as the `extract` tool does at 4096 chars.
+
 ## Writing and checking dates
 
 `describe` writes a time back as the most natural phrase that reads back to it exactly. It takes a Time, a Date, a Range of either, a Result or a Duration. `style: :calendar` never uses words relative to now:

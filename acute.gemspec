@@ -10,7 +10,15 @@ Gem::Specification.new do |s|
   s.metadata["source_code_uri"] = "https://github.com/skorks/acute"
   s.metadata["changelog_uri"] = "https://github.com/skorks/acute/blob/main/CHANGELOG.md"
   s.metadata["bug_tracker_uri"] = "https://github.com/skorks/acute/issues"
-  s.files = Dir["lib/**/*.rb", "data/*.yml", "schema/**/*.json", "exe/*", "LICENSE"]
+  files = Dir["lib/**/*.rb", "data/*.yml", "schema/**/*.json", "exe/*", "LICENSE"]
+  # An untracked file under lib/ is no part of the release, so a checkout packs only what git tracks
+  tracked = begin
+    out = IO.popen(%w[git ls-files -z], err: File::NULL, &:read)
+    out.split("\0") if Process.last_status.success?
+  rescue SystemCallError
+    nil
+  end
+  s.files = tracked ? files & tracked : files
   s.bindir = "exe"
   s.executables = ["acute"]
   s.required_ruby_version = ">= 3.3"

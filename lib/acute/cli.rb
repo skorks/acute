@@ -112,13 +112,17 @@ module Acute
       false
     end
 
-    # schema/failure.json, as the tools give it, plus the input line, which a tool never echoes
+    # schema/failure.json, as the tools give it, plus the input line, which a tool never echoes. Like the tools, a
+    # position over the whole phrase is left out.
     def failure(e, text)
-      json = { kind: "failure", text: text.dup.force_encoding(Encoding::UTF_8).scrub, code: e.code.to_s, error: e.message,
-               position: [e.position.begin, e.position.end] }
+      text = text.dup.force_encoding(Encoding::UTF_8).scrub
+      json = { kind: "failure", text:, code: e.code.to_s, error: e.message }
+      json[:position] = [e.position.begin, e.position.end] unless whole?(e.position, text)
       json[:hint] = DST_HINTS.fetch(e.code, e.hint) if e.hint
       JSON.generate(json)
     end
+
+    def whole?(span, text) = text[0...span.begin].strip.empty? && text[span.end..].to_s.strip.empty?
 
     # --next asks for a rule, so a phrase that isn't one fails with recurrence!'s reason
     def reading(text) = @next ? @parser.recurrence!(text) : @parser.read(text)

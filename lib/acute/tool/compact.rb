@@ -50,12 +50,13 @@ module Acute
       private_class_method :rule
 
       # defs: the schemas tool's output schema holds, by file name, before they are inlined. The recurrence tool
-      # adds a rule's first occurrences.
+      # adds a rule's first occurrences, and extract a count of the mentions past its cap.
       def self.schema(defs, tool)
         trim(defs["result"], drop: %w[text], optional: %w[begin assumptions alternatives])
         trim(defs.dig("result", "properties", "alternatives", "items"), optional: %w[begin])
         trim(defs["extraction"], drop: %w[text])
         trim(defs.dig("extraction", "properties", "mentions", "items"), drop: %w[kind])
+        defs["extraction"]["properties"]["more"] = { "type" => "integer" } if defs["extraction"]
         trim(defs["verdict"], drop: %w[text], optional: %w[expected unread])
         if (rule = defs["rule"])
           trim(rule, drop: %w[text], optional: %w[ical cron cron_reason])
