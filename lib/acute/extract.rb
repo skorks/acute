@@ -154,7 +154,7 @@ module Acute
         !CONTINUES.include?(text.byteslice(at, 12)[/\A[a-z]+/i]&.downcase)
     end
 
-    DETERMINERS = %w[the a an this our my your their his her its].freeze
+    DETERMINERS = %w[the a an this our my your their his its].freeze
 
     # E6: "read the daily", "our weekly with the team": after a determiner it is a noun phrase
     def self.determined?(text, start)
