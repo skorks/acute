@@ -80,7 +80,7 @@ class MCPTest < Minitest::Test
 
   def test_structured_content_conforms_to_the_output_schema
     schemas = exchange(request("tools/list"))[0].dig("result", "tools").to_h { [_1["name"], _1["outputSchema"]] }
-    calls = { "parse" => { "text" => "tomorrow at 3pm" }, "duration" => { "text" => "2 hours" },
+    calls = { "parse" => { "text" => "tomorrow at 3pm" }, "duration" => { "text" => "2 hours" }, "recurrence" => { "text" => "every monday at 9" },
               "extract" => { "text" => "lunch at noon" }, "verify" => { "text" => "noon", "value" => "2026-10-18T12:00:00-04:00" },
               "describe" => { "value" => "2026-10-18T15:00:00-04:00" }, "now" => {} }
     calls.each do |name, arguments|
@@ -97,6 +97,14 @@ class MCPTest < Minitest::Test
     result = call("parse", { "text" => "tomorrow at 3pm" })
     assert_equal "2026-10-18T15:00:00-04:00", result.dig("structuredContent", "time")
     refute result["isError"]
+  end
+
+  def test_recurrence_through_the_tool_in_the_zone_asked_for
+    result = call("recurrence", { "text" => "every monday at 9", "zone" => "Europe/London" })
+    refute result["isError"]
+    assert_equal ["Europe/London", "2026-10-19T09:00:00+01:00", "0 9 * * 1"], result["structuredContent"].values_at("zone", "dtstart", "cron")
+    assert_equal 3, result.dig("structuredContent", "next").size
+    assert call("recurrence", { "text" => "next friday" })["isError"]
   end
 
   def test_a_tool_failure_is_an_error_result

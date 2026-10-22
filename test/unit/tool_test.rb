@@ -7,8 +7,8 @@ class ToolTest < Minitest::Test
 
   OPTS = { now: "2026-10-17T14:00", zone: NY }.freeze
   TOOL = Acute::Tool.new(**OPTS)
-  MIRRORS = { "parse" => Acute.method(:parse), "duration" => Acute.method(:duration), "extract" => Acute.method(:extract),
-              "verify" => Acute.method(:verify), "describe" => Acute.method(:describe) }.freeze
+  MIRRORS = { "parse" => Acute.method(:parse), "duration" => Acute.method(:duration), "recurrence" => Acute.method(:recurrence),
+              "extract" => Acute.method(:extract), "verify" => Acute.method(:verify), "describe" => Acute.method(:describe) }.freeze
   TRUSTED = Acute.method(:with).parameters.map { _2.to_s }.freeze
   # context is a trusted option the model may also set, on the tools whose answer it changes
   DIRECTED = %w[parse extract verify].freeze
@@ -16,7 +16,7 @@ class ToolTest < Minitest::Test
   HOSTILE = [INJECTION, "friday. #{INJECTION}", "\xff\xfe#{INJECTION}".b.force_encoding("UTF-8"), "#{INJECTION} " * 200,
              10**20, 1.5, nil, true, :ignore, [INJECTION], { INJECTION => INJECTION }].freeze
   VALID = { "parse" => { "text" => "tomorrow", "context" => "past" }, "duration" => { "text" => "2 hours" },
-            "extract" => { "text" => "lunch tomorrow at 1", "context" => "future" },
+            "recurrence" => { "text" => "every friday at 9" }, "extract" => { "text" => "lunch tomorrow at 1", "context" => "future" },
             "verify" => { "text" => "tomorrow", "value" => "2026-10-18", "context" => "future" },
             "describe" => { "value" => "PT1H", "style" => "calendar" }, "now" => {} }.freeze
   PROSE = %w[error message description].freeze
@@ -39,6 +39,38 @@ class ToolTest < Minitest::Test
     assert_equal({ "kind" => "description", "text" => "Fri, Oct 23" }, call("describe", { "value" => "2026-10-23", "style" => "calendar" }))
     assert_equal({ "kind" => "description", "text" => "1h 30m" }, call("describe", { "value" => "PT1H30M" }))
     assert_equal({ "kind" => "description", "text" => "1w 2d 1.5s" }, call("describe", { "value" => "P1W2DT1.5S" }))
+  end
+
+  def test_recurrence_gives_the_compact_rule_and_its_first_three_occurrences
+    rule = Acute.recurrence("every weekday at 9am", **OPTS)
+    expected = Acute::Tool::Compact.(rule.as_json).merge("next" => %w[2026-10-19T09:00:00-04:00 2026-10-20T09:00:00-04:00 2026-10-21T09:00:00-04:00])
+    assert_equal expected, call("recurrence", { "text" => "every weekday at 9am" })
+    assert_equal({ "kind" => "rule", "text" => "every weekday at 9am", "rrule" => "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0",
+                   "dtstart" => "2026-10-19T09:00:00-04:00", "zone" => NY, "cron" => "0 9 * * 1-5" }, expected.except("next"))
+    other = call("recurrence", { "text" => "every other tuesday" })
+    assert_equal ["cron can't express \"every other\"", %w[2026-10-20 2026-11-03 2026-11-17]], other.values_at("cron_reason", "next")
+    refute other.key?("cron")
+    assert_equal "DTSTART;VALUE=DATE:20261019\nRRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR\nEXDATE;VALUE=DATE:20261102",
+                 call("recurrence", { "text" => "every weekday except nov 2" })["ical"]
+  end
+
+  # A DTSTART equal to now is the first occurrence; a rule that ends lists fewer
+  def test_recurrence_lists_from_dtstart
+    assert_equal %w[2026-10-17T14:00:00-04:00 2026-10-17T15:00:00-04:00 2026-10-17T16:00:00-04:00],
+                 call("recurrence", { "text" => "every hour" })["next"]
+    assert_equal %w[2026-10-17 2026-10-18], call("recurrence", { "text" => "every day 2 times" })["next"]
+    kolkata = call("recurrence", { "text" => "every day at 9am" }, Acute::Tool.new(**OPTS, zone: "Asia/Kolkata"))
+    assert_equal ["Asia/Kolkata", "2026-10-18T09:00:00+05:30"], kolkata.values_at("zone", "dtstart")
+  end
+
+  def test_recurrence_failures
+    assert_equal({ "kind" => "failure", "code" => "conflict", "error" => "the words in unread don't fit with the rest of the phrase",
+                   "unread" => ["next"] }, call("recurrence", { "text" => "next friday" }))
+    assert_equal ["invalid_date", "February has 28 days, 29 in a leap year", ["every feb 30"]],
+                 call("recurrence", { "text" => "every feb 30" }).values_at("code", "error", "unread")
+    assert_equal ["unknown_word", ["flurb"]], call("recurrence", { "text" => "flurb weekly" }).values_at("code", "unread")
+    assert_equal "missing_argument", call("recurrence", {})["code"]
+    assert_equal "unknown_argument", call("recurrence", { "text" => "weekly", "context" => "past" })["code"]
   end
 
   def test_a_parser_or_options_fix_what_the_model_cant_set

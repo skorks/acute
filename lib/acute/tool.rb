@@ -7,11 +7,12 @@ module Acute
   # with it comes back as a failure value. T5: no string the model reads as prose quotes its input; text
   # that needs pointing at goes in unread, which the schema marks as data.
   class Tool
-    NAMES = %w[parse duration extract verify describe now].freeze
+    NAMES = %w[parse duration recurrence extract verify describe now].freeze
     SCHEMAS = Ractor.make_shareable(NAMES.to_h do |name|
       [name, JSON.parse(File.read(File.expand_path("../../schema/tools/#{name}.json", __dir__)))]
     end)
     UNREAD = 5
+    OCCURRENCES = 3
     UNREAD_LENGTH = 60
     PARSE_ERRORS = {
       unknown_word: "acute couldn't read the words in unread",
@@ -110,6 +111,7 @@ module Acute
       case tool
       when "parse" then @parser.parse!(text, **context).as_json
       when "duration" then @parser.duration!(text).as_json
+      when "recurrence" then recurrence(text)
       when "extract" then @parser.extract(text, **context).as_json
       when "verify" then verify(text, args["value"], context)
       when "describe" then describe(args["value"], args.fetch("style", "relative").to_sym)
@@ -123,6 +125,14 @@ module Acute
       failed = parse_failure(e, text)
       message = "The text can't be read: #{failed["error"]}. Ask the user to rephrase."
       Verdict.new(text, :unparsed, message, nil).as_json.merge("unread" => failed["unread"])
+    end
+
+    # The rule's first occurrences, DTSTART's included, so the model can check what it set up. each rather than
+    # next: next counts from now and leaves out a DTSTART equal to it. each ends when its steps run out, so a
+    # rule whose occurrences are that far apart lists fewer.
+    def recurrence(text)
+      rule = @parser.recurrence!(text)
+      rule.as_json.merge("next" => rule.each.first(OCCURRENCES).map(&:iso8601))
     end
 
     def describe(value, style)

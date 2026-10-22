@@ -2,7 +2,8 @@ module Acute
   class Tool
     # The model pays for every char of a result on every call, so a tool gives the library's JSON without what
     # repeats: the input's echo, a begin equal to time, a mention's kind and text again in its value, the expected
-    # reading of a verdict that holds, now's offset, which the now string ends with, and empty lists. An assumption's
+    # reading of a verdict that holds, now's offset, which the now string ends with, a rule's ical when it holds
+    # only its dtstart and rrule, whichever of cron and cron_reason is null, and empty lists. An assumption's
     # message is its short form, the gist in about half the chars. The schema rules make the same cuts in the output
     # schemas, so the two can't drift.
     module Compact
@@ -20,6 +21,9 @@ module Acute
           if out["ok"] then out.delete("expected")
           elsif out["expected"] then result(out["expected"])
           end
+        when "rule"
+          out.delete("ical") unless out["ical"].include?("\nEXDATE")
+          out.delete(out["cron"] ? "cron_reason" : "cron")
         when "now" then out.delete("offset")
         end
         out.delete("unread") if out["unread"] == []
@@ -36,13 +40,22 @@ module Acute
       end
       private_class_method :result
 
-      # defs: the schemas an output schema holds, by file name, before they are inlined
-      def self.schema(defs)
+      # defs: the schemas tool's output schema holds, by file name, before they are inlined. The recurrence tool
+      # adds a rule's first occurrences.
+      def self.schema(defs, tool)
         trim(defs["result"], drop: %w[text], optional: %w[begin assumptions alternatives])
         trim(defs.dig("result", "properties", "alternatives", "items"), optional: %w[begin])
         trim(defs["extraction"], drop: %w[text])
         trim(defs.dig("extraction", "properties", "mentions", "items"), drop: %w[kind])
         trim(defs["verdict"], drop: %w[text], optional: %w[expected unread])
+        if (rule = defs["rule"])
+          trim(rule, optional: %w[ical cron cron_reason])
+          rule["properties"] = rule["properties"].merge("cron" => { "type" => "string" }, "cron_reason" => { "type" => "string" })
+        end
+        if tool == "recurrence"
+          rule["properties"]["next"] = { "type" => "array", "items" => { "type" => "string" }, "maxItems" => OCCURRENCES }
+          rule["required"] += ["next"]
+        end
         trim(defs["now"], drop: %w[offset])
         trim(defs["failure"], optional: %w[unread])
         defs

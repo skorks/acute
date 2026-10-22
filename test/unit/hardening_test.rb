@@ -65,7 +65,8 @@ class HardeningTest < Minitest::Test
 
   def test_the_cli_escapes_terminal_escapes_in_its_errors
     hostile = "\e[31mtomorrow\e]0;pwned\a"
-    [cli([hostile]), cli([], "#{hostile}\n"), cli(["--json"], "#{hostile}\n")].each do |out, err|
+    [cli([hostile]), cli([], "#{hostile}\n"), cli(["--json"], "#{hostile}\n"), cli([hostile, "--next", "2"]),
+     cli(["--next", "2"], "every \e[31mday\n")].each do |out, err|
       refute_match(/[\e\a]/, out)
       refute_match(/[\e\a]/, err)
       assert_match(/pwned|e\[31m|\\e/, out + err)

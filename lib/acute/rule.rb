@@ -105,7 +105,9 @@ module Acute
     end
 
     def to_h
-      { kind: "rule", text: to_s, rrule: rrule, dtstart: @timed ? dtstart.iso8601 : dtstart.to_s, zone: @zone, ical: to_ical }
+      line, reason = cron_or_reason
+      { kind: "rule", text: to_s, rrule: rrule, dtstart: @timed ? dtstart.iso8601 : dtstart.to_s, zone: @zone, ical: to_ical,
+        cron: line, cron_reason: reason }
     end
 
     def to_json(*args) = to_h.to_json(*args)

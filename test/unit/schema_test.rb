@@ -50,6 +50,7 @@ class SchemaTest < Minitest::Test
     {
       "result" => [["parse", { "text" => "next friday at 3" }], ["parse", { "text" => "friday", "context" => "past" }]],
       "duration" => [["duration", { "text" => "an hour and a half" }]],
+      "rule" => [["recurrence", { "text" => "every weekday at 9am" }], ["recurrence", { "text" => "every other tuesday except nov 3" }]],
       "extraction" => [["extract", { "text" => "lunch tomorrow at 1 for an hour" }]],
       "verdict" => [["verify", { "text" => "tomorrow", "value" => "2026-10-18" }], ["verify", { "text" => "a banana", "value" => "2026-10-18" }]],
       "description" => [["describe", { "value" => "2026-10-23T15:00:00-04:00" }], ["describe", { "value" => "PT90M" }]],

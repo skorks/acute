@@ -52,7 +52,7 @@ module GemCheck
       problems << "the installed gem's zones failed: #{out}" unless ok && out == want
       # the tool reads its input schemas from the gem's schema/tools/
       out, ok = run(env, RbConfig.ruby, "-e", 'require "acute/tool"; print Acute::Tool.new(zone: "UTC").definitions.size')
-      problems << "require \"acute/tool\" from the installed gem failed: #{out}" unless ok && out == "6"
+      problems << "require \"acute/tool\" from the installed gem failed: #{out}" unless ok && out == "7"
       out, ok = run(env, RbConfig.ruby, File.join(home, "bin/acute"), "--now", "2026-10-17T14:00", "--zone", "UTC", "tomorrow at 5pm")
       problems << "the installed acute executable failed: #{out}" unless ok && out.include?("5pm")
       hello = %({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25"}}\n)

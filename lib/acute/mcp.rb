@@ -16,15 +16,15 @@ module Acute
     INVALID_PARAMS = -32_602
     INTERNAL_ERROR = -32_603
     UNSUPPORTED_VERSION = -32_022
-    ZONED = %w[parse extract verify describe now].freeze
+    ZONED = %w[parse recurrence extract verify describe now].freeze
     ZONE_LENGTH = 64
     ZONE = {
       "type" => "string", "maxLength" => ZONE_LENGTH,
       "description" => "Only if the user names a zone not their own (\"3pm London time\"): IANA or UTC offset"
     }.freeze
     ZONE_ERROR = "zone must be an IANA time zone or a UTC offset such as +05:30".freeze
-    OUTPUTS = { "parse" => "result", "duration" => "duration", "extract" => "extraction", "verify" => "verdict",
-                "describe" => "description", "now" => "now" }.freeze
+    OUTPUTS = { "parse" => "result", "duration" => "duration", "recurrence" => "rule", "extract" => "extraction",
+                "verify" => "verdict", "describe" => "description", "now" => "now" }.freeze
     ANNOTATIONS = %w[title description examples $comment].freeze
     NAMED = %w[properties $defs].freeze
     SCHEMAS = File.expand_path("../../schema", __dir__)
@@ -52,7 +52,7 @@ module Acute
       end
       own = OUTPUTS.fetch(name)
       [own, "failure"].each(&hoist)
-      defs = bare(Tool::Compact.schema(defs), names: true)
+      defs = bare(Tool::Compact.schema(defs, name), names: true)
       root = [own, "failure"].map { { "$ref" => "#/$defs/#{_1}" } }
       uses = JSON.generate([root, defs]).scan(%r{"#/\$defs/(\w+)"}).flatten.tally
       schema = { "type" => "object", "oneOf" => inline(root, defs, uses) }

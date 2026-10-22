@@ -13,6 +13,7 @@ module Acute
       @out = stdout
       @err = stderr
       @json = false
+      @next = nil
       @options = {}
     end
 
@@ -37,6 +38,10 @@ module Acute
         o.banner = "Usage: acute [options] PHRASE\n       acute [options] < phrases.txt   (one per line)\n       " \
                    "acute mcp [options]             (an MCP server: acute mcp --help)"
         o.on("--json", "Print JSON (JSON Lines for stdin)") { @json = true }
+        o.on("--next N", Integer, "A rule's first N occurrences, 1–#{Rule::MAX_OCCURRENCES}") do |n|
+          raise OptionParser::InvalidArgument, n.to_s unless (1..Rule::MAX_OCCURRENCES).cover?(n)
+          @next = n
+        end
         o.on("--now TIME", "Now, in ISO 8601 (default: the clock)") { @options[:now] = _1 }
         o.on("--zone ZONE", "IANA zone or offset (default: the system's)") { @options[:zone] = _1 }
         o.on("--locale LOCALE", "en-US, en-GB, en-AU… (default: from the zone)") { @options[:locale] = _1 }
@@ -86,7 +91,7 @@ module Acute
 
     # A single phrase that fails exits 1 with parse!'s reason
     def phrase(text)
-      value = @parser.read(text)
+      value = reading(text)
       return show(value) || 0 if value
       @parser.parse!(text)
     rescue ParseError => e
@@ -95,16 +100,34 @@ module Acute
     end
 
     def line(text)
-      value = @parser.read(text)
-      return show(value) || true if value
+      value = reading(text)
+      return show(value, batch: true) || true if value
       @parser.parse!(text)
     rescue ParseError => e
       @out.puts @json ? { kind: "error", text: text, code: e.code.to_s, message: e.message }.to_json : "error: #{e.message}"
       false
     end
 
-    def show(value)
-      @out.puts @json ? value.to_json : echo(value)
+    # --next asks for a rule, so a phrase that isn't one fails with recurrence!'s reason
+    def reading(text) = @next ? @parser.recurrence!(text) : @parser.read(text)
+
+    # A rule is several lines, joined into one for stdin's one line per phrase
+    def show(value, batch: false)
+      return @out.puts(@json ? value.to_json : echo(value)) unless Rule === value
+      at = @next && occurrences(value)
+      return @out.puts(at ? value.to_h.merge(next: at.map(&:iso8601)).to_json : value.to_json) if @json
+      lines = [value.to_s, *value.to_ical.lines(chomp: true)]
+      lines << "cron: #{value.cron} (CRON_TZ=#{value.zone})" if value.cron
+      lines.concat(at.map { occurrence(_1, value.zone) }) if at
+      @out.puts batch ? lines.join("   ") : lines
+    end
+
+    # The rule's first n occurrences, DTSTART's included: the Date before it starts the search
+    def occurrences(rule) = rule.next!(@next, after: rule.dtstart.to_date - 1)
+
+    def occurrence(at, zone)
+      text = @parser.describe(at, zone: zone, style: :calendar)
+      Time === at ? "#{text} #{Zone.for(zone).abbreviation_at(at.to_i)}" : text
     end
 
     # "Fri, Oct 23, 3pm EDT   (also: Fri, Oct 16, 3pm)"
