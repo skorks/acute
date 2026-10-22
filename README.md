@@ -48,7 +48,7 @@ r.end      # => 2026-10-19 00:00:00 -0400
 Acute.parse("tomorrow 3pm PST", now:, zone:).time  # => 2026-10-18 19:00:00 -0400
 ```
 
-A phrase means the whole period it names: `time` is its start, and `end` is the first moment after it. A zone written in the text wins, and the answer comes back in yours. Without `zone:` acute falls back to the zone of `now:`, Rails' `Time.zone`, then the system's; on a server, pass the zone you mean. Daylight saving and the options: [docs/usage.md](docs/usage.md#time-zones).
+A phrase means the whole period it names: `time` is its start, and `end` is the first moment after it. A zone written in the text wins, and the answer comes back in yours. Without `zone:` acute falls back to the zone of `now:` (a TimeWithZone's, or a Time's fixed offset), Rails' `Time.zone`, then the system's; on a server, pass the zone you mean. Daylight saving and the options: [docs/usage.md](docs/usage.md#time-zones).
 
 Times are plain `Time` values with a fixed offset, even when `now:` is a `TimeWithZone`; under Rails, `r.time.in_time_zone(r.zone)` before adding days ([why](docs/usage.md#time-zones)). Answers people trip on, such as "next friday", midnight, two-digit years and daylight saving, are on [the gotchas page](docs/gotchas.md).
 

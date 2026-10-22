@@ -848,7 +848,7 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 
 - **D45.** `Acute.with(**options)` checks its options once, so a bad zone or option raises when the parser is made. Unknown options raise ArgumentError everywhere, and a bad value for a known option raises `Acute::OptionError` (an ArgumentError that names the `option` and `value`).
 - **D45.** Options given to a call override the parser's. `Parser#with(**more)` makes a new parser.
-- **D45.** A `now:` that carries a zone (a TimeWithZone, or a Time made with a TZInfo zone) gives the parser that zone. With no `now:` and no `zone:`, the zone is inferred on each call (`zone_inferred`).
+- **D45.** A `now:` that carries a zone (a TimeWithZone, or a Time made with a TZInfo zone) gives the parser that zone. A Time with only an offset, such as `Time.new(2026, 10, 17, 14, 0, 0, "-04:00")`, carries that offset, as `zone: "-04:00"` would; a local or UTC Time carries none. With no `now:` and no `zone:`, the zone is inferred on each call (`zone_inferred`).
 - **D45.** A `TZInfo::Timezone`, given as `zone:` or carried by `now:` or Rails' `Time.zone`, is read by its name from acute's own data, so every way into a zone gives the same answer. Only a name acute doesn't ship is built from the zone's own transitions. acute never loads tzinfo.
 - **D45.** The parser is frozen and Ractor-shareable. **D47.** A `holidays:` or `business_days:` object is kept as given, so the parser is shareable only when that object is.
 - **D47.** `duration`, `extract` and `describe` take every option, and ignore those that can't change their answer.

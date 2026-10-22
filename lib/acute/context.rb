@@ -40,10 +40,15 @@ module Acute
     # D47: the fraction of a second a clock in the text was written with
     attr_accessor :frac
 
-    # The zone a TimeWithZone, or a Time made with a TZInfo zone, brings with it
+    # D45: the zone a TimeWithZone, or a Time made with a TZInfo zone, brings with it. A Time with only an offset
+    # has no zone name, so its offset is the zone; a local or UTC Time names one, and brings none.
     def self.carried_zone(now)
       if now.respond_to?(:time_zone) then now.time_zone.tzinfo
-      elsif now.is_a?(Time) && Zone.tzinfo?(now.zone) then now.zone
+      elsif now.is_a?(Time)
+        zone = now.zone
+        if zone.nil? then now.strftime("%:z")
+        elsif Zone.tzinfo?(zone) then zone
+        end
       end
     end
 
