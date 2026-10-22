@@ -59,7 +59,7 @@ class CLITest < Minitest::Test
   end
 
   def test_d45_batch_gives_one_line_per_line
-    out, err, status = acute(*AT, stdin: "tomorrow 9am\nbanana\n3/4\n\n")
+    out, err, status = acute(*AT, stdin: "tomorrow 9am\nbanana\n3/4\nnext\n")
     assert_equal ["Sun, Oct 18, 9am EDT", "error: unknown word \"banana\"", "Thu, Mar 4   (also: Sat, Apr 3)",
                   "error: the phrase is incomplete"], out.lines(chomp: true)
     assert_equal "", err
@@ -71,8 +71,22 @@ class CLITest < Minitest::Test
     out, = acute("--json", *AT, stdin: "tomorrow 9am\nbanana\n")
     first, second = out.lines.map { JSON.parse(_1) }
     assert_equal "2026-10-18T09:00:00-04:00", first["time"]
-    assert_equal({ "kind" => "error", "text" => "banana", "code" => "unknown_word", "message" => "unknown word \"banana\"" },
-                 second)
+    assert_equal({ "kind" => "failure", "text" => "banana", "code" => "unknown_word", "error" => "unknown word \"banana\"",
+                   "position" => [0, 6] }, second)
+  end
+
+  def test_blank_lines_are_skipped
+    assert_equal ["Sun, Oct 18, 9am EDT\nMon, Oct 19\n", "", 0], acute(*AT, stdin: "\ntomorrow 9am\n  \t\r\n\nmonday\n\n")
+    assert_equal ["", "", 0], acute("--json", *AT, stdin: "\n \n")
+  end
+
+  # The tools' shape (schema/failure.json), with the input, a hint and where it points
+  def test_json_failures
+    out, err, status = acute("--json", *AT, "next", "fridya")
+    assert_equal [{ "kind" => "failure", "text" => "next fridya", "code" => "unknown_word", "error" => "unknown word \"fridya\"",
+                    "position" => [5, 11], "hint" => "did you mean \"friday\"?" }, "", 1], [JSON.parse(out), err, status]
+    out, = acute("--json", *AT, stdin: "caf\xC3\xA9 \xFF\n")
+    assert_equal ["failure", "invalid_encoding", "caf\u00e9 \uFFFD"], JSON.parse(out).values_at("kind", "code", "text")
   end
 
   def test_a_rule_prints_its_words_ical_and_cron
@@ -109,7 +123,7 @@ class CLITest < Minitest::Test
     assert_equal 1, status
     first, second = acute("--json", "--next", "1", *AT, stdin: "every day\ntomorrow\n")[0].lines.map { JSON.parse(_1) }
     assert_equal ["rule", ["2026-10-17"]], first.values_at("kind", "next")
-    assert_equal "error", second["kind"]
+    assert_equal "failure", second["kind"]
   end
 
   def test_help_and_version

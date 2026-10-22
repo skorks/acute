@@ -64,10 +64,11 @@ class ToolTest < Minitest::Test
   end
 
   def test_recurrence_failures
-    assert_equal({ "kind" => "failure", "code" => "not_rule", "error" => "not a repeating time" },
+    assert_equal({ "kind" => "failure", "code" => "not_rule", "error" => "not a repeating time", "position" => [0, 11] },
                  call("recurrence", { "text" => "next friday" }))
     assert_equal "no_occurrence", call("recurrence", { "text" => "every monday until last week" })["code"]
-    assert_equal({ "kind" => "failure", "code" => "vague_rule", "error" => "the phrase says how often, not when: ask the user which days or times" },
+    assert_equal({ "kind" => "failure", "code" => "vague_rule", "error" => "the phrase says how often, not when: ask the user which days or times",
+                   "position" => [0, 13] },
                  call("recurrence", { "text" => "every morning" }))
     assert_equal ["invalid_date", "February has 28 days, 29 in a leap year", ["every feb 30"]],
                  call("recurrence", { "text" => "every feb 30" }).values_at("code", "error", "unread")
@@ -138,7 +139,7 @@ class ToolTest < Minitest::Test
 
   def test_failures_point_at_the_input_only_through_unread
     assert_equal({ "kind" => "failure", "code" => "unknown_word", "error" => "acute couldn't read the words in unread",
-                   "unread" => ["flurb", "x" * 60, "zorp", "blat", "quux"] },
+                   "unread" => ["flurb", "x" * 60, "zorp", "blat", "quux"], "position" => [0, 5] },
                  call("parse", { "text" => "flurb #{"x" * 100} zorp blat quux snarf friday" }))
     assert_equal ["invalid_date", "June has 30 days", ["june 31"]], call("parse", { "text" => "june 31" }).values_at("code", "error", "unread")
     rejecting = Acute::Tool.new(**OPTS, dst: :reject)

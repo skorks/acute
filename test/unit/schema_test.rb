@@ -1,5 +1,6 @@
 require_relative "../test_helper"
 require "json"
+require "stringio"
 require_relative "../schema_validator"
 
 # The published schemas describe what to_json gives. The validator covers only the keywords they use.
@@ -69,13 +70,41 @@ class SchemaTest < Minitest::Test
 
   def test_the_validator_catches_a_wrong_shape
     root = schema("result")
-    bad = JSON.parse(parse("at 4").to_json).merge("grain" => "fortnight", "extra" => 1)
+    bad = JSON.parse(parse("at 4").to_json).merge("grain" => 7)
     bad.delete("zone")
-    assert_equal 3, check(bad, root, root).size
+    assert_equal 2, check(bad, root, root).size
     root = schema("verdict")
     bad = JSON.parse(Acute.verify("tomorrow", "2026-10-18", now: "2026-10-17T14:00", zone: NY).to_json)
     bad["ok"] = "yes"
-    bad["expected"]["grain"] = "fortnight"
+    bad["expected"]["time"] = nil
     assert_equal 2, check(bad, root, root).size
+  end
+
+  # The output schemas are open: a later version may add fields, codes and grains, and a reader built on 1.0's must
+  # still accept them
+  def test_new_fields_and_values_validate
+    later = { "result" => JSON.parse(parse("at 4").to_json).merge("grain" => "fortnight", "extra" => 1),
+              "failure" => { "kind" => "failure", "code" => "unknown_future", "error" => "x", "extra" => [] },
+              "verdict" => JSON.parse(Acute.verify("tomorrow", "2026-10-18", now: "2026-10-17T14:00", zone: NY).to_json)
+                               .merge("status" => "close", "extra" => true) }
+    later.each { |name, json| assert_empty check(json, schema(name), schema(name)), name }
+    tool = SchemaValidator.output("parse")
+    %w[result failure].each { assert_empty check(Acute::Tool::Compact.(later[_1]), tool, tool), _1 }
+  end
+
+  def test_a_cli_failure_matches_the_schema
+    require_relative "../../lib/acute/cli"
+    out = StringIO.new
+    Acute::CLI.run(%w[--json --zone UTC], stdin: StringIO.new("next fridya\njune 31\n"), stdout: out, stderr: StringIO.new)
+    root = schema("failure")
+    out.string.lines.each { assert_empty check(JSON.parse(_1), root, root), _1 }
+  end
+
+  # Each $id resolves to the schema as released: the tag is v + the version, so a version bump moves them all
+  def test_every_id_names_this_version
+    Dir[File.join(SchemaValidator::DIR, "**/*.json")].each do |path|
+      name = path.delete_prefix("#{SchemaValidator::DIR}/")
+      assert_equal "https://raw.githubusercontent.com/skorks/acute/v#{Acute::VERSION}/schema/#{name}", JSON.parse(File.read(path))["$id"]
+    end
   end
 end

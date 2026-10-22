@@ -111,7 +111,7 @@ class MCPTest < Minitest::Test
     result = call("parse", { "text" => "tomorow at 3pm" })
     assert result["isError"]
     assert_equal({ "kind" => "failure", "code" => "unknown_word", "error" => "acute couldn't read the words in unread",
-                   "unread" => ["tomorow"] }, result["structuredContent"])
+                   "unread" => ["tomorow"], "position" => [0, 7], "hint" => "did you mean \"tomorrow\"?" }, result["structuredContent"])
   end
 
   def test_zone_is_an_argument_under_mcp

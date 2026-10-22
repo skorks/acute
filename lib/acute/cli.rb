@@ -25,7 +25,7 @@ module Acute
       return phrase(args.join(" ")) if args.any?
       return usage if @stdin.tty?
       @out.sync = true
-      @stdin.each_line.map { line(_1.chomp) }.all? ? 0 : 1
+      @stdin.each_line.map { _1.b.strip.empty? || line(_1.chomp) }.all? ? 0 : 1
     rescue OptionParser::ParseError, ArgumentError => e
       @err.puts "acute: #{e.message}"
       2
@@ -95,7 +95,7 @@ module Acute
       return show(value) || 0 if value
       @parser.parse!(text)
     rescue ParseError => e
-      @err.puts "acute: #{e.message}"
+      @json ? @out.puts(failure(e, text)) : @err.puts("acute: #{e.message}")
       1
     end
 
@@ -104,8 +104,16 @@ module Acute
       return show(value, batch: true) || true if value
       @parser.parse!(text)
     rescue ParseError => e
-      @out.puts @json ? { kind: "error", text: text, code: e.code.to_s, message: e.message }.to_json : "error: #{e.message}"
+      @out.puts @json ? failure(e, text) : "error: #{e.message}"
       false
+    end
+
+    # schema/failure.json, as the tools give it, plus the input line, which a tool never echoes
+    def failure(e, text)
+      json = { kind: "failure", text: text.dup.force_encoding(Encoding::UTF_8).scrub, code: e.code.to_s, error: e.message,
+               position: [e.position.begin, e.position.end] }
+      json[:hint] = e.hint if e.hint
+      JSON.generate(json)
     end
 
     # --next asks for a rule, so a phrase that isn't one fails with recurrence!'s reason

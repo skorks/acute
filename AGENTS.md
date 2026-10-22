@@ -48,7 +48,7 @@ Options: `--only STAGE`, `--skip STAGE,STAGE`, `--grep TEXT` / `--file NAME` (co
 
 ## Releasing
 
-1. In a PR, bump `lib/acute/version.rb` and add the version to `CHANGELOG.md`. Merge it.
+1. In a PR, bump `lib/acute/version.rb`, add the version to `CHANGELOG.md`, and move every schema's `$id` to the new tag (`schema_test.rb` checks they name `v` + `Acute::VERSION`): `sed -i 's|/acute/v[^/]*/schema/|/acute/vX.Y.Z/schema/|' schema/*.json schema/tools/*.json`. Merge it.
 2. On an up-to-date main: `git tag -s vX.Y.Z -m vX.Y.Z`, then `git push origin vX.Y.Z`.
 3. Approve the `release` run in GitHub. `.github/workflows/release.yml` checks the tag is `v` + `Acute::VERSION` on main, runs `bin/check`, builds, attests and pushes the gem by trusted publishing: no API key exists.
 4. Don't rename `release.yml` or the `release` environment: the RubyGems trusted publisher matches both.

@@ -162,7 +162,11 @@ module Acute
 
     def parse_failure(e, text)
       unread = e.code == :unknown_word ? e.unknown : POINTED.include?(e.code) ? [text[e.position]] : []
-      failure(e.code, Explain.reason(e, text) || PARSE_ERRORS.fetch(e.code), unread)
+      found = failure(e.code, Explain.reason(e, text) || PARSE_ERRORS.fetch(e.code), unread)
+      found["position"] = [e.position.begin, e.position.end]
+      # only unknown_word's hint is for the model; the others name library options the app fixes
+      found["hint"] = e.hint if e.hint && e.code == :unknown_word
+      found
     end
 
     def failure(code, error, unread = [])

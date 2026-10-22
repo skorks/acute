@@ -64,7 +64,7 @@ module Acute
           rule["required"] += ["next"]
         end
         trim(defs["now"], drop: %w[offset])
-        trim(defs["failure"], optional: %w[unread])
+        trim(defs["failure"], drop: %w[text]) # T5: a tool never echoes its input
         defs
       end
 
