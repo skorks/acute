@@ -59,6 +59,12 @@ class ParserTest < Minitest::Test
     assert_equal "2026-10-18", p.parse("tomorrow").date.iso8601
   end
 
+  def test_d45_an_offset_carried_by_now_becomes_the_parsers_zone
+    p = Acute.with(now: Time.new(2026, 10, 17, 23, 0, 0, "+05:30"))
+    assert_equal "+05:30", p.options[:zone]
+    assert_equal "2026-10-18", p.parse("tomorrow").date.iso8601
+  end
+
   def test_frozen_and_shareable
     locale = +"en-GB"
     p = Acute.with(now: Time.new(2026, 10, 17, 14, 0, 0, "+01:00"), zone: "Europe/London", locale: locale)

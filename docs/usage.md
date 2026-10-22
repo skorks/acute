@@ -45,7 +45,7 @@ Acute.parse("last 14 days", now:, zone:).range
 # => 2026-10-03 14:00:00 -0400...2026-10-17 14:00:00 -0400
 ```
 
-Without `now:` acute uses the clock. Without `zone:` it uses the zone of `now:`, then Rails' `Time.zone`, then the system's. On a server, pass the zone you mean.
+Without `now:` acute uses the clock. Without `zone:` it uses the zone of `now:`, then Rails' `Time.zone`, then the system's. A TimeWithZone, or a Time made with a TZInfo zone, carries its zone; a Time with only an offset, such as `Time.new(2026, 10, 17, 14, 0, 0, "-04:00")`, carries that offset, as `zone: "-04:00"` would. A local or UTC Time, a DateTime and a String carry none. On a server, pass the zone you mean.
 
 ### A Result
 

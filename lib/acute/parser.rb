@@ -16,7 +16,8 @@ module Acute
                    fiscal_year_start: nil, strict: true, dst: nil, holidays: nil, business_days: nil, year_bias: nil)
       ctx = Context.new(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays,
                         business_days, year_bias)
-      # A now that carries a zone (a TimeWithZone) gives the parser that zone, as each call would infer it
+      # A now that carries a zone (a TimeWithZone, or a Time with only an offset) gives the parser that zone,
+      # as each call would infer it
       zone ||= ctx.zone.name if Context.carried_zone(now)
       # Copies, so making the parser shareable freezes nothing of the caller's
       opts = { now: now && Time.at(ctx.now).utc, zone: zone && -ctx.zone.name, context: context,

@@ -31,6 +31,25 @@ class ContextTest < Minitest::Test
     assert_equal [:zone_inferred], codes(r)
   end
 
+  def test_d45_an_offset_carried_by_now_is_the_zone
+    r = Acute.parse!("tomorrow at 9am", now: Time.new(2026, 10, 17, 14, 0, 0, "-04:00"))
+    assert_equal ["-04:00", "2026-10-18 09:00:00 -04:00", [:zone_inferred]], [r.zone, wall(r.begin), codes(r)]
+    r = Acute.parse!("today", now: Time.at(Time.utc(2026, 10, 17, 18).to_i, in: "+10:00"))
+    assert_equal ["+10:00", "2026-10-18 00:00:00 +10:00"], [r.zone, wall(r.begin)]
+  end
+
+  def test_d45_a_given_zone_wins_over_an_offset_carried_by_now
+    r = Acute.parse!("today", now: Time.new(2026, 10, 17, 22, 0, 0, "-04:00"), zone: "Asia/Tokyo")
+    assert_equal ["Asia/Tokyo", "2026-10-18 00:00:00 +09:00", []], [r.zone, wall(r.begin), codes(r)]
+  end
+
+  def test_d45_a_local_or_utc_now_carries_no_zone
+    [Time.local(2026, 10, 17, 14), Time.utc(2026, 10, 17, 18), Time.new(2026, 10, 17, 18, 0, 0, "Z"),
+     Time.new(2026, 10, 17, 18, 0, 0, "-04:00").utc].each do |now|
+      assert_equal Acute::Context::SYSTEM_ZONE, Acute.parse!("today", now: now).zone, now.inspect
+    end
+  end
+
   def test_system_zone_when_nothing_else_gives_one
     r = Acute.parse!("tomorrow at 9am", now: "2026-10-17T14:00")
     assert_equal Acute::Context::SYSTEM_ZONE, r.zone
