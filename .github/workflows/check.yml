@@ -13,12 +13,18 @@ env:
 
 jobs:
   check:
-    name: bin/check (Ruby ${{ matrix.ruby }})
-    runs-on: ubuntu-latest
+    name: bin/check (${{ matrix.os }}, Ruby ${{ matrix.ruby }}${{ matrix.tz && format(', TZ={0} LC_ALL={1}', matrix.tz, matrix.locale) || '' }})
+    runs-on: ${{ matrix.os }}
+    # Ruby head is an early warning, not a gate
+    continue-on-error: ${{ matrix.ruby == 'head' }}
     strategy:
       fail-fast: false
       matrix:
-        ruby: ["3.3", "3.4", "4.0"]
+        os: [ubuntu-latest]
+        ruby: ["3.3", "3.4", "4.0", head]
+        include:
+          - { os: ubuntu-latest, ruby: "4.0", tz: Pacific/Chatham, locale: tr_TR.UTF-8 }
+          - { os: macos-latest, ruby: "4.0" }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ruby/setup-ruby@824c0e29fdfc7d689c191c27acc969d2d04b7dd8 # v1.331.0
@@ -26,10 +32,30 @@ jobs:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
       - name: System zoneinfo, the corpus's oracle
-        run: |
-          test -f /usr/share/zoneinfo/America/New_York
-          head -1 /usr/share/zoneinfo/tzdata.zi
-      - run: bundle exec bin/check --skip lint,coverage,gem
+        run: test -f /usr/share/zoneinfo/America/New_York
+      - if: ${{ !matrix.tz }}
+        run: bundle exec bin/check --skip lint,coverage,gem
+      - if: ${{ matrix.tz }}
+        run: sudo locale-gen "$LOCALE"
+        env:
+          LOCALE: ${{ matrix.locale }}
+      - if: ${{ matrix.tz }}
+        run: bundle exec bin/check --skip lint,coverage,gem
+        env:
+          TZ: ${{ matrix.tz }}
+          LC_ALL: ${{ matrix.locale }}
+
+  # Windows has no system zoneinfo for the corpus's oracle, so the corpus stage is left out
+  windows:
+    name: bin/check (windows-latest, Ruby 4.0, no corpus)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ruby/setup-ruby@824c0e29fdfc7d689c191c27acc969d2d04b7dd8 # v1.331.0
+        with:
+          ruby-version: "4.0"
+          bundler-cache: true
+      - run: bundle exec ruby bin/check --skip lint,corpus,coverage,gem
 
   once:
     name: lint, coverage and the gem

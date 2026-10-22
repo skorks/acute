@@ -1,0 +1,47 @@
+name: fuzz
+
+# A million inputs a night from a fresh seed, over four shards. Each failing input lands in an artifact,
+# to become a case in test/cases. Rerun a shard with: ruby test/fuzz.rb --seed SEED --count 125000
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+    inputs:
+      seed:
+        description: Base seed (blank for a fresh one)
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    name: fuzz (shard ${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ruby/setup-ruby@824c0e29fdfc7d689c191c27acc969d2d04b7dd8 # v1.331.0
+        with:
+          ruby-version: "4.0"
+          bundler-cache: true
+      - name: 250,000 inputs
+        env:
+          BASE_SEED: ${{ inputs.seed || github.run_id }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          [[ "$BASE_SEED" =~ ^[0-9]{1,12}$ ]] || { echo "the seed must be up to 12 digits"; exit 1; }
+          seed=$(( (BASE_SEED * 4 + SHARD) % 1000000000 ))
+          echo "shard $SHARD: seed $seed" | tee -a "$GITHUB_STEP_SUMMARY"
+          bundle exec ruby test/fuzz.rb --seed "$seed" --count 125000 --out fuzz-failures.jsonl
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fuzz-failures-shard-${{ matrix.shard }}
+          path: fuzz-failures.jsonl
+          if-no-files-found: ignore

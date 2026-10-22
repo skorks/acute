@@ -1,6 +1,7 @@
 # Random bytes and mutated corpus phrases. parse may only give a Result or nil, parse! a Result or a
 # ParseError, and each must finish within LIMIT of CPU time (retried once after a full GC, so a GC pause doesn't count).
-#   ruby test/fuzz.rb [--seed N] [--count N]
+#   ruby test/fuzz.rb [--seed N] [--count N] [--out FILE]
+# --out writes each failing input as a JSON line, {text, problems, seed}, to become a case.
 require_relative "corpus"
 
 module Fuzz
@@ -70,7 +71,11 @@ module Fuzz
     rng = Random.new(seed)
     phrases = Corpus.load.map { _1["text"] }
     inputs = Array.new(count) { random_text(rng) } + Array.new(count) { mutate(phrases.sample(random: rng), rng) }
-    failures = inputs.filter_map { |text| (p = check(text)).empty? ? nil : "FUZZ #{text.inspect}: #{p.join("; ")}" }
+    failing = inputs.filter_map { |text| (p = check(text)).empty? ? nil : [text, p] }
+    failures = failing.map { |text, p| "FUZZ #{text.inspect}: #{p.join("; ")}" }
+    if (i = argv.index("--out"))
+      File.write(argv[i + 1], failing.map { |text, p| "#{JSON.generate(text: text.b.inspect[1..-2], problems: p, seed: seed)}\n" }.join)
+    end
     puts failures.first(20)
     puts "fuzz: #{inputs.size} inputs, seed #{seed}, #{failures.size} failures"
     failures.empty?
