@@ -9,7 +9,7 @@ require "tmpdir"
 
 module GemCheck
   ROOT = File.expand_path("..", __dir__)
-  SHIPPED = ["lib/**/*.rb", "data/*.yml", "schema/**/*.json", "exe/*", "LICENSE"].freeze
+  SHIPPED = ["lib/**/*.rb", "data/*.yml", "schema/**/*.json", "exe/*", "LICENSE", "README.md", "CHANGELOG.md", "docs/*.md"].freeze
   GEM = File.join(RbConfig::CONFIG["bindir"], "gem")
 
   module_function

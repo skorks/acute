@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.metadata["changelog_uri"] = "https://github.com/skorks/acute/blob/main/CHANGELOG.md"
   s.metadata["bug_tracker_uri"] = "https://github.com/skorks/acute/issues"
   s.metadata["documentation_uri"] = "https://github.com/skorks/acute/tree/main/docs"
-  files = Dir["lib/**/*.rb", "data/*.yml", "schema/**/*.json", "exe/*", "LICENSE"]
+  files = Dir["lib/**/*.rb", "data/*.yml", "schema/**/*.json", "exe/*", "LICENSE", "README.md", "CHANGELOG.md", "docs/*.md"]
   # An untracked file under lib/ is no part of the release, so a checkout packs only what git tracks
   tracked = begin
     out = IO.popen(%w[git ls-files -z], err: File::NULL, &:read)
