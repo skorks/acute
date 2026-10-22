@@ -34,11 +34,11 @@ class ToolTest < Minitest::Test
     assert_equal compact.(Acute.verify("tomorrow", "2026-10-19", **OPTS)).except("message"),
                  call("verify", { "text" => "tomorrow", "value" => "2026-10-19" }).except("message")
     friday = Acute.parse("2026-10-23T15:00:00-04:00", **OPTS)
-    assert_equal({ "kind" => "description", "text" => Acute.describe(friday, **OPTS) },
+    assert_equal({ "kind" => "description", "description" => Acute.describe(friday, **OPTS) },
                  call("describe", { "value" => "2026-10-23T15:00:00-04:00" }))
-    assert_equal({ "kind" => "description", "text" => "Fri, Oct 23" }, call("describe", { "value" => "2026-10-23", "style" => "calendar" }))
-    assert_equal({ "kind" => "description", "text" => "1h 30m" }, call("describe", { "value" => "PT1H30M" }))
-    assert_equal({ "kind" => "description", "text" => "1w 2d 1.5s" }, call("describe", { "value" => "P1W2DT1.5S" }))
+    assert_equal({ "kind" => "description", "description" => "Fri, Oct 23" }, call("describe", { "value" => "2026-10-23", "style" => "calendar" }))
+    assert_equal({ "kind" => "description", "description" => "1h 30m" }, call("describe", { "value" => "PT1H30M" }))
+    assert_equal({ "kind" => "description", "description" => "1w 2d 1.5s" }, call("describe", { "value" => "P1W2DT1.5S" }))
   end
 
   def test_recurrence_gives_the_compact_rule_and_its_first_three_occurrences
@@ -64,11 +64,10 @@ class ToolTest < Minitest::Test
   end
 
   def test_recurrence_failures
-    assert_equal({ "kind" => "failure", "code" => "not_rule", "error" => "not a repeating time", "position" => [0, 11] },
+    assert_equal({ "kind" => "failure", "code" => "not_rule", "error" => "not a repeating time" },
                  call("recurrence", { "text" => "next friday" }))
     assert_equal "no_occurrence", call("recurrence", { "text" => "every monday until last week" })["code"]
-    assert_equal({ "kind" => "failure", "code" => "vague_rule", "error" => "the phrase says how often, not when: ask the user which days or times",
-                   "position" => [0, 13] },
+    assert_equal({ "kind" => "failure", "code" => "vague_rule", "error" => "the phrase says how often, not when: ask the user which days or times" },
                  call("recurrence", { "text" => "every morning" }))
     assert_equal ["invalid_date", "February has 28 days, 29 in a leap year", ["every feb 30"]],
                  call("recurrence", { "text" => "every feb 30" }).values_at("code", "error", "unread")
@@ -144,6 +143,9 @@ class ToolTest < Minitest::Test
     assert_equal ["invalid_date", "June has 30 days", ["june 31"]], call("parse", { "text" => "june 31" }).values_at("code", "error", "unread")
     rejecting = Acute::Tool.new(**OPTS, dst: :reject)
     assert_equal ["dst_skipped_time", ["2026-03-08 02:30"]], call("parse", { "text" => "2026-03-08 02:30" }, rejecting).values_at("code", "unread")
+    # position only when it narrows the phrase
+    refute call("parse", { "text" => " 2026-03-08 02:30 " }, rejecting).key?("position")
+    assert_equal [5, 11], call("parse", { "text" => "next fridya 3pm" })["position"]
     assert_equal ["too_long", nil], call("parse", { "text" => "é" * 300 }).values_at("code", "unread")
     assert_equal "conflict", call("duration", { "text" => "next friday" })["code"]
     assert_equal ["invalid_argument", "value must be an ISO 8601 time or date", ["soon"]],

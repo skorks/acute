@@ -6,6 +6,9 @@ module Acute
   # @api private
   class CLI
     CLOCK_GRAINS = %i[second minute hour].freeze
+    # the library's DST hints name its Ruby option; the command's name its flag
+    DST_HINTS = { dst_skipped_time: "--dst earlier, later or compatible picks an instant for it",
+                  dst_repeated_time: "--dst earlier or later picks one" }.freeze
 
     def self.run(argv, stdin: $stdin, stdout: $stdout, stderr: $stderr) = new(stdin, stdout, stderr).run(argv)
 
@@ -113,7 +116,7 @@ module Acute
     def failure(e, text)
       json = { kind: "failure", text: text.dup.force_encoding(Encoding::UTF_8).scrub, code: e.code.to_s, error: e.message,
                position: [e.position.begin, e.position.end] }
-      json[:hint] = e.hint if e.hint
+      json[:hint] = DST_HINTS.fetch(e.code, e.hint) if e.hint
       JSON.generate(json)
     end
 

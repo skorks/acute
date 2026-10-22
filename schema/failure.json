@@ -16,7 +16,7 @@
     "position": {
       "type": "array",
       "items": { "type": "integer" },
-      "description": "Character (codepoint) offsets into the text, not bytes or UTF-16 units: where the trouble starts, and where it stops (exclusive)"
+      "description": "Character (codepoint) offsets into the text, not bytes or UTF-16 units: where the trouble starts, and where it stops (exclusive). A tool gives it only when it is less than the whole text."
     },
     "hint": { "type": "string", "description": "A way to fix it, such as the word a misspelt one may be" },
     "unread": {
