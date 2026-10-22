@@ -13,7 +13,8 @@ module Acute
       EVERY_DAY = [0, 1, 2, 3, 4, 5, 6].freeze
 
       # A Rule, or a Failure's code
-      def self.call(r, ctx)
+      # text: the input, which the Rule carries and nothing here reads
+      def self.call(r, ctx, text)
         freq, mult = FREQ[r.unit] if r.unit
         return :conflict if r.unit && !freq
         interval = (r.interval || 1) * (mult || 1)
@@ -87,7 +88,7 @@ module Acute
           timed ? secs.map { day * DAY + _1 } : day
         end
         Rule.new(rule, ctx.zone.name, start, timed, r.count, until_, exdates.flatten, r.start || r.within ? true : false,
-                 ctx.dst_policy)
+                 ctx.dst_policy, now: ctx.now, text: text)
       end
 
       # R4: seconds of the day, as D4, D30 and D35 read the clock, first reading only

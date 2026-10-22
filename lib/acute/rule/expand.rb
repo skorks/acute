@@ -5,14 +5,19 @@ module Acute
     MAX_OCCURRENCES = 1_000 # R19
     STEPS = 100_000 # R19
 
-    # R16: the next n occurrences after `after`, as Times in the rule's zone, or Dates for a rule of whole days.
-    # Fewer when the rule ends; nil past a limit (R19), which next! explains.
-    def next(n = 1, after: Time.now)
-      out = listing(n, after)
-      out unless Failure === out
+    # R16: the next occurrence after `after` (by default the now the rule was read at), or with n the next n as an
+    # Array: Times in the rule's zone, or Dates for a rule of whole days. nil or fewer when the rule ends; nil past a
+    # limit (R19), which next! explains.
+    def next(n = nil, after: now)
+      out = listing(n || 1, after)
+      return if Failure === out
+      n ? out : out[0]
     end
 
-    def next!(n = 1, after: Time.now) = raising(listing(n, after))
+    def next!(n = nil, after: now)
+      out = raising(listing(n || 1, after))
+      n ? out : out[0]
+    end
 
     # R16: the occurrences from `from` up to `to`, `to` left out. A Date stands for its whole day.
     def between(from, to)

@@ -14,6 +14,7 @@ zone = "America/New_York"
 ```ruby
 r = Acute.recurrence("every weekday at 9am", now:, zone:)   # nil when the text isn't a rule
 r.to_s     # => "every weekday at 9am"
+r.text     # => "every weekday at 9am"
 r.rrule    # => "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0"
 r.dtstart  # => 2026-10-19 09:00:00 -0400
 puts r.to_ical
@@ -30,7 +31,9 @@ A Rule has:
 | Method | Gives |
 |---|---|
 | `rrule`, `dtstart`, `to_ical` | the RRULE value, the first occurrence, and all the iCalendar lines (DTSTART, RRULE, any EXDATE) |
-| `to_s` | the rule in words, which reads back to the same rule |
+| `to_s` | the rule in words, which reads back to the same rule; `description` in the JSON |
+| `text` | the input it was read from: the whole text, a mention's own words, or the cron line |
+| `now` | the now it was read at, in its zone; `next` counts from it |
 | `cron`, `cron_reason` | a cron line, or nil and why; see [cron](#cron) |
 | `next`, `between`, `each` | the occurrences; see below |
 | `zone` | the zone its wall times are in |
@@ -38,12 +41,15 @@ A Rule has:
 
 ```ruby
 puts r.to_json
-# {"kind":"rule","text":"every weekday at 9am","rrule":"FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0","dtstart":"2026-10-19T09:00:00-04:00","zone":"America/New_York","ical":"DTSTART;TZID=America/New_York:20261019T090000\nRRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0","cron":"0 9 * * 1-5","cron_reason":null}
+# {"kind":"rule","text":"every weekday at 9am","description":"every weekday at 9am","rrule":"FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0","dtstart":"2026-10-19T09:00:00-04:00","zone":"America/New_York","ical":"DTSTART;TZID=America/New_York:20261019T090000\nRRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0","cron":"0 9 * * 1-5","cron_reason":null}
 ```
 
 ## Occurrences
 
 ```ruby
+r.next      # the first after the now it was read at
+# => 2026-10-19 09:00:00 -0400
+
 r.next(3, after: Time.new(2026, 10, 17, 14, 0, 0, "-04:00"))
 # => [2026-10-19 09:00:00 -0400, 2026-10-20 09:00:00 -0400, 2026-10-21 09:00:00 -0400]
 
@@ -54,13 +60,13 @@ r.each.first(2)   # lazy; stops when the rule ends
 # => [2026-10-19 09:00:00 -0400, 2026-10-20 09:00:00 -0400]
 ```
 
-- `next(n = 1, after: Time.now)` gives the next `n` after `after`. Fewer come back when the rule ends.
+- `next(after: now)` gives the next occurrence after `after`, or nil when the rule has ended. `next(n, after: now)` gives the next `n` as an Array, as `first` and `first(n)` do; fewer come back when the rule ends. `after` defaults to the now the rule was read at, not the clock, so a rule read with `now:` lists the same occurrences whenever it is asked. An occurrence equal to `after` isn't after it.
 - `between(from, to)` gives those from `from` up to `to`, leaving `to` out, so windows laid end to end list each occurrence once. A Date stands for its whole day.
-- `each(after: nil)` lists every occurrence, lazily, from DTSTART or after `after`.
+- `each(after: nil)` lists every occurrence, lazily, from DTSTART or after `after`. DTSTART is on or after now, so `each.first(n)` is `next(n)` except when DTSTART is now itself, which only `each` lists.
 
 For a rule of whole days they are Dates: `Acute.recurrence("every monday", now:, zone:).next(2, after: Date.new(2026, 10, 17))` gives the Dates 2026-10-19 and 2026-10-26.
 
-One call to `next` or `between` gives at most 1,000 occurrences and takes at most 100,000 steps. Past either it returns nil. `next!` and `between!` raise a `ParseError` with the code `:occurrence_limit` or `:step_limit`, which says why. `each` has no cap on how many it lists, so take what you need from it ([R19](rules.md#recurrence)).
+One call to `next` or `between` gives at most 1,000 occurrences and takes at most 100,000 steps. Past either it returns nil, `next` without `n` too. `next!` and `between!` raise a `ParseError` with the code `:occurrence_limit` or `:step_limit`, which says why. `each` has no cap on how many it lists, so take what you need from it ([R19](rules.md#recurrence)).
 
 ## Daylight saving
 

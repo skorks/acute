@@ -31,11 +31,12 @@ module Acute
       end
     end
 
-    attr_reader :zone
+    # text: the input it was read from; zone: the zone its wall times are in
+    attr_reader :text, :zone
 
     # start: local wall seconds when timed, else a day number; until_: a UTC epoch when timed, else a day number;
-    # exdates: as start; dst: the dst: policy occurrences follow (R18)
-    def initialize(parts, zone, start, timed, count, until_, exdates, started, dst = nil)
+    # exdates: as start; dst: the dst: policy occurrences follow (R18); now: the epoch it was read at
+    def initialize(parts, zone, start, timed, count, until_, exdates, started, dst = nil, now:, text:)
       @parts = parts
       @zone = zone
       @start = start
@@ -45,10 +46,15 @@ module Acute
       @exdates = exdates
       @started = started
       @dst = dst
+      @now = now
+      @text = -text
       Ractor.make_shareable(self)
     end
 
     def kind = :rule
+
+    # The now it was read at, in its zone: where next counts from (R16)
+    def now = Time.at(@now, in: Zone.for(@zone).offset_at(@now))
 
     def rrule
       p = @parts
@@ -109,8 +115,8 @@ module Acute
 
     def to_h
       line, reason = cron_or_reason
-      { kind: "rule", text: to_s, rrule: rrule, dtstart: @timed ? dtstart.iso8601 : dtstart.to_s, zone: @zone, ical: to_ical,
-        cron: line, cron_reason: reason }
+      { kind: "rule", text: @text, description: to_s, rrule: rrule, dtstart: @timed ? dtstart.iso8601 : dtstart.to_s,
+        zone: @zone, ical: to_ical, cron: line, cron_reason: reason }
     end
 
     def to_json(*args) = to_h.to_json(*args)

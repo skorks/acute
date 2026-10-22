@@ -45,7 +45,7 @@ class ToolTest < Minitest::Test
     rule = Acute.recurrence("every weekday at 9am", **OPTS)
     expected = Acute::Tool::Compact.(rule.as_json).merge("next" => %w[2026-10-19T09:00:00-04:00 2026-10-20T09:00:00-04:00 2026-10-21T09:00:00-04:00])
     assert_equal expected, call("recurrence", { "text" => "every weekday at 9am" })
-    assert_equal({ "kind" => "rule", "text" => "every weekday at 9am", "rrule" => "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0",
+    assert_equal({ "kind" => "rule", "description" => "every weekday at 9am", "rrule" => "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0",
                    "dtstart" => "2026-10-19T09:00:00-04:00", "zone" => NY, "cron" => "0 9 * * 1-5" }, expected.except("next"))
     other = call("recurrence", { "text" => "every other tuesday" })
     assert_equal ["cron can't express \"every other\"", %w[2026-10-20 2026-11-03 2026-11-17]], other.values_at("cron_reason", "next")
