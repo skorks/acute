@@ -115,24 +115,15 @@ module Acute
     # D47: the data stops decades short of TO (the shipped tables in 2045, or 2076 where carrying on from 2045
     # would differ; a TZInfo zone's wherever its source does). When the last 2 * RULE_YEARS changes alternate
     # between two that each fall yearly on one weekday on or after one day of their month, at one wall time,
-    # and run past RULES_RUN_TO, both are carried on to TO.
+    # and run past RULES_RUN_TO, both are carried on to TO. The wall time may be a day past that weekday's
+    # midnight, as Cairo's "last Thursday of October at 24:00" is, whose Friday can fall in November.
     def self.recurring(ats, offsets, abbreviations, first_offset)
       n = ats.size
       return [] unless n >= 2 * RULE_YEARS && ats[-1] > RULES_RUN_TO
-      changes = ((n - 2 * RULE_YEARS)...n).map do |k|
-        before = k.zero? ? first_offset : offsets[k - 1]
-        local = ats[k] + before
-        days = local.div(86_400)
-        ymd = Calendar.civil_from_days(days)
-        [ymd / 10_000, ymd / 100 % 100, ymd % 100, Calendar.weekday(days), local % 86_400, before, offsets[k],
-         abbreviations[k]]
-      end
       [0, 1].flat_map do |s|
-        years = (0...RULE_YEARS).map { changes[2 * _1 + s] }
-        return [] unless years.each_cons(2).all? { |a, b| b[0] == a[0] + 1 }
-        return [] unless years.map { |c| c.values_at(1, 3, 4, 5, 6, 7) }.uniq.size == 1
-        day = years.map { _1[2] }.min
-        return [] if years.map { _1[2] }.max - day > 6
+        rule = [0, 1].lazy.filter_map { yearly(ats, offsets, abbreviations, first_offset, n - 2 * RULE_YEARS + s, _1) }.first
+        return [] unless rule
+        years, day = rule
         _, month, _, weekday, wall, before, offset, abbreviation = years[-1]
         ((years[-1][0] + 1)...TO.year).map do |y|
           first = Calendar.days_from_civil(y, month, day)
@@ -142,7 +133,26 @@ module Acute
         end
       end.sort_by!(&:first)
     end
-    private_class_method :recurring
+
+    # Every other change from index k, as [year, month, day, weekday, wall, before, offset, abbreviation] counted
+    # from late days before the local date, with the first day of the month it falls on or after; nil unless
+    # they are one yearly rule
+    def self.yearly(ats, offsets, abbreviations, first_offset, k, late)
+      years = (0...RULE_YEARS).map do |j|
+        i = k + 2 * j
+        before = i.zero? ? first_offset : offsets[i - 1]
+        local = ats[i] + before - late * 86_400
+        days = local.div(86_400)
+        ymd = Calendar.civil_from_days(days)
+        [ymd / 10_000, ymd / 100 % 100, ymd % 100, Calendar.weekday(days), local % 86_400 + late * 86_400, before,
+         offsets[i], abbreviations[i]]
+      end
+      return unless years.each_cons(2).all? { |a, b| b[0] == a[0] + 1 }
+      return unless years.map { |c| c.values_at(1, 3, 4, 5, 6, 7) }.uniq.size == 1
+      day = years.map { _1[2] }.min
+      [years, day] unless years.map { _1[2] }.max - day > 6
+    end
+    private_class_method :recurring, :yearly
 
     attr_reader :name
 

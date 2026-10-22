@@ -265,4 +265,13 @@ class ZoneTest < Minitest::Test
     r = parse("Nov 1, 2026, 1:50am EDT – Nov 1, 2026, 1:10am EST")
     assert_equal 1200, r.end - r.begin
   end
+
+  # D47 past tzinfo-data's 2076: Cairo's summer ends on the last Thursday of October at 24:00, which in 2080 is
+  # Friday 1 November
+  def test_a_change_at_24_00_is_carried_on_across_the_month_end
+    cairo = Acute::Zone.for("Africa/Cairo")
+    change = Time.utc(2080, 10, 31, 21).to_i
+    assert_equal [10_800, 7200], [cairo.offset_at(change - 1), cairo.offset_at(change)]
+    assert_equal 10_800, cairo.offset_at(Time.utc(2199, 7, 1).to_i)
+  end
 end

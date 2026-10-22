@@ -1,6 +1,7 @@
 require_relative "../test_helper"
 
 class ContextTest < Minitest::Test
+  cover "Acute::Zone*" # a Ractor building a zone
   def test_now_as_date_means_its_start
     assert_equal "2026-10-17 16:00:00 -04:00", wall(parse("4pm", now: Date.new(2026, 10, 17)).begin)
   end

@@ -8,6 +8,7 @@ require_relative "../../lib/acute/mcp"
 
 # Controls the security probes found working, pinned so they stay that way
 class HardeningTest < Minitest::Test
+  cover "Acute::Zone*" # hostile zone names
   HOSTILE_ZONES = ["../../../../etc/passwd", "/etc/passwd", "America/../../../etc/passwd", "UTC\0", "a" * 100_000,
                    "posixrules", "right/UTC", "zone.tab", "+99:99", "America/New_York\0", "America/New_York/",
                    "America/New_York/../../../etc/passwd", "a" * 1_000_000, "America/New_York\xff", "\xff\xfe",
