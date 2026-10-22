@@ -125,13 +125,18 @@ module Acute
 
     def as_json(*) = JSON.parse(to_json)
 
-    def ==(other) = Rule === other && other.to_ical == to_ical
+    def ==(other) = Rule === other && other.state == state
 
     alias eql? ==
 
-    def hash = to_ical.hash
+    def hash = state.hash
 
     def inspect = "#<Acute::Rule #{to_ical.tr("\n", " ")}>"
+
+    protected
+
+    # What next, each, to_s and to_h answer from, but not the text. No dst: policy acts as :compatible (R18).
+    def state = [to_ical, @zone, @dst || :compatible, @started, @now]
 
     private
 

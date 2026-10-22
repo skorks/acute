@@ -177,6 +177,24 @@ class RuleTest < Minitest::Test
     assert_equal "#<Acute::Rule DTSTART;VALUE=DATE:20261019 RRULE:FREQ=WEEKLY;BYDAY=MO>", rule("every monday").inspect
   end
 
+  # Two phrasings of one rule are equal; rules with the same iCal that list, describe or count from differently aren't
+  def test_equality_covers_what_the_ical_leaves_out
+    assert_equal rule("every monday starting jan 4 2027"), rule("mondays starting january 4th 2027")
+    assert_equal rule("every day at 2:30am"), rule("every day at 2:30am", dst: :compatible)
+    spring = Date.new(2027, 3, 14)
+    [[rule("every day at 2:30am", dst: :earlier), rule("every day at 2:30am", dst: :reject), -> { _1.between(spring, spring) }],
+     [rule("every monday starting jan 4 2027"), rule("every monday", now: "2027-01-04T00:00"), :to_s.to_proc],
+     [rule("every monday starting jan 4 2027"), rule("every monday starting jan 4 2027", now: "2027-02-01T00:00"), :next.to_proc],
+     [rule("every monday", now: Time.utc(2026, 10, 17, 20)), rule("every monday", now: Time.utc(2026, 10, 17, 20), zone: "Asia/Tokyo"),
+      -> { _1.next(after: Time.utc(2026, 10, 19, 16)) }]].each do |a, b, differs|
+      assert_equal a.to_ical, b.to_ical
+      refute_equal differs.(a), differs.(b), a.text
+      refute_equal a, b, a.text
+      refute a.eql?(b)
+      refute_equal a.hash, b.hash
+    end
+  end
+
   def test_r15_not_rules_are_nil
     ["next friday", "this weekend", "3 days", "twice a week", "3 times a day", "every morning", "every 0 days",
      "every feb 30", "every day at 9am and 5:30pm", "", "every"].each do |text|

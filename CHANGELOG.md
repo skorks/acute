@@ -7,6 +7,7 @@
 - **Fixed:** an hourly or finer rule kept an excepted time: "every hour except october 17 at 4pm" still listed 4pm. A time is now that instant, and a date leaves out each of the rule's occurrences that day; one needing more than 24 is `:conflict` (R12).
 - **Fixed:** "week before last" and "the month before last" were incomplete; they are now the one before last week or month (D44). `extract` found only "fri" in "mon, wed and fri": a weekday in a list of weekdays is now a day, though "mon" and "wed" are also words (D18).
 - **Fixed:** the `acute` command printed a failure's hint only with `--json`. Its plain output now adds it as `hint: …`, naming the command's flag, as the JSON does: a line of its own after `acute: <reason>`, or after three spaces on an `error:` line from stdin.
+- **Fixed:** two rules with the same iCal were `==`, with one hash, though they listed or read differently: under another `dst:` policy, read in another zone or at another now, or one saying "starting" where the other didn't. Equality now covers all of these, and still not the text, so two phrasings of one rule stay equal.
 
 ## 1.0.0
 
