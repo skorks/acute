@@ -44,4 +44,12 @@ class EncodingTest < Minitest::Test
     assert_equal 3600, Acute.duration("1 hour".b).seconds
     assert_equal "tomorrow", Acute.parse("café tomorrow".b, **AT, strict: false).matched
   end
+
+  # Under LANG=C or LC_ALL=POSIX, as in many containers and cron, stdin and files tag UTF-8 bytes US-ASCII
+  def test_utf8_bytes_tagged_us_ascii_are_read_as_utf8
+    ascii = ->(s) { s.dup.force_encoding(Encoding::US_ASCII) }
+    assert_equal "tomorrow", Acute.parse(ascii.("café tomorrow"), **AT, strict: false).matched
+    assert_equal [11...19], Acute.extract(ascii.("lunch café tomorrow"), **AT).mentions.map(&:offset)
+    assert_nil Acute.parse(ascii.("tomorrow \xff"), **AT)
+  end
 end

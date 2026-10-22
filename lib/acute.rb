@@ -106,15 +106,16 @@ module Acute
     options = [locale, week_start, hemisphere, fiscal_year_start, strict, dst, holidays, business_days, year_bias]
     Context.new(now, zone, context, *options) # bad options raise here, before any mention is found
     budget = Resolve::Period::Budget.new # D49: one for the call, not one a mention (T17)
-    Extract.call(text, -> { Context.new(now, zone, context, *options).tap { _1.budget = budget } })
+    Extract.call(utf8(text) || text, -> { Context.new(now, zone, context, *options).tap { _1.budget = budget } })
   end
 
   # The text as UTF-8, or nil when it can't be read as UTF-8: broken bytes, or an encoding such as UTF-16 whose
-  # bytes the lexer would misread. Binary text that is valid UTF-8 is taken as it is.
+  # bytes the lexer would misread. Binary or US-ASCII text that is valid UTF-8 is taken as it is: under LANG=C a
+  # read from stdin or a file tags UTF-8 bytes US-ASCII.
   def self.utf8(text)
     case text.encoding
-    when Encoding::UTF_8, Encoding::US_ASCII then text if text.valid_encoding?
-    when Encoding::BINARY
+    when Encoding::UTF_8 then text if text.valid_encoding?
+    when Encoding::BINARY, Encoding::US_ASCII
       utf = text.dup.force_encoding(Encoding::UTF_8)
       utf if utf.valid_encoding?
     else text if text.ascii_only?
