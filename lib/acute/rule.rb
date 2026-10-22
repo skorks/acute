@@ -135,6 +135,7 @@ module Acute
       out << " #{@count} times" if @count
       out << " starting #{date(@timed ? @start.div(DAY) : @start)}" if @started
       out << " until #{@timed ? until_local : date(@until)}" if @until
+      out << " except #{list(@exdates.map { date(@timed ? _1.div(DAY) : _1) }.uniq)}" unless @exdates.empty?
       out
     end
 

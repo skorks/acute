@@ -76,6 +76,7 @@ module Acute
           return x if Symbol === x
           until_ = ending(x, timed, ctx)
           return until_ if Symbol === until_
+          return :no_occurrence if (timed ? ctx.local(until_) : until_) < start # R9
         elsif r.length
           until_ = length(r.length, start, timed, ctx)
         end

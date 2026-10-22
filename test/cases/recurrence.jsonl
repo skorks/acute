@@ -145,3 +145,4 @@
 {"id":"recurrence-0145","text":"our weekly with the team","now":"2026-10-17T14:00:00","tz":"America/New_York","expect":{"extract":[]},"source":"hand","tags":["extract","recurrence","E6"]}
 {"id":"recurrence-0146","text":"back up daily to S3","now":"2026-10-17T14:00:00","tz":"America/New_York","expect":{"extract":[{"start":8,"end":13,"rrule":"DTSTART;VALUE=DATE:20261017\nRRULE:FREQ=DAILY"}]},"source":"hand","tags":["extract","recurrence","E6"]}
 {"id":"recurrence-0147","text":"remind her daily","now":"2026-10-17T14:00:00","tz":"America/New_York","expect":{"extract":[{"start":11,"end":16,"rrule":"DTSTART;VALUE=DATE:20261017\nRRULE:FREQ=DAILY"}]},"source":"hand","tags":["extract","recurrence","E6"]}
+{"id":"recurrence-0148","text":"every monday until last week","now":"2026-10-17T14:00:00","tz":"America/New_York","expect":{"rrule":null},"source":"hand","tags":["recurrence","R9"],"note":"UNTIL before DTSTART: no occurrence"}

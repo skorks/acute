@@ -95,7 +95,7 @@ class CLITest < Minitest::Test
   end
 
   def test_next_errors
-    assert_equal ["", "acute: \"tomorrow\" doesn't fit with the rest of the phrase\n", 1], acute("tomorrow", "--next", "2", *AT)
+    assert_equal ["", "acute: not a repeating time\n", 1], acute("tomorrow", "--next", "2", *AT)
     assert_equal ["", "acute: invalid argument: --next 0\n", 2], acute("every day", "--next", "0", *AT)
     assert_equal ["", "acute: invalid argument: --next 1001\n", 2], acute("every day", "--next", "1001", *AT)
     assert_match(/invalid argument: --next three/, acute("every day", "--next", "three", *AT)[1])
@@ -104,7 +104,7 @@ class CLITest < Minitest::Test
   def test_batch_rules_stay_one_line_each
     out, _, status = acute(*AT, "--next", "1", stdin: "every day\ntomorrow\n")
     assert_equal ["every day   DTSTART;VALUE=DATE:20261017   RRULE:FREQ=DAILY   cron: 0 0 * * * (CRON_TZ=America/New_York)   Sat, Oct 17",
-                  "error: \"tomorrow\" doesn't fit with the rest of the phrase"], out.lines(chomp: true)
+                  "error: not a repeating time"], out.lines(chomp: true)
     assert_equal 1, status
     first, second = acute("--json", "--next", "1", *AT, stdin: "every day\ntomorrow\n")[0].lines.map { JSON.parse(_1) }
     assert_equal ["rule", ["2026-10-17"]], first.values_at("kind", "next")

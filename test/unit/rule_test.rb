@@ -37,11 +37,27 @@ class RuleTest < Minitest::Test
       "every monday starting november" => "every Monday starting Nov 2, 2026",
       "every 15 minutes from 9 to 5 on weekdays" => "every 15 minutes from 9am to 5pm on weekdays",
       "every 20 minutes between 9pm and midnight" => "every 20 minutes from 9pm to midnight",
-      "every day at 9 and 9:30" => "every day at 9am and 9:30am" }.each do |text, english|
+      "every day at 9 and 9:30" => "every day at 9am and 9:30am",
+      "every weekday except nov 2" => "every weekday except Nov 2, 2026",
+      "every day at 9am except nov 2 and nov 3" => "every day at 9am except Nov 2, 2026 and Nov 3, 2026" }.each do |text, english|
       r = rule(text)
       assert_equal english, r.to_s, text
       assert_equal r, rule(r.to_s), english
     end
+  end
+
+  def test_r9_an_until_before_the_first_occurrence_is_no_rule
+    assert_nil rule("every monday until last week")
+    assert_nil rule("every day at 9am until 8am")
+    error = assert_raises(Acute::ParseError) { Acute.recurrence!("every monday until last week", **OPTS) }
+    assert_equal :no_occurrence, error.code
+    assert_equal "the rule ends before it starts", error.message
+  end
+
+  def test_r15_a_phrase_with_no_rule_word_says_it_is_not_repeating
+    error = assert_raises(Acute::ParseError) { Acute.recurrence!("next friday", **OPTS) }
+    assert_equal :not_rule, error.code
+    assert_equal "not a repeating time", error.message
   end
 
   def test_describe_gives_the_english
@@ -83,7 +99,7 @@ class RuleTest < Minitest::Test
   def test_recurrence_bang_raises_what_recurrence_returns_nil_for
     assert_equal rule("weekly"), Acute.recurrence!("weekly", **OPTS)
     e = assert_raises(Acute::ParseError) { Acute.recurrence!("next friday", **OPTS) }
-    assert_equal :conflict, e.code
+    assert_equal :not_rule, e.code
     assert_raises(Acute::ParseError) { Acute.recurrence!("every feb 30", **OPTS) }
     assert_raises(Acute::ParseError) { Acute.recurrence!("x" * 600, **OPTS) }
     assert_raises(Acute::ParseError) { Acute.recurrence!("\xff".b.force_encoding("UTF-8"), **OPTS) }
