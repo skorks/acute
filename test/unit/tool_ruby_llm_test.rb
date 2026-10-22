@@ -26,6 +26,7 @@ class ToolRubyLLMTest < Minitest::Test
     assert_equal "unknown_argument", run.("acute_parse", { "text" => "today", "zone" => "UTC" })["code"]
     assert_equal "missing_argument", run.("acute_parse", {})["code"]
     assert_equal "now", run.("acute_now", {})["kind"]
+    assert_equal TOOL.call("acute_recurrence", { "text" => "every monday at 9" }), run.("acute_recurrence", { "text" => "every monday at 9" })
   end
 
   def test_each_acute_tool_gives_its_own_instances
@@ -37,7 +38,7 @@ class ToolRubyLLMTest < Minitest::Test
   def test_requiring_it_loads_the_tool_or_says_ruby_llm_is_missing
     out, status = Open3.capture2e(RbConfig.ruby, "-I", LIB, "-e", 'require "acute/tool/ruby_llm"; print Acute::Tool.new(zone: "UTC").ruby_llm.size')
     assert_predicate status, :success?, out
-    assert_equal "6", out
+    assert_equal "7", out
     hide = 'Object.prepend(Module.new { def require(name) = name == "ruby_llm" ? raise(LoadError, "cannot load such file -- ruby_llm") : super })'
     out, status = Open3.capture2e(RbConfig.ruby, "-I", LIB, "-e", "#{hide}; require 'acute/tool/ruby_llm'")
     refute_predicate status, :success?

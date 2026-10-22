@@ -1,6 +1,6 @@
 # acute for agents
 
-acute offers itself to an LLM as six tools. `Acute::Tool` gives them to an app that calls a model through an SDK; `acute mcp` serves the same tools to any MCP client. Both take their names, descriptions and argument schemas from [schema/tools/](../schema/tools), and both return the hashes described in [schema/](../schema), with what repeats left out, since the model pays for every char of a result on every call. A result leaves out the input's `text` (on a parse, extract or verify result, a mention's value and a verdict's `expected`); a `begin` equal to `time`; a mention's `kind`, which its value's `kind` repeats; a verdict's `expected` when `ok` is true; `now`'s `offset`, which the `now` string ends with; and `assumptions`, `alternatives` and `unread` when they're empty, a failure's `unread` included. An assumption's `message` is its short form, `short` in [data/assumptions.yml](../data/assumptions.yml): the gist in about 50 chars rather than 80. The library's own JSON keeps them all, and the long messages.
+acute offers itself to an LLM as seven tools. `Acute::Tool` gives them to an app that calls a model through an SDK; `acute mcp` serves the same tools to any MCP client. Both take their names, descriptions and argument schemas from [schema/tools/](../schema/tools), and both return the hashes described in [schema/](../schema), with what repeats left out, since the model pays for every char of a result on every call. A result leaves out the input's `text` (on a parse, extract or verify result, a mention's value and a verdict's `expected`); a `begin` equal to `time`; a mention's `kind`, which its value's `kind` repeats; a verdict's `expected` when `ok` is true; `now`'s `offset`, which the `now` string ends with; a rule's `ical` unless it has an EXDATE, since `dtstart` and `rrule` hold the rest, and whichever of `cron` and `cron_reason` is null; and `assumptions`, `alternatives` and `unread` when they're empty, a failure's `unread` included. An assumption's `message` is its short form, `short` in [data/assumptions.yml](../data/assumptions.yml): the gist in about 50 chars rather than 80. The library's own JSON keeps them all, and the long messages.
 
 ## The tools
 
@@ -8,12 +8,15 @@ acute offers itself to an LLM as six tools. `Acute::Tool` gives them to an app t
 |---|---|---|
 | `parse` | `text`, `context` | [result.json](../schema/result.json) |
 | `duration` | `text` | [duration.json](../schema/duration.json) |
+| `recurrence` | `text` | [rule.json](../schema/rule.json), plus `next`: its first three occurrences |
 | `extract` | `text`, `context` | [extraction.json](../schema/extraction.json) |
 | `verify` | `text`, `value`, `context` | [verdict.json](../schema/verdict.json) |
 | `describe` | `value`, `style` | [description.json](../schema/description.json) |
 | `now` | none | [now.json](../schema/now.json) |
 
 Any of them may instead return a [failure](../schema/failure.json).
+
+`recurrence`'s `next` is the rule's first three occurrences, from `dtstart` on, as ISO 8601 times, or dates for a rule of whole days. A rule that ends sooner lists fewer. `cron`, when the rule has one, runs in the wall time of `zone` (`CRON_TZ`).
 
 ## Failures and `unread`
 

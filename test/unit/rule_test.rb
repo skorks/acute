@@ -48,11 +48,13 @@ class RuleTest < Minitest::Test
   def test_to_h_and_json
     r = rule("every day at 9am")
     h = { kind: "rule", text: "every day at 9am", rrule: "FREQ=DAILY;BYHOUR=9;BYMINUTE=0",
-          dtstart: "2026-10-18T09:00:00-04:00", zone: "America/New_York", ical: r.to_ical }
+          dtstart: "2026-10-18T09:00:00-04:00", zone: "America/New_York", ical: r.to_ical,
+          cron: "0 9 * * *", cron_reason: nil }
     assert_equal h, r.to_h
     assert_equal h.transform_keys(&:to_s), JSON.parse(r.to_json)
     assert_equal h.transform_keys(&:to_s), r.as_json
     assert_equal "2026-10-19", rule("every monday").to_h[:dtstart]
+    assert_equal [nil, "cron can't express \"until\""], rule("every monday until june").to_h.values_at(:cron, :cron_reason)
   end
 
   def test_frozen_and_shareable

@@ -5,11 +5,13 @@ require_relative "../../lib/acute/mcp"
 # The model reads every char of these on every request, so growth must be a deliberate change to a cap
 class ToolSizeTest < Minitest::Test
   CAPS = {
-    definitions: 3_000,
-    tools_list: 12_500,
+    definitions: 3_400,
+    tools_list: 13_600,
     parse_result: 150,
+    recurrence_result: 290,
     extract_result: 640,
-    descriptions: { "parse" => 260, "duration" => 150, "extract" => 240, "verify" => 210, "describe" => 160, "now" => 195 }
+    descriptions: { "parse" => 260, "duration" => 150, "recurrence" => 160, "extract" => 240, "verify" => 210, "describe" => 160,
+                    "now" => 195 }
   }.freeze
 
   TOOL = Acute::Tool.new(zone: "UTC")
@@ -30,12 +32,13 @@ class ToolSizeTest < Minitest::Test
     out = StringIO.new
     Acute::MCP.new(TOOL).serve(StringIO.new(lines.join("\n") << "\n"), out)
     reply = out.string.lines.find { JSON.parse(_1)["id"] == 2 }
-    assert_equal 6, JSON.parse(reply).dig("result", "tools").size
+    assert_equal 7, JSON.parse(reply).dig("result", "tools").size
     assert_operator reply.chomp.length, :<=, CAPS[:tools_list]
   end
 
   def test_typical_results_fit_their_caps
     assert_operator JSON.generate(NEW_YORK.call("parse", { "text" => "next friday at 3pm" })).length, :<=, CAPS[:parse_result]
+    assert_operator JSON.generate(NEW_YORK.call("recurrence", { "text" => "every weekday at 9am" })).length, :<=, CAPS[:recurrence_result]
     assert_operator JSON.generate(NEW_YORK.call("extract", { "text" => "lunch with Sam tomorrow at 1 for an hour" })).length, :<=, CAPS[:extract_result]
   end
 end

@@ -108,7 +108,7 @@ $ claude mcp add acute -- acute mcp --zone America/New_York    # an MCP server o
 
 ```ruby
 tool = Acute::Tool.new(zone: user.zone)            # require "acute/tool"
-tool.definitions(:anthropic)                       # or :openai: six tools for any SDK
+tool.definitions(:anthropic)                       # or :openai: seven tools for any SDK
 tool.call("parse", { "text" => "next friday 3pm" }) # => {"kind" => "time", ...}
 chat.with_tools(*tool.ruby_llm)                    # require "acute/tool/ruby_llm"
 ```
