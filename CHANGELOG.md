@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Changed:** the gem includes the README, CHANGELOG and docs/, so they can be read offline beside the code.
 - **Fixed:** a `now:` with only an offset, such as `Time.new(2026, 10, 17, 14, 0, 0, "-04:00")`, was read in the system zone, though the docs promise the zone of `now:`. Without `zone:`, its offset is now the zone (D45).
 - **Fixed:** Cairo kept standard time all year after 2076. Its summer, which ends at 24:00 on the last Thursday of October, now carries on to 2200 (D47).
 - **Fixed:** an hourly or finer rule kept an excepted time: "every hour except october 17 at 4pm" still listed 4pm. A time is now that instant, and a date leaves out each of the rule's occurrences that day; one needing more than 24 is `:conflict` (R12).
