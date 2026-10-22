@@ -78,7 +78,7 @@ module Acute
     out
   end
 
-  def self.rule(given, ctx, tokens = nil)
+  def self.rule(given, ctx, tokens = nil, tree = nil)
     unless tokens
       raise ArgumentError, "text must be a String, got #{given.class}" unless String === given
       text = utf8(given) or return Failure.new(:invalid_encoding, 0, given.bytesize)
@@ -86,7 +86,7 @@ module Acute
       tokens = Lexer.lex(text)
       return tokens if Failure === tokens
     end
-    tree = Grammar.rule(tokens)
+    tree ||= Grammar.rule(tokens)
     return Grammar.rule?(tokens) ? tree : Failure.new(:not_rule, 0, given.bytesize) if Failure === tree
     out = Resolve::Recur.call(tree, ctx)
     Symbol === out ? Failure.new(out, 0, given.bytesize) : out

@@ -2,6 +2,7 @@ require_relative "../test_helper"
 require "stringio"
 require_relative "../../lib/acute/cli"
 require_relative "../../lib/acute/chronic_duration"
+require_relative "../../lib/acute/tool"
 
 # Controls the security probes found working, pinned so they stay that way
 class HardeningTest < Minitest::Test
@@ -61,6 +62,48 @@ class HardeningTest < Minitest::Test
     err = StringIO.new
     Acute::CLI.run(argv, stdin: StringIO.new(stdin), stdout: out, stderr: err)
     [out.string, err.string]
+  end
+
+  def seconds
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    yield
+    Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+  end
+
+  # T23: each lone frequency word asked whether a determiner came before it by matching all the text before
+  # it, so 100 KB of "daily weekly monthly" took 30 s
+  def test_t23_lone_frequency_words_keep_extract_linear
+    now = Time.new(2026, 10, 22, 12, 0, 0, "-04:00")
+    ["daily weekly monthly ", "daily "].each do |unit|
+      text = (unit * (100_000 / unit.size))
+      assert_operator seconds { Acute.extract(text, now: now) }, :<, 3.0, unit
+      assert_operator seconds { Acute.extract(text[0, 4096], now: now) }, :<, 0.5, unit
+    end
+    text = "#{"日本 " * 2000}the weekly sync, our daily standup, take it daily with food"
+    assert_equal ["daily"], Acute.extract(text, now: now).mentions.map(&:text)
+  end
+
+  # T25: the words just before a mention were matched from 12 bytes back, which can be inside a character
+  def test_t25_multibyte_text_before_a_mention_does_not_raise
+    ["会議は日本 tomorrow", "会議は日本 12 tomorrow", "€€€€ 12 jan", "ああああ morning", "日本語 #{"x" * 3}$12 3pm"].each do |text|
+      Acute.extract(text, now: Time.new(2026, 10, 22, 12, 0, 0, "-04:00"))
+    end
+    assert_equal ["tomorrow"], Acute.extract("会議は日本 tomorrow").mentions.map(&:text)
+    refute Acute::Tool.new.call("extract", { "text" => "会議は日本 tomorrow" }).key?("error")
+  end
+
+  # T24: a rule that runs far out, or whose occurrences are far apart, stops at R19's budgets
+  def test_t24_far_out_rules_stop_at_the_budgets
+    now = Time.new(2026, 10, 22, 12, 0, 0, "-04:00")
+    rule = ->(text) { Acute.recurrence!(text, now: now, zone: "America/New_York") }
+    assert_operator(seconds do
+      assert_nil rule.("every day 999999999 times").next(3, after: Time.new(9000))
+      assert_nil rule.("every minute until 2200").between(now, Time.new(2200))
+      assert_nil rule.("every 999999999 seconds").between(Time.at(-10**15), Time.at(10**15))
+      assert_equal 3, rule.("every 999999999 years").next(3, after: now).size
+      assert_equal 1000, rule.("every minute until december 31 9999").next(1000, after: now).size
+      assert_equal [], rule.("every minute until 2200").next(3, after: Time.at(10**18))
+    end, :<, 0.5)
   end
 
   def test_the_cli_escapes_terminal_escapes_in_its_errors
