@@ -154,8 +154,48 @@ class RuleCronTest < Minitest::Test
   def test_r25_dtstart_agrees_with_cron_counting_minute_by_minute
     now = Time.utc(2026, 10, 17, 14, 7)
     ["0 9 * * 1-5", "30 0,12 1,15 * *", "*/20 * * * *", "0 */3 * * *", "15 4 29 2 *", "0 0 31 */2 *", "45 23 * * 0",
-     "0 6 13 * *", "1 2 3 4 *", "0 0 1 2-12/3 *", "0 9 1-31 * 1", "0 14 * * 6", "7 14 * * *"].each do |line|
+     "0 6 13 * *", "1 2 3 4 *", "0 0 1 2-12/3 *", "0 9 1-31 * 1", "0 14 * * 6", "7 14 * * *", "*/15 9-17 * * 1-5",
+     "0,30 9 * * *", "5-59/15 * * * *", "*/7 * * * *", "10,40 */6 1,15 * *"].each do |line|
       assert_equal first_run(line, now), Acute::Rule.from_cron(line, now: now, zone: "UTC").dtstart, line
+    end
+  end
+
+  def test_r25_several_minutes_are_a_byminute_list
+    r = from("*/15 9-17 * * 1-5")
+    assert_equal "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9,10,11,12,13,14,15,16,17;BYMINUTE=0,15,30,45", r.rrule
+    assert_equal "*/15 9-17 * * 1-5", r.cron
+    assert_equal "FREQ=DAILY;BYHOUR=9;BYMINUTE=0,30", from("0,30 9 * * *").rrule
+    assert_equal "FREQ=DAILY;BYHOUR=#{(0..23).to_a.join(",")};BYMINUTE=5,20,35,50", from("5-59/15 * * * *").rrule
+    assert_equal "FREQ=MONTHLY;BYMONTHDAY=1,15;BYHOUR=0,6,12,18;BYMINUTE=10,40", from("10,40 */6 1,15 * *").rrule
+    ["*/15 9-17 * * 1-5", "5-59/15 * * * *", "*/7 * * * *", "10,40 */6 1,15 * *", "*/20 9-11 * * 6"].each do |line|
+      assert_equal line, from(line).cron, line
+    end
+    assert_equal "*/30 9 * * *", from("0,30 9 * * *").cron # R20: the shortest way
+  end
+
+  # R27: to_s reads back where the minutes step evenly through the day's window. Where they don't, as */7
+  # restarting each hour, it lists every time, which the grammar reads back too
+  def test_r27_minute_lists_read_back_from_to_s
+    { "*/15 9-17 * * 1-5" => "every 15 minutes from 9am to 6pm on weekdays",
+      "5-59/15 * * * *" => "every 15 minutes from 12:05am to midnight",
+      "0,20,40 9-11 * * 6" => "every 20 minutes from 9am to 12pm on Saturdays",
+      "0,30 9 * * *" => "every day at 9am and 9:30am",
+      "10,40 */6 1,15 * *" => "the 1st and 15th of every month at 12:10am, 12:40am, 6:10am, 6:40am, 12:10pm, 12:40pm, 6:10pm and 6:40pm" }.each do |line, english|
+      r = from(line)
+      assert_equal english, r.to_s, line
+      assert_equal r, rule(english), english
+    end
+    assert_equal from("*/7 9 * * *"), rule(from("*/7 9 * * *").to_s)
+  end
+
+  def test_r25_minute_lists_occur_where_cron_runs
+    start = Time.utc(2026, 10, 14)
+    stop = start + 3 * 86_400
+    ["*/15 9-17 * * 1-5", "0,30 9 * * *", "5-59/15 * * * *", "*/7 * * * *", "10,40 */6 1,15 * *"].each do |line|
+      f = line.split
+      sets = cron_sets(f)
+      want = (start.to_i...stop.to_i).step(60).map { Time.at(_1).utc }.select { match?(_1, sets, f[2].start_with?("*"), f[4].start_with?("*")) }
+      assert_equal want, Acute::Rule.from_cron(line, now: start, zone: "UTC").between(start, stop), line
     end
   end
 
@@ -177,12 +217,8 @@ class RuleCronTest < Minitest::Test
   end
 
   def test_r25_unsupported_lines_say_why
-    { "*/15 9-17 * * 1-5" => "a rule holds one minute past the hour, or a step of minutes through every hour of every day",
-      "0,30 9 * * *" => "a rule holds one minute past the hour, or a step of minutes through every hour of every day",
-      "5-59/15 * * * *" => "a rule holds one minute past the hour, or a step of minutes through every hour of every day",
-      "0 9 * 7 *" => "a rule can't hold those days and months together",
+    { "0 9 * 7 *" => "a rule can't hold those days and months together",
       "0 9 1 1,8 *" => "a rule can't hold those days and months together",
-      "*/7 * * * *" => "a rule holds one minute past the hour, or a step of minutes through every hour of every day",
       "0 9 1,15 7 *" => "a rule can't hold those days and months together",
       "0 9 * * 1#2" => '"1#2" is not standard cron: no L, W, # or ?',
       "0 9 L * *" => '"L" is not standard cron: no L, W, # or ?',
@@ -284,13 +320,15 @@ class RuleCronTest < Minitest::Test
   # The first minute on or after now that cron runs, in UTC, counting as Vixie cron does
   def first_run(line, now)
     f = line.split
-    sets = [[0, 59], [0, 23], [1, 31], [1, 12], [0, 6]].each_with_index.map { |(lo, hi), i| expand(f[i], lo, hi) }
+    sets = cron_sets(f)
     t = now
     until match?(t, sets, f[2].start_with?("*"), f[4].start_with?("*"))
       t = day?(t, sets, f[2].start_with?("*"), f[4].start_with?("*")) ? t + 60 : Time.utc(t.year, t.month, t.day) + 86_400
     end
     t
   end
+
+  def cron_sets(fields) = [[0, 59], [0, 23], [1, 31], [1, 12], [0, 6]].each_with_index.map { |(lo, hi), i| expand(fields[i], lo, hi) }
 
   def expand(field, low, high)
     field.split(",").flat_map do |item|

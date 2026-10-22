@@ -13,7 +13,7 @@ module Acute
                                     monthly: "month", yearly: "year" })
     DAY = 86_400
 
-    # What repeats: secs are seconds of the day, the same minute (R4)
+    # What repeats: secs are seconds of the day, sorted, each hour said with each minute said (R4)
     Parts = Struct.new(:freq, :interval, :month, :monthdays, :days, :nths, :setpos, :secs) do
       def on?(day)
         ymd = Calendar.civil_from_days(day)
@@ -60,8 +60,8 @@ module Acute
       out << "BYDAY=#{byday.join(",")}" unless byday.empty?
       out << "BYSETPOS=#{p.setpos.join(",")}" if p.setpos
       unless p.secs.empty?
-        out << "BYHOUR=#{p.secs.map { _1 / 3600 }.join(",")}"
-        out << "BYMINUTE=#{p.secs[0] / 60 % 60}"
+        out << "BYHOUR=#{p.secs.map { _1 / 3600 }.uniq.join(",")}"
+        out << "BYMINUTE=#{p.secs.map { _1 / 60 % 60 }.uniq.sort.join(",")}"
         out << "BYSECOND=#{p.secs[0] % 60}" if p.secs[0] % 60 != 0
       end
       out << "COUNT=#{@count}" if @count
@@ -84,6 +84,10 @@ module Acute
 
     def to_s
       p = @parts
+      if (window = steps)
+        return "#{window}#{tail}" if p.freq == :daily && p.interval == 1
+        return "#{window} on #{weekdays(plural: true)}#{tail}" if p.freq == :weekly && p.interval == 1 && !p.days.empty?
+      end
       out = +if !p.nths.empty?
                "the #{list(p.nths.sort_by(&:first).map { ordinal(_1[0]) })} #{DAY_NAMES[p.nths[0][1]]} of #{every("month")}"
              elsif p.setpos
@@ -97,11 +101,10 @@ module Acute
              else
                every(UNITS[p.freq])
              end
-      out << " at #{list(p.secs.map { Describe.clock(_1) })}" unless p.secs.empty?
-      out << " #{@count} times" if @count
-      out << " starting #{date(@timed ? @start.div(DAY) : @start)}" if @started
-      out << " until #{@timed ? until_local : date(@until)}" if @until
-      out
+      if window then out << " #{window}"
+      elsif !p.secs.empty? then out << " at #{list(p.secs.map { Describe.clock(_1) })}"
+      end
+      out << tail
     end
 
     def to_h
@@ -125,6 +128,26 @@ module Acute
     private
 
     Notes = Struct.new(:dst)
+
+    # The count, start and end, as to_s ends with them
+    def tail
+      out = +""
+      out << " #{@count} times" if @count
+      out << " starting #{date(@timed ? @start.div(DAY) : @start)}" if @started
+      out << " until #{@timed ? until_local : date(@until)}" if @until
+      out
+    end
+
+    # R4: several minutes past the hour, evenly spaced through a window of the day, as "every 15 minutes from
+    # 9am to 6pm", its end left out (R27); nil for one minute, two times, or times no step reaches
+    def steps
+      secs = @parts.secs
+      return if secs.size < 3 || secs.map { _1 / 60 % 60 }.uniq.size < 2
+      step = secs[1] - secs[0]
+      return unless 3600 % step == 0 && secs.each_cons(2).all? { _2 - _1 == step }
+      stop = secs[-1] + step >= DAY ? "midnight" : Describe.clock(secs[-1] + step)
+      "every #{step / 60} minutes from #{Describe.clock(secs[0])} to #{stop}"
+    end
 
     def form = @timed ? ";TZID=#{@zone}" : ";VALUE=DATE"
 
@@ -154,11 +177,12 @@ module Acute
 
     def sorted_days = @parts.days.sort_by { (_1 + 6) % 7 }
 
-    def weekdays
+    def weekdays(plural: false)
       days = sorted_days
-      return "weekday" if days == [1, 2, 3, 4, 5]
-      return "weekend" if days == [6, 0]
-      list(days.map { DAY_NAMES[_1] })
+      s = plural ? "s" : ""
+      return "weekday#{s}" if days == [1, 2, 3, 4, 5]
+      return "weekend#{s}" if days == [6, 0]
+      list(days.map { "#{DAY_NAMES[_1]}#{s}" })
     end
 
     # "every month", "every other week", "every 3 days"; unit nil for weekdays, which take the interval in weeks
