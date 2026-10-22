@@ -11,14 +11,14 @@ require_relative "../lib/acute"
 PHRASES = ["tomorrow", "next tuesday 3pm", "3 days ago", "27/5/1979", "friday at noon", "in 2 hours",
            "last monday", "may 5th", "tomorrow at 4:30pm", "this afternoon"].freeze
 NOW = Time.new(2026, 10, 17, 14, 0, 0, "-04:00")
-ZONE = "America/New_York"
+ZONE = "America/New_York".freeze
 ROUNDS = Integer(ARGV.fetch(0, 5))
 
-def per_call(n)
-  n.times { yield } # warm up, so YJIT has compiled what it will
+def per_call(n, &)
+  n.times(&) # warm up, so YJIT has compiled what it will
   best = Array.new(ROUNDS) do
     t0 = Process.clock_gettime(Process::CLOCK_PROCESS_CPUTIME_ID)
-    n.times { yield }
+    n.times(&)
     (Process.clock_gettime(Process::CLOCK_PROCESS_CPUTIME_ID) - t0) / n
   end
   best.min * 1e6
@@ -31,7 +31,7 @@ end
 
 mode = defined?(RubyVM::YJIT) && RubyVM::YJIT.enabled? ? "YJIT" : "interpreter"
 puts "Ruby #{RUBY_VERSION}, #{mode}, best of #{ROUNDS} rounds, µs a parse"
-puts format("%-20s %9s %9s %7s", "phrase", "chronic", "acute", "faster")
+puts "phrase                 chronic     acute  faster"
 ratios = PHRASES.map do |text|
   chronic = per_call(300) { Chronic.parse(text, now: NOW) }
   acute = per_call(3_000) { Acute.parse(text, now: NOW, zone: ZONE) }
