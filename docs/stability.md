@@ -5,7 +5,7 @@ acute follows [semantic versioning](https://semver.org) from 1.0.0. `gem "acute"
 ## What SemVer covers
 
 - The public Ruby API, as [docs/usage.md lists it](usage.md#the-public-api).
-- Failure codes.
+- Failure codes ([the table](usage.md#failures)).
 - The tool names, and the tool and MCP input and output schemas in [schema/](../schema).
 - The CLI's flags, its `--json` output and its exit codes ([docs/cli.md](cli.md)).
 

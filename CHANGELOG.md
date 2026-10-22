@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **Fixed:** Cairo kept standard time all year after 2076. Its summer, which ends at 24:00 on the last Thursday of October, now carries on to 2200 (D47).
+- **Fixed:** an hourly or finer rule kept an excepted time: "every hour except october 17 at 4pm" still listed 4pm. A time is now that instant, and a date leaves out each of the rule's occurrences that day; one needing more than 24 is `:conflict` (R12).
 
 ## 1.0.0
 

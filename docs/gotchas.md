@@ -109,3 +109,25 @@ Acute.parse("at 1530", now:, zone:).time      # => 2026-10-17 15:30:00 -0400
 ## Adding days under Rails jumps an hour
 
 Times come back as plain `Time` values with a fixed offset, so `+ 86_400` across a clock change keeps the old offset. Under Rails, convert first: `r.time.in_time_zone(r.zone)` ([time zones](usage.md#time-zones)).
+
+## "soon" gave nil
+
+acute fails rather than guess. A phrase it can't pin to an exact time returns nil, and `parse!` raises with the reason ([failures](usage.md#failures)):
+
+```ruby
+Acute.parse("soon", now:, zone:)                        # => nil
+Acute.parse("the day after the meeting", now:, zone:)   # => nil
+Acute.parse("satterday", now:, zone:)                   # => nil
+Acute.parse("mon, wed and fri", now:, zone:)            # => nil
+Acute.parse("FY27", now:, zone:)                        # => nil
+Acute.parse("FY27", now:, zone:, fiscal_year_start: 7).date.to_s  # => "2026-07-01"
+```
+
+- **No time named**: "soon", "sometime next week".
+- **Words it doesn't know**, such as an event or a name: "the day after the meeting". `strict: false` skips unknown words ([D22](rules.md#d22-strict-by-default)).
+- **Misspellings** outside a small fixed table. There is no fuzzy matching: "tommorow" reads, "satterday" doesn't (D22).
+- **Several dates in one phrase**: "mon, wed and fri", "tonight or tomorrow" (D22). `extract` reads dates out of text instead.
+- **Other languages**: "mañana", "demain". A locale sets date order, week start and holidays, not the words.
+- **Holidays outside the built-in set**, such as "chinese new year", without a `holidays:` calendar ([D15](rules.md#d15-holidays)); fiscal years without `fiscal_year_start:` ([D17](rules.md#d17-business-days-and-fiscal-years)); year 0 and BC ([D12](rules.md#d12-centuries-and-decades)).
+- **A repeat that says how often but not when**: "twice a week", "every morning" ([what isn't a rule](recurrence.md#what-isnt-a-rule)).
+- **Text over 512 bytes** fails with `too_long`.
