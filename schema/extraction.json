@@ -1,11 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/skorks/acute/schema/extraction.json",
+  "$id": "https://raw.githubusercontent.com/skorks/acute/v0.0.1/schema/extraction.json",
   "title": "Acute::Extraction",
   "description": "The times, lengths and rules mentioned in a text, in order, and the text without them.",
   "type": "object",
   "required": ["kind", "text", "remainder", "mentions"],
-  "additionalProperties": false,
   "properties": {
     "kind": { "const": "extraction" },
     "text": { "type": "string" },
@@ -15,14 +14,13 @@
       "items": {
         "type": "object",
         "required": ["kind", "text", "offset", "value"],
-        "additionalProperties": false,
         "properties": {
-          "kind": { "enum": ["time", "duration", "rule"] },
+          "kind": { "type": "string", "description": "Known values: time, duration, rule. More may come." },
           "text": { "type": "string" },
           "offset": {
             "type": "array",
             "items": { "type": "integer" },
-            "description": "Character offsets into text: where the mention starts, and where it stops (exclusive)"
+            "description": "Character (codepoint) offsets into text, not bytes or UTF-16 units: where the mention starts, and where it stops (exclusive)"
           },
           "value": { "oneOf": [{ "$ref": "result.json" }, { "$ref": "duration.json" }, { "$ref": "rule.json" }] }
         }

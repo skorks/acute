@@ -89,7 +89,7 @@ Acute.parse!("tomorow at 3", now:, zone:)
 #   e.code => :unknown_word, e.hint => "did you mean \"tomorrow\"?"
 ```
 
-A ParseError also has `position`, the Range of the text it points at, and `unknown`, the words acute didn't know.
+A ParseError also has `position`, the Range of the text it points at, and `unknown`, the words acute didn't know. Every offset acute gives, `position` and a mention's `offset` included, counts characters (codepoints), not bytes or UTF-16 units.
 
 A bad option value raises `Acute::OptionError`, an `ArgumentError` that names the `option` and the `value`. It and `ParseError` both include `Acute::Error`, so `rescue Acute::Error` catches either.
 
@@ -136,7 +136,7 @@ x.mentions.map { [_1.offset, _1.value.to_s] }
 x.remainder  # => "Lunch with Sam, then a review"
 ```
 
-An Extraction has `text`, `mentions` and `remainder`, the text with the mentions taken out. Each mention has `kind` (`:time`, `:duration` or `:rule`), `text`, `offset` (a Range of character positions in the text) and `value`, a Result, a Duration or a Rule. Its JSON is [schema/extraction.json](../schema/extraction.json), with `offset` as `[begin, end]`. What counts as a mention, and where one starts and ends, are the [E-rules](rules.md#extraction).
+An Extraction has `text`, `mentions` and `remainder`, the text with the mentions taken out. Each mention has `kind` (`:time`, `:duration` or `:rule`), `text`, `offset` (a Range of character positions in the text, counted in codepoints) and `value`, a Result, a Duration or a Rule. Its JSON is [schema/extraction.json](../schema/extraction.json), with `offset` as `[begin, end]`. What counts as a mention, and where one starts and ends, are the [E-rules](rules.md#extraction).
 
 ## Writing and checking dates
 
@@ -186,4 +186,4 @@ PARSER.parse("1/2/2027").date.to_s  # => "2027-02-01"
 
 ## JSON
 
-Every value has `to_h`, `to_json` and `as_json` (String keys). The schemas in [schema/](../schema) describe them: [result](../schema/result.json), [duration](../schema/duration.json), [rule](../schema/rule.json), [extraction](../schema/extraction.json) and [verdict](../schema/verdict.json). The others there, and [schema/tools/](../schema/tools), are for the [agent tools](agents.md).
+Every value has `to_h`, `to_json` and `as_json` (String keys). The schemas in [schema/](../schema) describe them: [result](../schema/result.json), [duration](../schema/duration.json), [rule](../schema/rule.json), [extraction](../schema/extraction.json) and [verdict](../schema/verdict.json). The others there, and [schema/tools/](../schema/tools), are for the [agent tools](agents.md). Each schema's `$id` is its URL at the release's tag. The schemas of output are open: a later 1.x may add fields, and new values of a failure's `code`, a `grain`, a verdict's `status` or a mention's `kind`, so ignore a field you don't know and treat an unknown value as you would none of the known ones.

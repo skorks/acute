@@ -1,11 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/skorks/acute/schema/result.json",
+  "$id": "https://raw.githubusercontent.com/skorks/acute/v0.0.1/schema/result.json",
   "title": "Acute::Result",
   "description": "A parsed time or span. Times are ISO 8601 with the zone's offset; end is exclusive and null when open.",
   "type": "object",
   "required": ["kind", "text", "time", "begin", "end", "grain", "zone", "assumptions", "alternatives"],
-  "additionalProperties": false,
   "properties": {
     "kind": { "const": "time" },
     "text": { "type": "string" },
@@ -19,9 +18,8 @@
       "items": {
         "type": "object",
         "required": ["code", "rule", "message"],
-        "additionalProperties": false,
         "properties": {
-          "code": { "type": "string" },
+          "code": { "type": "string", "description": "A code in data/assumptions.yml. More may come." },
           "rule": { "type": ["string", "null"], "description": "The rule in docs/rules.md that made the assumption, or null" },
           "message": { "type": "string" }
         }
@@ -32,7 +30,6 @@
       "items": {
         "type": "object",
         "required": ["time", "begin", "end", "grain"],
-        "additionalProperties": false,
         "properties": {
           "time": { "type": "string", "format": "date-time" },
           "begin": { "type": ["string", "null"], "format": "date-time" },
@@ -43,9 +40,6 @@
     }
   },
   "$defs": {
-    "grain": {
-      "enum": ["second", "minute", "hour", "day", "weekend", "week", "month", "quarter", "season",
-               "year", "decade", "century"]
-    }
+    "grain": { "type": "string", "description": "Known values: second, minute, hour, day, weekend, week, month, quarter, season, year, decade, century. More may come." }
   }
 }

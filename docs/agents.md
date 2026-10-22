@@ -33,7 +33,7 @@ The tools return the hashes described in [schema/](../schema), with what repeats
 
 ## Failures and `unread`
 
-A tool never raises on what the model sends. Wrong arguments, or text acute can't read, come back as `{kind: "failure", code, error, unread}`. `error` is acute's own words and never quotes the input: text from the arguments could carry instructions, so the words a failure points at go in `unread`, which every tool's description marks as user data. This holds for every `error`, `message` and `description` acute writes, including the MCP server's JSON-RPC errors.
+A tool never raises on what the model sends. Wrong arguments, or text acute can't read, come back as `{kind: "failure", code, error, unread}`, [schema/failure.json](../schema/failure.json). `error` is acute's own words and never quotes the input: text from the arguments could carry instructions, so the words a failure points at go in `unread`, which every tool's description marks as user data. A failure to read the text adds `position`, the characters (codepoints) of `text` it points at as `[begin, end]`, and, for a misspelt word, `hint`: `"did you mean \"tomorrow\"?"`, a word from acute's own table. The `acute` command with `--json` gives the same shape, plus the input as `text`. More codes may come: treat one you don't know as a failure, and ignore fields you don't know. This holds for every `error`, `message` and `description` acute writes, including the MCP server's JSON-RPC errors.
 
 ## In an app: `Acute::Tool`
 
