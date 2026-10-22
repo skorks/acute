@@ -7,6 +7,7 @@ module Acute
       FREQ = { second: [:secondly, 1], minute: [:minutely, 1], hour: [:hourly, 1], day: [:daily, 1], week: [:weekly, 1],
                fortnight: [:weekly, 2], month: [:monthly, 1], quarter: [:monthly, 3], year: [:yearly, 1] }.freeze
       FINE = { secondly: true, minutely: true, hourly: true }.freeze
+      STEP = { secondly: 1, minutely: 60, hourly: 3600 }.freeze
       FINE_GRAIN = { second: true, minute: true, hour: true }.freeze
       SEARCH = 8 * 366 + 1 # R9: the next 29 February can be 8 years away
       EVERY_DAY = [0, 1, 2, 3, 4, 5, 6].freeze
@@ -17,6 +18,13 @@ module Acute
         return :conflict if r.unit && !freq
         interval = (r.interval || 1) * (mult || 1)
         return :invalid_date if interval == 0 # R15
+        if r.window # R27: the steps inside the window are the rule's clocks, on each day it runs
+          return :conflict unless FINE[freq] && r.clocks.empty? && !r.part
+          steps = window(r.window, interval * STEP[freq], ctx)
+          return steps if Symbol === steps
+          freq = nil
+          interval = 1
+        end
         days = r.days.uniq
         days = EVERY_DAY if days.empty? && r.except_days.any? && (freq.nil? || freq == :daily)
         days -= r.except_days # R12
@@ -41,15 +49,15 @@ module Acute
         elsif days.any?
           freq = :weekly if freq.nil? || freq == :daily # R6
           return :conflict unless freq == :weekly
-        elsif r.clocks.any? || r.part
+        elsif r.clocks.any? || r.part || steps
           freq ||= :daily
         end
         return :conflict unless freq
         return :conflict if r.part && r.clocks.empty? # R15: "every morning"
         return :conflict if [r.until, r.within, r.length].compact.size > 1 || (r.count && (r.until || r.within || r.length))
 
-        secs = r.clocks.map { clock(_1, r.part, ctx) }.uniq.sort
-        return :conflict if secs.map { _1 % 3600 }.uniq.size > 1 # R4
+        secs = steps || r.clocks.map { clock(_1, r.part, ctx) }.uniq.sort
+        return :conflict unless grid?(secs) # R4
         timed = !secs.empty? || FINE[freq]
 
         from = ctx.now
@@ -86,6 +94,25 @@ module Acute
         return Clock.candidates(c, ctx, false)[0] unless part
         day = ctx.today
         Periodic.clock(c, G::Part.new(part), Named.part(part, day, ctx), ctx)[0].b - day * DAY
+      end
+
+      # R4: each hour with each minute, all at one second, as BYHOUR × BYMINUTE gives them
+      def self.grid?(secs)
+        rest = secs.map { _1 % 3600 }.uniq
+        rest.map { _1 % 60 }.uniq.size <= 1 && secs.size == secs.map { _1 / 3600 }.uniq.size * rest.size
+      end
+
+      # R27: the seconds of the day from the window's start, a step apart, before its end; within one day
+      def self.window(node, step, ctx)
+        x = first(node, ctx)
+        return x if Symbol === x
+        return :incomplete unless x.begin && x.end
+        b = ctx.local(x.begin)
+        day = b.div(DAY)
+        e = ctx.local(x.end) - day * DAY
+        b -= day * DAY
+        return :conflict if e > DAY || e <= b
+        (b...e).step(step).to_a
       end
 
       def self.first(node, ctx)

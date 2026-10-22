@@ -98,11 +98,7 @@ module Acute
         elsif every_day && minutes == [0] && (n = grid(hours, 0, 23)) && n < 24
           return fine(:hourly, n, ctx)
         end
-        unless minutes.size == 1
-          return [:unsupported_cron, "a rule holds one minute past the hour, or a step of minutes through every hour of every day"]
-        end
-
-        secs = hours.map { _1 * 3600 + minutes[0] * 60 }
+        secs = hours.flat_map { |h| minutes.map { h * 3600 + _1 * 60 } } # R25: each hour with each minute (R4)
         step = grid(months, 1, 12, offset: true)
         parts = if every_day then [:daily, 1, nil, [], []]
                 elsif all_doms && all_months then [:weekly, 1, nil, [], dows]
@@ -198,7 +194,7 @@ module Acute
         return [cron_line([minute, hours, (1..31).to_a, (1..12).to_a, (0..6).to_a]), nil]
       end
       return cant(every(p.days.empty? ? unit : nil).delete_suffix(" on")) if n > 1 && !(p.freq == :monthly && 12 % n == 0) # R23
-      minute = p.secs.empty? ? [0] : [p.secs[0] / 60 % 60] # R22
+      minute = p.secs.empty? ? [0] : p.secs.map { _1 / 60 % 60 }.uniq.sort # R22
       hours = p.secs.empty? ? [0] : p.secs.map { _1 / 3600 }
 
       day = @timed ? @start.div(DAY) : @start

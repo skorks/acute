@@ -4,9 +4,10 @@ module Acute
   class Grammar
     # interval: units between occurrences; days: weekdays picked (0 = Sunday); nths: [n, wday] within the month
     # (R8); monthdays: days of the month, -1 the last; setpos: BYSETPOS over Monday to Friday; month and date:
-    # what was said (R9); until, start, within and except hold one-off trees; length the Units of "for 6 weeks"
+    # what was said (R9); until, start, within, except and window hold one-off trees; length the Units of "for 6
+    # weeks"
     Recur = Struct.new(:interval, :unit, :days, :nths, :monthdays, :setpos, :month, :date, :clocks, :part,
-                       :until, :start, :within, :except_days, :except, :count, :length)
+                       :until, :start, :within, :except_days, :except, :count, :length, :window)
 
     # R5
     FREQUENCY = { daily: [:day, 1], hourly: [:hour, 1], weekly: [:week, 1], monthly: [:month, 1], yearly: [:year, 1],
@@ -29,7 +30,7 @@ module Acute
     end
 
     def rule
-      r = Recur.new(nil, nil, [], [], [], nil, nil, nil, [], nil, nil, nil, nil, [], [], nil, nil)
+      r = Recur.new(nil, nil, [], [], [], nil, nil, nil, [], nil, nil, nil, nil, [], [], nil, nil, nil)
       every = false
       while @i < @n
         k = @t[@i]
@@ -91,6 +92,12 @@ module Acute
           @i += S
           r.start = tail_phrase
           return r.start if Failure === r.start
+        elsif k == L::WORD && (v == :from || v == :between) && r.unit && !r.window # R27: "every 15 minutes from 9 to 5"
+          stop = @i + S
+          stop += S while stop < @n && !window_end?(stop)
+          r.window = Grammar.new(@t[@i...stop]).phrase
+          return r.window if Failure === r.window
+          @i = stop
         elsif k == L::WORD && v == :in
           @i += S
           r.within = tail_phrase
@@ -212,6 +219,14 @@ module Acute
       node = Grammar.new(@t[@i...stop]).phrase
       @i = stop
       node
+    end
+
+    # A window's clock range ends at the days it is on, or at the next rule word
+    def window_end?(j)
+      k = @t[j]
+      w = @t[j + 1]
+      (k == L::WORD && (TAIL[w] || w == :on || w == :every)) || k == L::WDAY || k == L::WEEKEND ||
+        (k == L::UNIT && w == :business_day) || (k == L::NUM && @t[j + S + 1] == :times)
     end
 
     def tail_end(j, and_stop = false)

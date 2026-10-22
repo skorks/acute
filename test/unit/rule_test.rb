@@ -34,7 +34,10 @@ class RuleTest < Minitest::Test
       "the 1st and 15th of every month" => "the 1st and 15th of every month",
       "every january 1st" => "every year on January 1",
       "every 30 minutes until 5pm" => "every 30 minutes until Oct 17, 2026 5pm",
-      "every monday starting november" => "every Monday starting Nov 2, 2026" }.each do |text, english|
+      "every monday starting november" => "every Monday starting Nov 2, 2026",
+      "every 15 minutes from 9 to 5 on weekdays" => "every 15 minutes from 9am to 5pm on weekdays",
+      "every 20 minutes between 9pm and midnight" => "every 20 minutes from 9pm to midnight",
+      "every day at 9 and 9:30" => "every day at 9am and 9:30am" }.each do |text, english|
       r = rule(text)
       assert_equal english, r.to_s, text
       assert_equal r, rule(r.to_s), english
