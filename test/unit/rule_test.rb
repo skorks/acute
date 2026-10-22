@@ -76,6 +76,22 @@ class RuleTest < Minitest::Test
     end
   end
 
+  def test_r12_excepted_times_read_back_to_the_same_exdates
+    {
+      "every hour except october 17 at 4pm" => "every hour except Oct 17, 2026 4pm",
+      "every hour except october 17 at 4pm and october 17 at 5pm" => "every hour except Oct 17, 2026 4pm and Oct 17, 2026 5pm",
+      "every hour except october 18 at 4pm and october 19 at 5pm" => "every hour except Oct 18, 2026 4pm and Oct 19, 2026 5pm",
+      "every hour except october 18" => "every hour except Oct 18, 2026",
+      "every hour except november 1" => "every hour except Nov 1, 2026"
+    }.each do |text, english|
+      r = rule(text)
+      assert_equal english, r.to_s, text
+      back = rule(r.to_s)
+      assert_equal r.to_ical[/EXDATE.*/], back.to_ical[/EXDATE.*/], text
+      assert_equal r, back, text
+    end
+  end
+
   def test_r9_an_until_before_the_first_occurrence_is_no_rule
     assert_nil rule("every monday until last week")
     assert_nil rule("every day at 9am until 8am")
