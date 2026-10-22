@@ -77,7 +77,8 @@ module Acute
           day = ctx.local(x.begin).div(DAY)
           timed ? secs.map { day * DAY + _1 } : day
         end
-        Rule.new(rule, ctx.zone.name, start, timed, r.count, until_, exdates.flatten, r.start || r.within ? true : false)
+        Rule.new(rule, ctx.zone.name, start, timed, r.count, until_, exdates.flatten, r.start || r.within ? true : false,
+                 ctx.dst_policy)
       end
 
       # R4: seconds of the day, as D4, D30 and D35 read the clock, first reading only
