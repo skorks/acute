@@ -91,6 +91,18 @@ Acute.verify("next friday at noon", "2026-10-24T12:00", now:, zone:).message
 
 More: [docs/usage.md](docs/usage.md#writing-and-checking-dates).
 
+### Repeating times
+
+```ruby
+r = Acute.recurrence("every weekday at 9am", now:, zone:)
+r.rrule  # => "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0"
+r.cron   # => "0 9 * * 1-5"
+r.next(2, after: Time.new(2026, 10, 17, 14, 0, 0, "-04:00"))
+# => [2026-10-19 09:00:00 -0400, 2026-10-20 09:00:00 -0400]
+```
+
+iCalendar rules, their occurrences and cron: [docs/recurrence.md](docs/recurrence.md).
+
 ### Command line
 
 ```
@@ -126,6 +138,7 @@ Over ten everyday phrases on Ruby 4.0.7, acute takes 9–16 µs a parse to chron
 ## Documentation
 
 - [docs/usage.md](docs/usage.md): every call, option and result field, with examples.
+- [docs/recurrence.md](docs/recurrence.md): repeating times as iCalendar rules, their occurrences, and cron.
 - [docs/cli.md](docs/cli.md): the `acute` command and its options.
 - [docs/agents.md](docs/agents.md): acute as tools for an LLM, through `Acute::Tool` or `acute mcp`.
 - [docs/chronic.md](docs/chronic.md): why acute exists, moving from chronic, and speed.

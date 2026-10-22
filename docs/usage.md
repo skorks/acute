@@ -16,8 +16,9 @@ zone = "America/New_York"
 | `Acute.parse(text, **options)` | an `Acute::Result`, or nil when the text isn't a time |
 | `Acute.parse!(text, **options)` | an `Acute::Result`, or raises `Acute::ParseError` |
 | `Acute.duration(text, **options)` / `duration!` | an `Acute::Duration`, or nil / raises |
-| `Acute.read(text, **options)` | whichever the text is, a Result or a Duration, or nil |
-| `Acute.extract(text, **options)` | an `Acute::Extraction`: every time and duration inside other text |
+| `Acute.read(text, **options)` | whichever the text is, a Result, a Duration or a Rule, or nil |
+| `Acute.recurrence(text, **options)` / `recurrence!` | an `Acute::Rule` for a repeating time ([recurrence.md](recurrence.md)), or nil / raises |
+| `Acute.extract(text, **options)` | an `Acute::Extraction`: every time, duration and repeating time inside other text |
 | `Acute.describe(value, style: :relative, **options)` | the most natural phrase that reads back to the value |
 | `Acute.verify(text, value, **options)` | an `Acute::Verdict`: whether the value is what the text says |
 | `Acute.with(**options)` | an `Acute::Parser` with the options fixed, which has all of the above |
@@ -122,7 +123,7 @@ d.to_s(:long)  # => "1 hour 30 minutes"
 
 A month stays a month rather than becoming a guess in seconds: `parts` keeps each unit (`{months: 1}`), and `seconds` raises when a part has no fixed length. `after(time)` adds the duration on the calendar, and `seconds(from: time)` counts it from that time. Its JSON is [schema/duration.json](../schema/duration.json), where `seconds` is null for such a duration.
 
-`Acute.read` returns whichever the text is, a time or a duration. Text that is both, such as "1530 hrs", is the time ([read](rules.md#read)).
+`Acute.read` returns whichever the text is, a time, a duration or a repeating time. Text that is both a time and a duration, such as "1530 hrs", is the time ([read](rules.md#read)).
 
 ## Dates inside other text
 
@@ -135,7 +136,7 @@ x.mentions.map { [_1.offset, _1.value.to_s] }
 x.remainder  # => "Lunch with Sam, then a review"
 ```
 
-An Extraction has `text`, `mentions` and `remainder`, the text with the mentions taken out. Each mention has `kind` (`:time` or `:duration`), `text`, `offset` (a Range of character positions in the text) and `value`, a Result or a Duration. Its JSON is [schema/extraction.json](../schema/extraction.json), with `offset` as `[begin, end]`. What counts as a mention, and where one starts and ends, are the [E-rules](rules.md#extraction).
+An Extraction has `text`, `mentions` and `remainder`, the text with the mentions taken out. Each mention has `kind` (`:time`, `:duration` or `:rule`), `text`, `offset` (a Range of character positions in the text) and `value`, a Result, a Duration or a Rule. Its JSON is [schema/extraction.json](../schema/extraction.json), with `offset` as `[begin, end]`. What counts as a mention, and where one starts and ends, are the [E-rules](rules.md#extraction).
 
 ## Writing and checking dates
 
@@ -185,4 +186,4 @@ PARSER.parse("1/2/2027").date  # => #<Date: 2027-02-01>
 
 ## JSON
 
-Every value has `to_h`, `to_json` and `as_json` (String keys). The schemas in [schema/](../schema) describe them: [result](../schema/result.json), [duration](../schema/duration.json), [extraction](../schema/extraction.json) and [verdict](../schema/verdict.json). The others there, and [schema/tools/](../schema/tools), are for the [agent tools](agents.md).
+Every value has `to_h`, `to_json` and `as_json` (String keys). The schemas in [schema/](../schema) describe them: [result](../schema/result.json), [duration](../schema/duration.json), [rule](../schema/rule.json), [extraction](../schema/extraction.json) and [verdict](../schema/verdict.json). The others there, and [schema/tools/](../schema/tools), are for the [agent tools](agents.md).
