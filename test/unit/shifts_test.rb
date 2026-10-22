@@ -2,6 +2,7 @@ require_relative "../test_helper"
 
 # D44: shifts by several counts, signed counts, fractions, and shifts beside a day
 class ShiftsTest < Minitest::Test
+  cover "Acute::Resolve*"
   def assert_at(text, expected, **opts)
     assert_equal expected, wall(parse(text, **opts).begin), text
   end

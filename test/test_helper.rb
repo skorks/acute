@@ -2,6 +2,7 @@
 # while those threads wait on their queue never finishes (Ruby 4.0.7), though the same Ractor runs alone
 ENV["MT_CPU"] ||= "1" if Gem.win_platform?
 require "minitest/autorun"
+require "mutant/minitest/coverage" # cover, for bin/mutant
 require "tzinfo" # the tests compare with it; acute never loads it
 require_relative "../lib/acute"
 

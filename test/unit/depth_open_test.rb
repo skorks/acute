@@ -2,6 +2,7 @@ require_relative "../test_helper"
 
 # Open ends and the spans that hold a date, settled in the depth pass (D44)
 class DepthOpenTest < Minitest::Test
+  cover "Acute::Resolve*"
   def span(text, **opts)
     r = parse(text, **opts)
     [r.begin && wall(r.begin), r.end && wall(r.end)]

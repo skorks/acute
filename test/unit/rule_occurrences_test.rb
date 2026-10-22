@@ -2,6 +2,7 @@ require_relative "../test_helper"
 require "json"
 
 class RuleOccurrencesTest < Minitest::Test
+  cover "Acute::Rule*"
   OPTS = { now: "2026-10-17T14:00", zone: NY }.freeze
   AFTER = Time.new(2026, 10, 17, 14, 0, 0, "-04:00")
 

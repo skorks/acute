@@ -2,6 +2,7 @@ require_relative "../test_helper"
 
 # D17, D47, D49: business days are counted, not stepped through, and one call counts at most 10,000 (T17)
 class BusinessDaysTest < Minitest::Test
+  cover "Acute::Resolve*"
   NOW = Time.new(2026, 10, 21, 12, 0, 0, "-04:00")
   EPOCH = 2_440_588
   FIXED = [[1, 1], [7, 4], [11, 11], [12, 25]].freeze

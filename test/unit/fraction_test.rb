@@ -3,6 +3,7 @@ require_relative "../../lib/acute/chronic"
 
 # D47: a fraction of a second written in the text is kept, exactly
 class FractionTest < Minitest::Test
+  cover "Acute::Resolve*"
   def test_d47_the_fraction_is_kept_exactly
     r = parse("2013-08-01T19:30:00.345-07:00")
     assert_equal Rational(345, 1000), r.time.subsec

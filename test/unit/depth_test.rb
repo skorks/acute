@@ -2,6 +2,7 @@ require_relative "../test_helper"
 
 # The details settled in the depth pass (D44), theme by theme
 class DepthTest < Minitest::Test
+  cover "Acute::Resolve*"
   def assert_reads(text, main, alts = [], **opts)
     r = parse(text, **opts)
     assert_equal main, wall(r.begin), text

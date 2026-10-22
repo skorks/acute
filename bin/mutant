@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+# bin/mutant [SUBJECT...] [--jobs N]: mutation testing before a release, too slow for bin/check.
+# With no subject it runs the core one subject at a time. Mutant picks each subject's tests by their `cover`.
+CORE = %w[Acute::Calendar* Acute::Zone* Acute::Lexer* Acute::Rule* Acute::Resolve*].freeze
+
+args = ARGV.dup
+jobs = (i = args.index("--jobs")) ? args.slice!(i, 2)[1] : "2"
+subjects = args.empty? ? CORE : args
+Dir.chdir(File.expand_path("..", __dir__))
+failed = subjects.reject { |subject| system("bundle", "exec", "mutant", "run", "--jobs", jobs, subject) }
+abort "mutants alive in: #{failed.join(", ")}" unless failed.empty?

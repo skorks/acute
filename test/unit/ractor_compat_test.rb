@@ -5,6 +5,7 @@ require_relative "../../lib/acute/chronic_duration"
 # The compatibility layers parse with their defaults in any Ractor. Their process-wide settings
 # (Chronic.time_class, ChronicDuration.hours_per_day) stay the main Ractor's, as in the originals.
 class RactorCompatTest < Minitest::Test
+  cover "Acute::Zone*" # a Ractor keeps its own zone cache
   NOW = Time.utc(2026, 10, 17, 14)
 
   def in_ractor(*args, &)

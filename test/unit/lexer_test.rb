@@ -1,6 +1,7 @@
 require_relative "../test_helper"
 
 class LexerTest < Minitest::Test
+  cover "Acute::Lexer*"
   L = Acute::Lexer
 
   def tokens(s) = L.inspect_tokens(L.lex(s), s)

@@ -2,6 +2,7 @@ require_relative "../test_helper"
 
 # One or two phrases from each theme of the corpus, and the D42 details settled while adding them
 class BreadthTest < Minitest::Test
+  cover "Acute::Resolve*"
   def assert_reads(text, main, alts = [], assumptions = [], **opts)
     r = parse(text, **opts)
     assert_equal main, wall(r.begin), text

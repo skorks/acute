@@ -1,6 +1,7 @@
 require_relative "../test_helper"
 
 class ZoneTest < Minitest::Test
+  cover "Acute::Zone*"
   Notes = Struct.new(:dst)
 
   def local(y, mo, d, h, mi) = Acute::Calendar.days_from_civil(y, mo, d) * 86_400 + h * 3600 + mi * 60
@@ -29,6 +30,32 @@ class ZoneTest < Minitest::Test
                      "#{name} #{epoch}"
       end
     end
+  end
+
+  # The next change of offset, skipping transitions that change only the abbreviation or DST flag
+  def test_next_change_matches_tzinfo_data_before_every_transition
+    limit = Time.utc(2200).to_i
+    wrong = TZDATA.timezone_identifiers.flat_map do |name|
+      zone = Acute::Zone.for(name)
+      trans = TZDATA.get_timezone_info(name).create_timezone.transitions_up_to(Time.utc(2200), Time.utc(1800))
+      trans.each_index.filter_map do |k|
+        before = trans[k].previous_offset.observed_utc_offset
+        expected = trans[k..].find { it.offset.observed_utc_offset != before }&.timestamp_value
+        got = zone.next_change(trans[k].timestamp_value - 1)
+        [name, k] unless expected ? got == expected : got.nil? || got >= limit
+      end
+    end
+    assert_empty wrong
+    assert_nil Acute::Zone.for("Asia/Kolkata").next_change(Time.utc(2026).to_i)
+    assert_nil Acute::Zone.for("+05:30").next_change(0)
+  end
+
+  def test_known_names_and_inspect
+    assert Acute::Zone.known?("America/New_York")
+    assert Acute::Zone.known?("US/Eastern")
+    refute Acute::Zone.known?("Mars/Olympus")
+    refute Acute::Zone.known?("+05:00")
+    assert_equal "#<Acute::Zone US/Eastern>", Acute::Zone.for("US/Eastern").inspect
   end
 
   def test_new_york_fall_back_takes_the_earlier_time
@@ -144,7 +171,8 @@ class ZoneTest < Minitest::Test
   end
 
   def test_rejects_unknown_zones
-    assert_raises(ArgumentError) { Acute::Zone.for("Mars/Olympus") }
+    e = assert_raises(Acute::OptionError) { Acute::Zone.for("Mars/Olympus") }
+    assert_equal ["unknown zone \"Mars/Olympus\"", :zone, "Mars/Olympus"], [e.message, e.option, e.value]
     assert_raises(ArgumentError) { Acute::Zone.for(5) }
     %w[+24:00 +99:99 -05:60].each { |z| assert_raises(ArgumentError, z) { Acute::Zone.for(z) } }
     assert_equal 86_340, Acute::Zone.for("+23:59").offset_at(0)
