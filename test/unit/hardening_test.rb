@@ -152,12 +152,25 @@ class HardeningTest < Minitest::Test
   # T29: each byte of a word multiplied its key, a bignum by then, so one unbroken 64 KB word took 0.6 s to
   # lex and a megabyte of base64 in extract's text minutes. Text over 512 bytes reaches the lexer only from
   # extract, which blanks such a run's middle.
+  # Linear means 4x the text costs about 4x the time; quadratic would cost 16x. Absolute limits fail on a slow runner.
+  def best_of_three(&) = Array.new(3) { seconds(&) }.min
+
   def test_t29_a_long_unbroken_word_lexes_in_linear_time
-    assert_operator seconds { Acute.extract("a" * 1_000_000) }, :<, 0.5
-    assert_operator seconds { Acute.extract("noon" * 16_384) }, :<, 0.1
-    assert_operator seconds { Acute.extract("会議" * 32_768) }, :<, 0.1
-    assert_operator seconds { Acute.extract("https://#{"www.example." * 6_000}com/a") }, :<, 0.1
-    assert_operator seconds { Acute.parse("a" * Acute::MAX_LENGTH) }, :<, 0.01
+    shapes = {
+      "letters" => ->(n) { "a" * n },
+      "noon" => ->(n) { "noon" * (n / 4) },
+      "cjk" => ->(n) { "会議" * (n / 2) },
+      "dotted url" => ->(n) { "https://#{"www.example." * (n / 12)}com/a" }
+    }
+    shapes.each do |name, shape|
+      small = shape.call(30_000)
+      large = shape.call(120_000)
+      t1 = best_of_three { Acute.extract(small) }
+      t4 = best_of_three { Acute.extract(large) }
+      assert_operator t1, :>=, 0.001, "#{name}: too quick to time"
+      assert_operator t4 / t1, :<, 8, "#{name}: 4x the text took #{(t4 / t1).round(1)}x as long (#{t1}s, #{t4}s)"
+    end
+    assert_operator best_of_three { Acute.parse("a" * Acute::MAX_LENGTH) }, :<, 0.05
     assert_equal ["tomorrow"], Acute.extract("#{"x" * 100_000} tomorrow").mentions.map(&:text)
   end
 
