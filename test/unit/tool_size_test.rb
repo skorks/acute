@@ -6,7 +6,7 @@ require_relative "../../lib/acute/mcp"
 class ToolSizeTest < Minitest::Test
   CAPS = {
     definitions: 3_400,
-    tools_list: 14_100, # 300 over the last cap: extract's output schema now carries a rule value
+    tools_list: 14_200, # 100 over the last cap: every output schema lists the vague_rule failure code
     parse_result: 150,
     recurrence_result: 290,
     extract_result: 640,

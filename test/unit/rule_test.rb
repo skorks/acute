@@ -60,6 +60,37 @@ class RuleTest < Minitest::Test
     assert_equal "not a repeating time", error.message
   end
 
+  def test_r15_a_rule_that_says_how_often_but_not_when_says_so
+    ["twice a week", "Twice a month", "3 times a day", "3 times every week", "once or twice a month", "thrice daily",
+     "twice a week for 6 weeks", "every morning", "each afternoon", "every evening", "mornings", "every monday morning"].each do |text|
+      assert_nil rule(text), text
+      e = assert_raises(Acute::ParseError, text) { Acute.recurrence!(text, **OPTS) }
+      assert_equal [:vague_rule, "#{text.inspect} says how often, not when", 0...text.size], [e.code, e.message, e.position]
+    end
+  end
+
+  def test_r15_other_failures_keep_their_codes
+    { "this morning" => :not_rule, "3 times" => :not_rule, "next friday" => :not_rule, "every 0 days" => :invalid_date,
+      "3 times a day at 9am" => :not_rule, "twice a flurb" => :unknown_word, "every morning flurb" => :unknown_word,
+      "twice a week on mondays" => :unknown_word }.each do |text, code|
+      assert_equal code, assert_raises(Acute::ParseError, text) { Acute.recurrence!(text, **OPTS) }.code, text
+    end
+  end
+
+  def test_r5_every_second_is_the_unit_unless_an_ordinal_goes_on
+    secondly = "DTSTART;TZID=America/New_York:20261017T140000\nRRULE:FREQ=SECONDLY"
+    ["every second", "every Second", "every second,", "every second of the day"].each do |text|
+      assert_equal secondly, rule(text).to_ical, text
+    end
+    assert_equal "FREQ=SECONDLY;UNTIL=20261017T210000Z", rule("every second until 5pm").rrule
+    { "every 2nd" => "FREQ=MONTHLY;BYMONTHDAY=2", "every second of the month" => "FREQ=MONTHLY;BYMONTHDAY=2",
+      "every second monday" => "FREQ=MONTHLY;BYDAY=2MO", "every second day" => "FREQ=DAILY;INTERVAL=2",
+      "every second tuesday of the month" => "FREQ=MONTHLY;BYDAY=2TU", "every second and fourth friday" => "FREQ=MONTHLY;BYDAY=2FR,4FR",
+      "every second to last friday" => "FREQ=MONTHLY;BYDAY=-2FR" }.each do |text, rrule|
+      assert_equal rrule, rule(text).rrule, text
+    end
+  end
+
   def test_describe_gives_the_english
     assert_equal "every day at 8:30am and 5:30pm", Acute.describe(rule("every day at 8:30 and 17:30"))
   end

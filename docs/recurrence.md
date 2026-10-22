@@ -141,4 +141,4 @@ Acute.recurrence("next friday", now:, zone:)     # => nil: a one-off time
 
 So is "every day at 9am and 5:30pm": BYHOUR and BYMINUTE would add 9:30 and 17:00, and one rule can't hold only the two ([R4](rules.md#recurrence)).
 
-`recurrence!` raises on all of these, with the code `:not_rule` ("not a repeating time") for a one-off time and another code where the words fail first. A rule that ends before it starts, such as "every monday until last week", raises `:no_occurrence`.
+`recurrence!` raises on all of these: `:vague_rule` ("\"twice a week\" says how often, not when") for a count per period or a part of the day with no clock, `:not_rule` ("not a repeating time") for a one-off time, and another code where the words fail first, such as `:invalid_date` for "every 0 days". A rule that ends before it starts, such as "every monday until last week", raises `:no_occurrence`.

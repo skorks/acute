@@ -29,6 +29,28 @@ module Acute
       end
     end
 
+    COUNTS = { "twice" => "2 times", "thrice" => "3 times" }.freeze
+
+    # R15: whether text that failed as a rule says how often but not when: a count per period with no days or
+    # times ("twice a week", "3 times a day"), or a part of the day with no clock ("every morning"). Only
+    # recurrence! asks, once the phrase has failed, so "twice" is no word the lexer has to know.
+    def self.vague?(text)
+      t = Lexer.lex(text.gsub(/\b(twice|thrice)\b/i) { COUNTS[$1.downcase] })
+      return false unless Array === t
+      count = days = part = false
+      (0...t.size).step(S) do |i|
+        k = t[i]
+        return false if k == L::CLOCK || k == L::AT || k == L::MER
+        days ||= k == L::WDAY || k == L::ORD || k == L::MONTH
+        part ||= k == L::PART
+        next unless k == L::NUM && t[i + S] == L::WORD && t[i + S + 1] == :times
+        j = i + 2 * S
+        count ||= (t[j] == L::WORD && FREQUENCY[t[j + 1]]) || # "3 times daily"
+                  ((t[j] == L::ART || (t[j] == L::WORD && t[j + 1] == :every)) && t[j + S] == L::UNIT)
+      end
+      (count && !days) || (part && rule?(t))
+    end
+
     def rule
       r = Recur.new(nil, nil, [], [], [], nil, nil, nil, [], nil, nil, nil, nil, [], [], nil, nil, nil)
       every = false
@@ -42,6 +64,9 @@ module Acute
           if k == L::WORD && @t[@i + 1] == :other # R7
             r.interval = 2
             @i += S
+          elsif k == L::ORD && @t[@i + 1] == 2 && !r.unit && every_second?(@i) # R5: "every second" is the unit, not the 2nd of the month
+            r.unit = :second
+            @i += @i + S < @n && @t[@i + S + 1] == :of ? 4 * S : S
           elsif (k == L::NUM || (k == L::ORD && @t[@i + 2 * S + 1] != :of)) && @t[@i + S] == L::UNIT &&
                 @t[@i + S + 1] != :business_day # R5: "every 2 weeks", "every third day"
             r.interval = @t[@i + 1]
@@ -180,6 +205,19 @@ module Acute
     end
 
     private
+
+    # R5: an ORD 2 after "every" that is "second" written as a word, and ends the phrase, goes on with a rule word
+    # or is "of the day": "every second", "every second until 5pm". Before a day, a unit or "of the month" it is
+    # an ordinal.
+    def every_second?(i)
+      return false unless @t[i + 2] & L::ENGLISH != 0
+      j = i + S
+      return true if j >= @n
+      return false unless @t[j] == L::WORD
+      w = @t[j + 1]
+      TAIL[w] || (w == :of && (@t[j + S + 1] == :the || @t[j + S + 1] == :every) && @t[j + 2 * S] == L::UNIT &&
+                  @t[j + 2 * S + 1] == :day)
+    end
 
     # "first and third", "last", "second to last" (R8)
     def rule_ords

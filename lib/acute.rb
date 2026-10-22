@@ -74,9 +74,15 @@ module Acute
                        fiscal_year_start: nil, strict: true, dst: nil, holidays: nil, business_days: nil, year_bias: nil)
     out = rule(text, Context.new(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst,
                                  holidays, business_days, year_bias))
-    raise Explain.error(out, utf8(text) || text) if Failure === out
-    out
+    return out unless Failure === out
+    text = utf8(text) || text
+    out = Failure.new(:vague_rule, 0, text.bytesize) if VAGUE_CODES[out.code] && Grammar.vague?(text) # R15
+    raise Explain.error(out, text)
   end
+
+  # The failures a rule that says how often but not when (R15) meets first: "twice" is no word, "3 times a day"
+  # has no rule word, "every morning" no clock
+  VAGUE_CODES = { unknown_word: true, not_rule: true, conflict: true }.freeze
 
   def self.rule(given, ctx, tokens = nil, tree = nil)
     unless tokens

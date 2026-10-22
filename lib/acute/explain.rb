@@ -26,6 +26,8 @@ module Acute
         ParseError.new("#{slice.inspect} doesn't fit with the rest of the phrase", code: :conflict, position: first)
       when :no_occurrence
         ParseError.new("the rule ends before it starts", code: :no_occurrence, position: first)
+      when :vague_rule
+        ParseError.new("#{slice.inspect} says how often, not when", code: :vague_rule, position: first)
       when :not_rule
         ParseError.new("not a repeating time", code: :not_rule, position: first)
       when :dst_skipped_time
