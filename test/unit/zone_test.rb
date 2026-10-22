@@ -50,6 +50,44 @@ class ZoneTest < Minitest::Test
     assert_nil Acute::Zone.for("+05:30").next_change(0)
   end
 
+  # tzinfo's periods for a wall time: none in a gap, two in an overlap. A gap's instants come from the
+  # transition whose wall-clock jump holds it: compatible and :later keep the old offset, :earlier the new.
+  def tzinfo_local_to_utc(tz, trans, local, policy)
+    periods = tz.periods_for_local(Time.at(local).utc)
+    case periods.size
+    when 1 then [local - periods[0].observed_utc_offset, nil]
+    when 2
+      first, last = periods.map { local - _1.observed_utc_offset }.sort
+      [policy == :later ? last : first, :dst_repeated_time]
+    else
+      t = trans.find { local.between?(_1.timestamp_value + _1.previous_offset.observed_utc_offset, _1.timestamp_value + _1.offset.observed_utc_offset - 1) }
+      [local - (policy == :earlier ? t.offset : t.previous_offset).observed_utc_offset, :dst_skipped_time]
+    end
+  end
+
+  POLICIES = [nil, :earlier, :later].freeze
+
+  # Wall times a second either side of each change, in the old offset and the new: New York's gap and overlap,
+  # Lord Howe's half-hour DST, Moscow's standard offset changing (2011, 2014), Apia skipping a whole day (2011),
+  # São Paulo's southern summer
+  def test_local_to_utc_matches_tzinfo_data_either_side_of_every_transition
+    wrong = %w[America/New_York Australia/Lord_Howe Europe/Moscow Pacific/Apia America/Sao_Paulo].flat_map do |name|
+      zone = Acute::Zone.for(name)
+      tz = TZDATA.get_timezone_info(name).create_timezone
+      trans = tz.transitions_up_to(Time.utc(2200), Time.utc(1800))
+      locals = trans.flat_map do |t|
+        [t.previous_offset, t.offset].flat_map { |o| (-1..1).map { t.timestamp_value + o.observed_utc_offset + _1 } }
+      end
+      locals.uniq.product(POLICIES).filter_map do |local, policy|
+        notes = Notes.new
+        got = [zone.local_to_utc(local, notes, policy), notes.dst]
+        want = tzinfo_local_to_utc(tz, trans, local, policy)
+        [name, Time.at(local).utc.strftime("%F %T"), policy, got, want] unless got == want
+      end
+    end
+    assert_empty wrong
+  end
+
   def test_known_names_and_inspect
     assert Acute::Zone.known?("America/New_York")
     assert Acute::Zone.known?("US/Eastern")
