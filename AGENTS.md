@@ -45,3 +45,10 @@ Options: `--only STAGE`, `--skip STAGE,STAGE`, `--grep TEXT` / `--file NAME` (co
 4. Tag each convention with its rule (`# D4`), and record an assumption from `data/assumptions.yml`. The rules are in `docs/rules.md`.
 5. Run `bin/check`. A case that used to pass and now fails is a regression: fix it, or explain why the case is wrong.
 6. Run `bin/check --record` to add the new passing ids to the ratchet.
+
+## Releasing
+
+1. In a PR, bump `lib/acute/version.rb` and add the version to `CHANGELOG.md`. Merge it.
+2. On an up-to-date main: `git tag -s vX.Y.Z -m vX.Y.Z`, then `git push origin vX.Y.Z`.
+3. Approve the `release` run in GitHub. `.github/workflows/release.yml` checks the tag is `v` + `Acute::VERSION` on main, runs `bin/check`, builds, attests and pushes the gem by trusted publishing: no API key exists.
+4. Don't rename `release.yml` or the `release` environment: the RubyGems trusted publisher matches both.
