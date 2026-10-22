@@ -18,6 +18,7 @@ module Acute
   #
   # Tokens are read straight from the flat Array: @t[i] is a kind and @t[i + 1] a value, both nil past the
   # end. A function word's Symbol is no other kind's value, so `@t[@i + 1] == :of` is the word "of".
+  # @api private
   class Grammar
     # h24: written with a leading zero, a 24-hour form (D4); seconds: written with seconds, or :hour for an hour alone
     Clock = Struct.new(:hour, :min, :sec, :meridiem, :named, :h24, :seconds, :frac)

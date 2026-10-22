@@ -26,12 +26,15 @@ module Acute
       # A region is copied; an object answering holiday? or business_day? is the caller's, so it is kept as is
       holidays = Array(holidays).map(&:to_sym) if Symbol === holidays || String === holidays || Array === holidays
       @options = opts.merge(holidays: holidays, business_days: business_days).compact
+      # extract takes no strict:, as it always skips unknown words
+      @extract_options = @options.except(:strict)
       objects = [holidays, business_days].compact.reject { Array === _1 }
       if objects.all? { Ractor.shareable?(_1) }
         Ractor.make_shareable(self)
       else
         @options.each_value { Ractor.make_shareable(_1) unless objects.include?(_1) }
         @options.freeze
+        @extract_options.freeze
         freeze
       end
     end
@@ -42,7 +45,7 @@ module Acute
 
     def read(text, **ctx) = Acute.read(text, **@options, **ctx)
 
-    def extract(text, **ctx) = Acute.extract(text, **@options, **ctx)
+    def extract(text, **ctx) = Acute.extract(text, **@extract_options, **ctx)
 
     def describe(value, **ctx) = Acute.describe(value, **@options, **ctx)
 

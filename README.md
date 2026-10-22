@@ -24,7 +24,7 @@ Or `gem install acute`. acute needs Ruby 3.3 or later and has no runtime depende
 
 ## Usage
 
-The examples pin `now:` to Saturday 17 October 2026, 14:00, in New York. `now:` takes a Time or an ISO 8601 string, and without it acute uses the clock. Every call takes the same options (`now:`, `zone:`, `context:`, `locale:`, `strict:`, `dst:`…), and `Acute.with` checks them once and returns a frozen parser to share across threads and Ractors. Every call, option and result field: [docs/usage.md](docs/usage.md).
+The examples pin `now:` to Saturday 17 October 2026, 14:00, in New York. `now:` takes a Time or an ISO 8601 string, and without it acute uses the clock. Every call takes the same options (`now:`, `zone:`, `context:`, `locale:`, `strict:`, `dst:`…) and checks them, and `Acute.with` checks them once and returns a frozen parser to share across threads and Ractors. Every call, option and result field: [docs/usage.md](docs/usage.md).
 
 ```ruby
 now = "2026-10-17T14:00"
@@ -37,6 +37,8 @@ Acute.parse("tomorrow 3pm PST", now:, zone:).time  # => 2026-10-18 19:00:00 -040
 ```
 
 A phrase means the whole period it names: `time` is its start, and `end` is the first moment after it. A zone written in the text wins, and the answer comes back in yours. Without `zone:` acute falls back to the zone of `now:`, Rails' `Time.zone`, then the system's; on a server, pass the zone you mean. Daylight saving and the options: [docs/usage.md](docs/usage.md#time-zones).
+
+Times come back as plain `Time` values with a fixed offset, even when `now:` is a `TimeWithZone`; under Rails, `r.time.in_time_zone(r.zone)` before adding days ([why](docs/usage.md#time-zones)).
 
 ### Ambiguity
 

@@ -4,6 +4,7 @@ module Acute
   # A zone's UTC offsets, unpacked from the shipped tables the first time it is used, so lookups are a binary
   # search over Integers.
   # Times are epoch seconds; a "local" time is wall-clock seconds counted as if the wall clock were UTC.
+  # @api private
   class Zone
     FROM = Time.utc(1800).freeze # before any zone's first transition (1844), so local mean time is kept
     TO = Time.utc(2200).freeze

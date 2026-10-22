@@ -52,7 +52,7 @@ Without `now:` acute uses the clock. Without `zone:` it uses the zone of `now:`,
 | Method | Gives |
 |---|---|
 | `time`, `begin`, `end`, `range` | the start, the span, and the span as a Range; `begin` or `end` is nil for an open-ended phrase ("after friday", "before 2027") |
-| `date` | the start's Date |
+| `date` | the start's local Date, in the result's zone, at any grain (for a phrase open at the start, the date of `time`) |
 | `grain` | the unit the phrase was said in: `:minute`, `:day`, `:month`… |
 | `zone` | the zone the answer is in |
 | `text`, `matched` | the input, and the part of it read (they differ under `strict: false`) |
@@ -93,6 +93,27 @@ A ParseError also has `position`, the Range of the text it points at, and `unkno
 
 A bad option value raises `Acute::OptionError`, an `ArgumentError` that names the `option` and the `value`. It and `ParseError` both include `Acute::Error`, so `rescue Acute::Error` catches either.
 
+Each `ParseError` has one of these codes. New codes may be added in minor releases, so treat an unknown one as a plain failure.
+
+| `code` | Meaning | Raised by |
+|---|---|---|
+| `unknown_word` | a word acute doesn't know; `unknown` lists them and `hint` may suggest one | `parse!`, `duration!`, `recurrence!` |
+| `invalid_date` | a date or time that doesn't exist ("feb 30", "25:00") | `parse!`, `recurrence!` |
+| `incomplete` | the phrase stops short ("next") | `parse!`, `recurrence!` |
+| `conflict` | words that don't fit together ("friday 3pm 4pm", "3 days hours") | `parse!`, `duration!`, `recurrence!` |
+| `not_rule` | the text is not a repeating time | `recurrence!` |
+| `vague_rule` | it says how often but not when ("twice a week") | `recurrence!` |
+| `no_occurrence` | the rule ends before it starts | `recurrence!` |
+| `dst_skipped_time` | a wall time the clocks skip, under `dst: :reject` | `parse!` |
+| `dst_repeated_time` | a wall time that happens twice, under `dst: :reject` | `parse!` |
+| `business_day_limit` | more than 10,000 business days counted in one call | `parse!`, `Duration#after` and `seconds(from:)` |
+| `too_long` | text over 512 bytes | `parse!`, `duration!`, `recurrence!`, `Rule.from_cron!` |
+| `invalid_encoding` | text that isn't valid UTF-8 | `parse!`, `duration!`, `recurrence!` |
+| `occurrence_limit` | more than 1,000 occurrences asked for in one call | the Rule calls that list occurrences |
+| `step_limit` | no occurrence within 100,000 steps of the search | the Rule calls that list occurrences |
+| `invalid_cron` | a cron line that isn't one | `Rule.from_cron!` |
+| `unsupported_cron` | a valid cron line a Rule can't hold (`@reboot`) | `Rule.from_cron!` |
+
 By default, text with a word acute doesn't know fails. `strict: false` skips unknown words, as chronic did, and records that it did:
 
 ```ruby
@@ -108,6 +129,8 @@ A zone written in the text wins over the zone you pass, and the answer comes bac
 Acute.parse("tomorrow 3pm PST", now:, zone:).time  # => 2026-10-18 19:00:00 -0400
 Acute.parse("friday 9am", now:, zone: "Europe/London").time  # => 2026-10-23 09:00:00 +0100
 ```
+
+`time`, `begin`, `end` and a rule's occurrences are plain `Time` values with a fixed offset, even when `now:` is an ActiveSupport `TimeWithZone`. Under Rails, `r.time.in_time_zone(r.zone)` gives a TimeWithZone. Convert before doing arithmetic: ActiveSupport's `+ 1.day` on a plain Time keeps its offset across a daylight saving change.
 
 Times that daylight saving skips or repeats follow fixed rules. Each one is recorded as an assumption, and `dst:` changes the choice ([D23](rules.md#d23-future-context-two-digit-years-whole-units-arithmetic-and-dst)).
 
@@ -162,7 +185,7 @@ The value may be a Time, a Date, a Range of either, or an ISO 8601 string. A Ver
 
 ## Options
 
-Every call takes the same options:
+Every call takes the same options, and checks them before it reads any text: a bad value raises `Acute::OptionError`, an unknown option Ruby's `ArgumentError`. `extract` takes no `strict:`, since it always skips unknown words (a parser's is left out). `Rule.from_cron` takes `now:`, `zone:` and `dst:`.
 
 | Option | What it sets |
 |---|---|
@@ -187,3 +210,9 @@ PARSER.parse("1/2/2027").date.to_s  # => "2027-02-01"
 ## JSON
 
 Every value has `to_h`, `to_json` and `as_json` (String keys). The schemas in [schema/](../schema) describe them: [result](../schema/result.json), [duration](../schema/duration.json), [rule](../schema/rule.json), [extraction](../schema/extraction.json) and [verdict](../schema/verdict.json). The others there, and [schema/tools/](../schema/tools), are for the [agent tools](agents.md). Each schema's `$id` is its URL at the release's tag. The schemas of output are open: a later 1.x may add fields, and new values of a failure's `code`, a `grain`, a verdict's `status` or a mention's `kind`, so ignore a field you don't know and treat an unknown value as you would none of the known ones.
+
+## The public API
+
+The public API, which follows semantic versioning from 1.0: the `Acute` module's methods; `Acute::Parser`, `Result`, `Duration`, `Rule`, `Extraction` and its `Mention`, `Verdict` and `Assumption`, by the methods documented here and in [recurrence.md](recurrence.md); `Acute::Error`, `ParseError` and `OptionError`; `Acute::Tool`; `acute/chronic` and `acute/chronic_duration`; and the `acute` command with `acute mcp`. Everything else, marked `# @api private` in the source, may change in any release: the lexer, grammar, resolver, zones, tables, the CLI and MCP classes, other constants, and the constructors of the values the calls return.
+
+`Result`, `Rule`, `Duration`, `Verdict`, `Extraction`, `Mention` and `Assumption` are frozen. A Rule, and a parser without a caller's holidays object, are Ractor-shareable; `Ractor.make_shareable` makes a Result shareable too.

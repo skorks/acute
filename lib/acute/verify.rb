@@ -22,9 +22,11 @@ module Acute
   class Verdict
     STATUSES = %i[match inside alternative mismatch unparsed].freeze
     OK = %i[match inside alternative].freeze
+    private_constant :STATUSES, :OK
 
     attr_reader :text, :status, :message, :expected
 
+    # @api private
     def initialize(text, status, message, expected)
       @text = text
       @status = status
@@ -44,6 +46,7 @@ module Acute
     def inspect = "#<Acute::Verdict #{@status} #{@message.inspect}>"
   end
 
+  # @api private
   class Verify
     DAY = 86_400
     ORDINALS = %w[first second third fourth fifth sixth seventh eighth ninth tenth].freeze
@@ -207,4 +210,6 @@ module Acute
 
     def aligned?(t) = day_start(day_of(t)) == t
   end
+
+  private_constant :Verify
 end

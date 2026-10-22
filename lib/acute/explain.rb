@@ -6,6 +6,7 @@ require_relative "tables/words"
 module Acute
   # Turns a Failure into a ParseError with a message, character positions and a hint. Only the error
   # path comes here, so it can afford to rescan the text.
+  # @api private
   module Explain
     def self.error(failure, text)
       return ParseError.new("the text is not valid UTF-8", code: :invalid_encoding, position: 0...0) if failure.code == :invalid_encoding

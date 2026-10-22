@@ -30,5 +30,6 @@ module Acute
   end
 
   # What a stage returns instead of raising: start and stop are byte offsets into the text
+  # @api private
   Failure = Struct.new(:code, :start, :stop)
 end

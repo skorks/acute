@@ -3,6 +3,7 @@ require_relative "../acute"
 
 module Acute
   # exe/acute: one phrase from the arguments, or one per line from stdin (D45)
+  # @api private
   class CLI
     CLOCK_GRAINS = %i[second minute hour].freeze
 

@@ -20,7 +20,7 @@ class ResultTest < Minitest::Test
     assert_equal "2026-10-17T16:00:00-04:00", r.iso8601
     assert_equal "America/New_York", r.zone
     assert_equal "4pm", r.text
-    assert_nil r.date
+    assert_equal Date.new(2026, 10, 17), r.date
     assert_predicate r, :instant?
     refute_predicate r, :span?
     refute_predicate r, :open?

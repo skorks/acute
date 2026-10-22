@@ -20,11 +20,11 @@ module Acute
       FINE = { minutely: 60, hourly: 3600 }.freeze
 
       # A Rule, or [code, message, character range] (R25)
-      def self.read(line, now, zone)
+      def self.read(line, now, zone, dst)
         raise ArgumentError, "a cron line must be a String, got #{line.class}" unless String === line
+        ctx = Context.new(now, zone, :future, nil, nil, nil, nil, true, dst) # R18: occurrences follow dst:
         return [:too_long, "longer than #{MAX_LENGTH} bytes", 0...0] if line.bytesize > MAX_LENGTH
         return [:invalid_cron, "a cron line is plain ASCII", 0...0] unless line.valid_encoding? && line.ascii_only?
-        ctx = Context.new(now, zone, :future)
         text = line.strip.downcase
         lead = line.length - line.lstrip.length
         whole = lead...(lead + text.length)
@@ -108,7 +108,7 @@ module Acute
         return [:unsupported_cron, "a rule can't hold those days and months together"] unless parts
         rule = Parts.new(*parts, [], nil, secs)
         start = first(rule, rule.interval > 1 && months, ctx) or return [:invalid_cron, "the line never runs"]
-        Rule.new(rule, ctx.zone.name, start, true, nil, nil, [], false, now: ctx.now, text: line)
+        Rule.new(rule, ctx.zone.name, start, true, nil, nil, [], false, ctx.dst_policy, now: ctx.now, text: line)
       end
 
       # The step n when values are every nth through high, from low or (offset) from less than n past it, and n
@@ -124,8 +124,8 @@ module Acute
         step = n * FINE[freq]
         local = ctx.local(ctx.now)
         start = (local + step - 1).div(step) * step
-        Rule.new(Parts.new(freq, n, nil, [], [], [], nil, []), ctx.zone.name, start, true, nil, nil, [], false, now: ctx.now,
-                 text: line)
+        Rule.new(Parts.new(freq, n, nil, [], [], [], nil, []), ctx.zone.name, start, true, nil, nil, [], false,
+                 ctx.dst_policy, now: ctx.now, text: line)
       end
 
       # R2: the first run on or after now, as local wall seconds; with a step of months, only in those months
@@ -152,13 +152,13 @@ module Acute
       end
     end
 
-    def self.from_cron(line, now: nil, zone: nil)
-      out = Cron.read(line, now, zone)
+    def self.from_cron(line, now: nil, zone: nil, dst: nil)
+      out = Cron.read(line, now, zone, dst)
       Rule === out ? out : nil
     end
 
-    def self.from_cron!(line, now: nil, zone: nil)
-      out = Cron.read(line, now, zone)
+    def self.from_cron!(line, now: nil, zone: nil, dst: nil)
+      out = Cron.read(line, now, zone, dst)
       raise ParseError.new(out[1], code: out[0], position: out[2]) unless Rule === out
       out
     end
@@ -216,5 +216,7 @@ module Acute
     end
 
     def cron_line(sets) = sets.zip(Cron::WRITE).map { |v, w| Cron.write(v.uniq, *w) }.join(" ")
+
+    private_constant :Cron
   end
 end

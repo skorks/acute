@@ -14,6 +14,7 @@ module Acute
     DAY = 86_400
 
     # What repeats: secs are seconds of the day, sorted, each hour said with each minute said (R4)
+    # @api private
     Parts = Struct.new(:freq, :interval, :month, :monthdays, :days, :nths, :setpos, :secs) do
       def on?(day)
         ymd = Calendar.civil_from_days(day)
@@ -34,6 +35,7 @@ module Acute
     # text: the input it was read from; zone: the zone its wall times are in
     attr_reader :text, :zone
 
+    # @api private: rules come from recurrence and from_cron.
     # start: local wall seconds when timed, else a day number; until_: a UTC epoch when timed, else a day number;
     # exdates: as start; dst: the dst: policy occurrences follow (R18); now: the epoch it was read at
     def initialize(parts, zone, start, timed, count, until_, exdates, started, dst = nil, now:, text:)
@@ -134,6 +136,7 @@ module Acute
     private
 
     Notes = Struct.new(:dst)
+    private_constant :DAY, :DAYS, :DAY_NAMES, :MONTH_NAMES, :ORDINALS, :UNITS, :Notes
 
     # The count, start and end, as to_s ends with them
     def tail

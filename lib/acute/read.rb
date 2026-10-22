@@ -1,5 +1,6 @@
 module Acute
   ALSO_DURATION = Assumption.for(:also_duration)
+  private_constant :ALSO_DURATION
 
   # Whatever the text is: a Rule, a Result, a Duration, or nil. A rule comes first, then a time, which wins over
   # a duration (D45). The rule is tried only when a word that makes one is there.

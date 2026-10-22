@@ -7,6 +7,7 @@ module Acute
   # with it comes back as a failure value. T5: no string the model reads as prose quotes its input; text
   # that needs pointing at goes in unread, which the schema marks as data.
   class Tool
+    # @api private: NAMES, SCHEMAS and UNREAD_LENGTH are read by MCP
     NAMES = %w[parse duration recurrence extract verify describe now].freeze
     SCHEMAS = Ractor.make_shareable(NAMES.to_h do |name|
       [name, JSON.parse(File.read(File.expand_path("../../schema/tools/#{name}.json", __dir__)))]
@@ -34,6 +35,7 @@ module Acute
                    (?:T(?=\d)(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?)?\z/x
     ISO_PARTS = %i[years months weeks days hours minutes seconds].freeze
     ISO_TIME = /\A\d{4}-\d\d-\d\d(?:[T ]|\z)/
+    private_constant :UNREAD, :OCCURRENCES, :PARSE_ERRORS, :OPTION_ERRORS, :POINTED, :ISO_DURATION, :ISO_PARTS, :ISO_TIME
 
     attr_reader :parser, :prefix
 
