@@ -14,6 +14,7 @@ module Acute
     end)
     UNREAD = 5
     OCCURRENCES = 3
+    MENTIONS = 50 # T34: a reply many times its text would crowd the model's context
     UNREAD_LENGTH = 60
     PARSE_ERRORS = {
       unknown_word: "acute couldn't read the words in unread",
@@ -35,7 +36,7 @@ module Acute
                    (?:T(?=\d)(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?)?\z/x
     ISO_PARTS = %i[years months weeks days hours minutes seconds].freeze
     ISO_TIME = /\A\d{4}-\d\d-\d\d(?:[T ]|\z)/
-    private_constant :UNREAD, :OCCURRENCES, :PARSE_ERRORS, :OPTION_ERRORS, :POINTED, :ISO_DURATION, :ISO_PARTS, :ISO_TIME
+    private_constant :UNREAD, :OCCURRENCES, :MENTIONS, :PARSE_ERRORS, :OPTION_ERRORS, :POINTED, :ISO_DURATION, :ISO_PARTS, :ISO_TIME
 
     attr_reader :parser, :prefix
 
@@ -117,7 +118,7 @@ module Acute
       when "parse" then @parser.parse!(text, **context).as_json
       when "duration" then @parser.duration!(text).as_json
       when "recurrence" then recurrence(text)
-      when "extract" then @parser.extract(text, **context).as_json
+      when "extract" then extract(text, context)
       when "verify" then verify(text, args["value"], context)
       when "describe" then describe(args["value"], args.fetch("style", "relative").to_sym)
       else now
@@ -138,6 +139,15 @@ module Acute
     def recurrence(text)
       rule = @parser.recurrence!(text)
       rule.as_json.merge("next" => rule.each.first(OCCURRENCES).map(&:iso8601))
+    end
+
+    # more: how many mentions past the first MENTIONS were left out
+    def extract(text, context)
+      json = @parser.extract(text, **context).as_json
+      more = json["mentions"].size - MENTIONS
+      return json unless more.positive?
+      json["mentions"] = json["mentions"].first(MENTIONS)
+      json.merge("more" => more)
     end
 
     def describe(value, style)

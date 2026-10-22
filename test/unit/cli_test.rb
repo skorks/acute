@@ -71,8 +71,7 @@ class CLITest < Minitest::Test
     out, = acute("--json", *AT, stdin: "tomorrow 9am\nbanana\n")
     first, second = out.lines.map { JSON.parse(_1) }
     assert_equal "2026-10-18T09:00:00-04:00", first["time"]
-    assert_equal({ "kind" => "failure", "text" => "banana", "code" => "unknown_word", "error" => "unknown word \"banana\"",
-                   "position" => [0, 6] }, second)
+    assert_equal({ "kind" => "failure", "text" => "banana", "code" => "unknown_word", "error" => "unknown word \"banana\"" }, second)
   end
 
   def test_blank_lines_are_skipped
@@ -87,6 +86,7 @@ class CLITest < Minitest::Test
                     "position" => [5, 11], "hint" => "did you mean \"friday\"?" }, "", 1], [JSON.parse(out), err, status]
     out, = acute("--json", *AT, "--dst", "reject", "2026-03-08 02:30")
     assert_equal ["dst_skipped_time", "--dst earlier, later or compatible picks an instant for it"], JSON.parse(out).values_at("code", "hint")
+    refute JSON.parse(out).key?("position"), "a position over the whole phrase is left out, as the tools leave it"
     out, = acute("--json", *AT, "--dst", "reject", stdin: "2026-11-01 01:30\n")
     assert_equal ["dst_repeated_time", "--dst earlier or later picks one"], JSON.parse(out).values_at("code", "hint")
     out, = acute("--json", *AT, stdin: "caf\xC3\xA9 \xFF\n")

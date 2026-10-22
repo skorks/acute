@@ -164,6 +164,13 @@ class ToolTest < Minitest::Test
     end
   end
 
+  # T34: a reply many times its text would crowd the model's context
+  def test_extract_returns_at_most_50_mentions_and_counts_the_rest
+    out = call("extract", { "text" => "monday, " * 200 })
+    assert_equal [50, 150], [out["mentions"].size, out["more"]]
+    refute call("extract", { "text" => "monday, " * 50 }).key?("more")
+  end
+
   # T5: the verdict names the text by what it means and a mismatched value as acute normalised it
   def test_verify_words_each_status_without_the_input
     {
