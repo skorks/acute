@@ -39,7 +39,8 @@ class SchemaTest < Minitest::Test
   end
 
   def test_extractions
-    ["lunch tomorrow at 1 for an hour", "nothing to see", "from 9 to 5 on friday, then 2 weeks off"].each do |text|
+    ["lunch tomorrow at 1 for an hour", "nothing to see", "from 9 to 5 on friday, then 2 weeks off",
+     "standup every weekday at 9:30"].each do |text|
       assert_valid "extraction", Acute.extract(text, now: "2026-10-17T14:00", zone: NY)
     end
   end
@@ -51,7 +52,7 @@ class SchemaTest < Minitest::Test
       "result" => [["parse", { "text" => "next friday at 3" }], ["parse", { "text" => "friday", "context" => "past" }]],
       "duration" => [["duration", { "text" => "an hour and a half" }]],
       "rule" => [["recurrence", { "text" => "every weekday at 9am" }], ["recurrence", { "text" => "every other tuesday except nov 3" }]],
-      "extraction" => [["extract", { "text" => "lunch tomorrow at 1 for an hour" }]],
+      "extraction" => [["extract", { "text" => "lunch tomorrow at 1 for an hour" }], ["extract", { "text" => "standup every weekday at 9:30" }]],
       "verdict" => [["verify", { "text" => "tomorrow", "value" => "2026-10-18" }], ["verify", { "text" => "a banana", "value" => "2026-10-18" }]],
       "description" => [["describe", { "value" => "2026-10-23T15:00:00-04:00" }], ["describe", { "value" => "PT90M" }]],
       "now" => [["now", {}], ["now", {}, Acute::Tool.new(zone: "Asia/Kolkata")]],

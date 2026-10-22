@@ -72,7 +72,7 @@ Either end may be `null` for an open end: "before friday" is `[null, "<friday 00
 {"extract":[{"start":13,"end":23,"time":"2015-08-12T00:00:00","grain":"day"}]}
 ```
 
-An entry may hold `span` or `alternatives` in place of `time` and `grain`. The corpus compares the `time` mentions `Acute.extract` returns, in order, with these entries: same offsets and the same readings as a normal case (`alternatives` included). Durations acute finds are ignored, because the sources don't list them. Scoring uses the usual statuses: `nil` when mentions were expected and none found, `garbage` when `"extract": []` and some were found, `alt_differs` when offsets and every first reading match but alternatives differ, `wrong` otherwise. The speed stage also times them.
+An entry may hold `span` or `alternatives` in place of `time` and `grain`. An entry with `rrule` in their place is a rule mention, compared by its `to_ical` as an `rrule` case is: `{"start":7,"end":28,"rrule":"DTSTART…\nRRULE:…"}`. The corpus compares the `time` and `rule` mentions `Acute.extract` returns, in order, with these entries: same offsets and the same readings as a normal case (`alternatives` included). Durations acute finds are ignored, because the sources don't list them. Scoring uses the usual statuses: `nil` when mentions were expected and none found, `garbage` when `"extract": []` and some were found, `alt_differs` when offsets and every first reading match but alternatives differ, `wrong` otherwise. The speed stage also times them.
 
 **`rrule`.** An RFC 5545 rule, as `Acute.recurrence(text).to_ical` gives it: a DTSTART line, an RRULE line and any EXDATE line, joined by `\n`.
 

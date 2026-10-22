@@ -709,7 +709,7 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 
 ## Extraction
 
-`Acute.extract` finds the times in a longer text. Each mention has its start and end offsets, and `remainder` is the text left over.
+`Acute.extract` finds the times, lengths and rules in a longer text. Each mention has its start and end offsets, and `remainder` is the text left over.
 
 - **E2.** A duration's mention includes its "for": "for 2 hours". "4pm for 30 mins" is two mentions, a time and a duration. As one phrase to `parse` it is nil.
 - **E3.** A mention needs something beyond plain lowercase English words. "may" in "this may or may not work" is not a date, and a lone number is not a mention.
@@ -737,6 +737,7 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
   - **D51.** A "for" that makes a span from a start belongs to the mention: "set OOO for 3 days, from today" is "for 3 days, from today", three days from today, where "3 days from today" alone is a shift.
   - **D51.** A bare number at a mention's end goes with what follows when it starts a mention that reaches further: "11/20, 12 of Nov" is "11/20" and "12 of Nov".
 - **E5.** A dot right after a month, weekday or meridiem ends its abbreviation, not the sentence: "Oct. 2", "Dec. 2021", "1p.m. to 4" are one mention each, unless a capital follows. A meridiem written with dots keeps its last one ("4 a.m.", "3 p . m ."), and a decade its apostrophe ("'40s").
+- **E6.** A rule is a mention of kind `rule`, its value an `Acute::Rule`, where a word that makes one ("every", "daily", "Mondays") starts it or comes after its start. It is the longest piece `Acute.recurrence` reads, not ending in a word that only introduces what follows, and it wins over a time or length found at the same start unless that reaches further: "standup every weekday at 9:30 in room 4" mentions "every weekday at 9:30", "pay rent on the 1st of every month" "the 1st of every month", "remind me every 2 weeks until June" one rule, not a length and a time. A lone frequency word directly before another word is an adjective, not a rule: "hourly rate", "the weekly report". E3 holds for rules too, so "every second counts" mentions nothing, and a number written as a word doesn't start one (D50): "take one every 8 hours" mentions "every 8 hours". `parse(strict: false)` looks for a time, so it finds no rules.
 - **D43.** A malformed clock ("4:3") is one unknown word, so the rest of the text is still searched.
 - **D44.** No mention starts inside a written number: nothing in "123-12-1234".
 - **D44.** A mention includes its "this", "next" or "last": "this Q3".

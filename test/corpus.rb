@@ -128,16 +128,20 @@ module Corpus
     ENV["TZ"] = old
   end
 
-  # Mentions are [start, end, readings]; the durations acute finds are ignored, as the sources don't list them
+  # Mentions are [start, end, readings], a rule's one reading its to_ical (ical); the durations acute finds are
+  # ignored, as the sources don't list them
   def extract_case(c)
     tz = TZS[c["tz"]]
-    mentions = Acute.extract(c["text"], **context(c)).mentions.select { _1.kind == :time }
-    got = mentions.map { |m| [m.offset.begin, m.offset.end, ([m.value] + m.value.alternatives).map { [_1.begin&.to_r, _1.end&.to_r] }] }
+    mentions = Acute.extract(c["text"], **context(c)).mentions.reject { _1.kind == :duration }
+    got = mentions.map do |m|
+      readings = m.kind == :rule ? [ical(m.value.to_ical)] : ([m.value] + m.value.alternatives).map { [_1.begin&.to_r, _1.end&.to_r] }
+      [m.offset.begin, m.offset.end, readings]
+    end
     exp = c["expect"]["extract"]
     return [got.empty? ? "pass" : "garbage", got] if exp.empty?
     return ["nil", got] if got.empty?
 
-    want = exp.map { |e| [e["start"], e["end"], (e["alternatives"] || [e]).map { interval(_1, tz) }] }
+    want = exp.map { |e| [e["start"], e["end"], e["rrule"] ? [ical(e["rrule"])] : (e["alternatives"] || [e]).map { interval(_1, tz) }] }
     return ["pass", got] if got == want
     same_first = got.size == want.size && got.zip(want).all? { |g, w| g[0, 2] == w[0, 2] && g[2][0] == w[2][0] }
     [same_first ? "alt_differs" : "wrong", got]
