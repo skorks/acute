@@ -41,7 +41,7 @@ module ChronicRun
   def show(value)
     case value
     when Chronic::Span then "#{show(value.begin)}...#{show(value.end)}"
-    when Time then value.getlocal.strftime(value.subsec.zero? ? "%F %T" : "%F %T.%N")
+    when Time then value.strftime(value.subsec.zero? ? "%F %T" : "%F %T.%N")
     when nil then "nil"
     when String then value
     else value.inspect

@@ -24,6 +24,7 @@ class DocsExamplesTest < Minitest::Test
   private
 
   def check_page(page)
+    skip "the docs show Ruby 3.4's Hash#inspect" if RUBY_VERSION < "3.4"
     text = File.read(page)
     scope = Object.new.instance_eval { binding }
     failures = text.to_enum(:scan, BLOCK).flat_map do

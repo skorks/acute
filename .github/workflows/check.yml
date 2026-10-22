@@ -22,9 +22,11 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         ruby: ["3.3", "3.4", "4.0", head]
+        # a key no other leg has, so this is a leg of its own rather than settings for the plain 4.0 one
+        variant: [plain]
         include:
-          - { os: ubuntu-latest, ruby: "4.0", tz: Pacific/Chatham, locale: tr_TR.UTF-8 }
-          - { os: macos-latest, ruby: "4.0" }
+          - { os: ubuntu-latest, ruby: "4.0", variant: tz, tz: Pacific/Chatham, locale: tr_TR.UTF-8 }
+          - { os: macos-latest, ruby: "4.0", variant: plain }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ruby/setup-ruby@824c0e29fdfc7d689c191c27acc969d2d04b7dd8 # v1.331.0
@@ -55,7 +57,8 @@ jobs:
         with:
           ruby-version: "4.0"
           bundler-cache: true
-      - run: bundle exec ruby bin/check --skip lint,corpus,coverage,gem
+      # The speed stages' CPU clocks give NaN here; they are report-only in CI anyway
+      - run: bundle exec ruby bin/check --skip lint,corpus,coverage,gem,speed,yjit
 
   once:
     name: lint, coverage and the gem

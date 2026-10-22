@@ -19,8 +19,10 @@ module Corpus
   STATUSES = %w[pass alt_differs wrong nil garbage raises chronic_option rule_pending].freeze
   RULE_ID = /\A[DER]\d+\z/
   # The system's zoneinfo, whose rules run a century on where tzinfo-data's transitions stop at about 2076 (D47)
-  ZONEINFO = TZInfo::DataSources::ZoneinfoDataSource.new
-  TZS = Hash.new { |h, name| h[name] = ZONEINFO.get_timezone_info(name).create_timezone }
+  # Made at first use, so what loads this file without needing the oracle runs where there is no system zoneinfo
+  TZS = Hash.new do |h, name|
+    h[name] = (@zoneinfo ||= TZInfo::DataSources::ZoneinfoDataSource.new).get_timezone_info(name).create_timezone
+  end
 
   module_function
 
