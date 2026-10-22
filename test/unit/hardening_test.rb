@@ -3,6 +3,7 @@ require "stringio"
 require_relative "../../lib/acute/cli"
 require_relative "../../lib/acute/chronic_duration"
 require_relative "../../lib/acute/tool"
+require_relative "../../lib/acute/mcp"
 
 # Controls the security probes found working, pinned so they stay that way
 class HardeningTest < Minitest::Test
@@ -106,6 +107,112 @@ class HardeningTest < Minitest::Test
     end, :<, 0.5)
   end
 
+  # T29: each byte of a word multiplied its key, a bignum by then, so one unbroken 64 KB word took 0.6 s to
+  # lex and a megabyte of base64 in extract's text minutes. Text over 512 bytes reaches the lexer only from
+  # extract, which blanks such a run's middle.
+  def test_t29_a_long_unbroken_word_lexes_in_linear_time
+    assert_operator seconds { Acute.extract("a" * 1_000_000) }, :<, 0.5
+    assert_operator seconds { Acute.extract("noon" * 16_384) }, :<, 0.1
+    assert_operator seconds { Acute.extract("会議" * 32_768) }, :<, 0.1
+    assert_operator seconds { Acute.extract("https://#{"www.example." * 6_000}com/a") }, :<, 0.1
+    assert_operator seconds { Acute.parse("a" * Acute::MAX_LENGTH) }, :<, 0.01
+    assert_equal ["tomorrow"], Acute.extract("#{"x" * 100_000} tomorrow").mentions.map(&:text)
+  end
+
+  def test_t29_a_blanked_run_keeps_every_offset_and_splits_as_before
+    text = "会議は日本 #{"é" * 40}#{"日本" * 40}’s 5pm, at noon #{"a." * 50}b tomorrow ½#{"x" * 70}½ 3pm"
+    found = Acute.extract(text).mentions
+    assert_equal %w[5pm noon tomorrow 3pm], found.map(&:text)
+    found.each { |m| assert_equal m.text, text[m.offset] }
+    assert_equal [], Acute.extract("twenty #{"q" * 80} four").mentions.map(&:text)
+    assert_equal ["friday"], Acute.extract("next #{"q" * 80} friday").mentions.map(&:text)
+  end
+
+  # extract looks at a few bytes before or after a word, and those can start or end inside a character
+  def test_t25_a_byte_window_inside_a_character_never_raises
+    assert_equal ["3rd"], Acute.extract("3rd’ü.bü").mentions.map(&:text)
+    assert_equal ["3 days"], Acute.extract("éé 3 days").mentions.map(&:text)
+  end
+
+  def test_extract_of_binary_text_with_high_bytes_gives_json
+    out = Acute.extract("tomorrow \xff".b)
+    assert_equal ["tomorrow"], out.mentions.map(&:text)
+    assert_equal "tomorrow \uFFFD", JSON.parse(out.to_json)["text"]
+  end
+
+  # T3: the rewrites never see text longer than acute reads
+  def test_t3_chronic_duration_turns_down_text_over_the_limit_before_rewriting_it
+    long = "1 hour #{"and " * Acute::MAX_LENGTH}"
+    assert_nil ChronicDuration.parse(long)
+    ChronicDuration.raise_exceptions = true
+    assert_raises(ChronicDuration::DurationParseError) { ChronicDuration.parse(long) }
+  ensure
+    ChronicDuration.raise_exceptions = false
+  end
+
+  RAW = /[\x00-\x1f\x7f\u0085  \p{Cf}]/
+  HOSTILE = ["tomorow\e]0;pwned\a\e[31m", "x\nFORGED: ok\r", "‮noon", " \u0085\x00", "\xff\xfe".b.force_encoding("UTF-8")].join(" ")
+
+  def refute_raw(where, text)
+    text = text.to_s.dup.force_encoding(Encoding::UTF_8)
+    assert_predicate text, :valid_encoding?, "#{where} is not valid UTF-8: #{text.inspect}"
+    refute_match RAW, text, "#{where}: #{text.inspect}"
+  end
+
+  def raised
+    yield
+    flunk("no error")
+  rescue Acute::Error => e
+    e.message
+  end
+
+  # Every place acute quotes its input: the message escapes control and format characters (T30), invalid
+  # UTF-8 and newlines, so a quoted word can't forge or reorder a line
+  def test_every_echo_of_the_input_escapes_it
+    now = { now: "2026-10-22T12:00", zone: "America/New_York" }
+    { "parse!" => -> { Acute.parse!(HOSTILE, **now) }, "duration!" => -> { Acute.duration!(HOSTILE) },
+      "recurrence!" => -> { Acute.recurrence!("every #{HOSTILE}", **now) }, "from_cron!" => -> { Acute::Rule.from_cron!(HOSTILE) },
+      "zone" => -> { Acute.parse("3pm", zone: HOSTILE) }, "now" => -> { Acute.parse("3pm", now: HOSTILE) },
+      "locale" => -> { Acute.parse("3pm", locale: HOSTILE) }, "week_start" => -> { Acute.parse("3pm", week_start: HOSTILE) },
+      "verify value" => -> { Acute.verify("tomorrow", "2026-10-23#{HOSTILE}", **now) } }.each do |where, call|
+      refute_raw(where, raised(&call))
+    end
+    verdict = Acute.verify(HOSTILE, Time.now, **now)
+    refute_raw("verify message", verdict.message)
+    refute_raw("verify inspect", verdict.inspect)
+    assert_equal "unparsed", JSON.parse(verdict.to_json)["status"] # its text field is the input as data, scrubbed
+    refute_raw("rule to_s", Acute.recurrence("every day #{HOSTILE}", **now, strict: false)&.to_s)
+  end
+
+  # T5: no prose a tool returns holds the input; the words it couldn't read come back only in unread
+  def test_t5_tool_results_and_mcp_errors_never_echo_the_input
+    tool = Acute::Tool.new(now: "2026-10-22T12:00", zone: "America/New_York")
+    hostile = HOSTILE.scrub
+    { "parse" => { "text" => hostile }, "duration" => { "text" => hostile }, "recurrence" => { "text" => hostile },
+      "extract" => { "text" => hostile }, "verify" => { "text" => hostile, "value" => "2026-10-23" },
+      "describe" => { "value" => hostile[0, 64] }, hostile => {} }.each do |name, args|
+      result = tool.call(name, args)
+      result.except("unread", "remainder").each_value { refute_match(/pwned|FORGED|noon/, _1.to_json, name) }
+    end
+    lines = [{ name: "parse", arguments: { text: "3pm", zone: hostile } }, { name: hostile, arguments: {} }].map do |params|
+      JSON.generate({ jsonrpc: "2.0", id: 1, method: "tools/call", params: params })
+    end
+    out = StringIO.new
+    Acute::MCP.new.serve(StringIO.new("#{lines.join("\n")}\n#{JSON.generate({ jsonrpc: "2.0", id: 2, method: hostile })}\n"), out)
+    out.string.lines.map { JSON.parse(_1) }.each do |reply|
+      reply.dig("result", "structuredContent")&.delete("unread")
+      reply.dig("result", "content")&.each { |c| c["text"] = JSON.parse(c["text"]).except("unread").to_json }
+      refute_match(/pwned|FORGED/, reply.to_json)
+    end
+  end
+
+  def test_the_cli_quotes_invalid_utf8_on_stdin_rather_than_raising
+    out, err = cli(["--json"], "\xff\xfe tomorow\n3pm\n".b)
+    assert_equal(%w[failure time], out.lines.map { JSON.parse(_1)["kind"] })
+    assert_equal "�� tomorow", JSON.parse(out.lines[0])["text"]
+    assert_empty err
+  end
+
   def test_the_cli_escapes_terminal_escapes_in_its_errors
     hostile = "\e[31mtomorrow\e]0;pwned\a"
     [cli([hostile]), cli([], "#{hostile}\n"), cli(["--json"], "#{hostile}\n"), cli([hostile, "--next", "2"]),
@@ -113,6 +220,12 @@ class HardeningTest < Minitest::Test
       refute_match(/[\e\a]/, out)
       refute_match(/[\e\a]/, err)
       assert_match(/pwned|e\[31m|\\e/, out + err)
+    end
+    [cli(["--next", "2", "--json"], "every \e[31mday\n"), cli(["--zone", hostile, "3pm"]), cli(["--locale", hostile, "3pm"]),
+     cli(["--next", hostile, "x"]), cli(["--bogus#{hostile}"]), cli(["mcp", "--zone", hostile]),
+     cli(["#{hostile}‮ "])].each do |out, err|
+      refute_match(/[\e\a‮ ]/, out + err)
+      assert_operator err.count("\n"), :<=, 1, err
     end
   end
 end

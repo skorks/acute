@@ -31,7 +31,7 @@ module Acute
       @out.sync = true
       @stdin.each_line.map { _1.b.strip.empty? || line(_1.chomp) }.all? ? 0 : 1
     rescue OptionParser::ParseError, ArgumentError => e
-      @err.puts "acute: #{e.message}"
+      @err.puts "acute: #{Acute.visible(e.message.scrub)}"
       2
     end
 

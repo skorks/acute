@@ -295,6 +295,12 @@ class RuleOccurrencesTest < Minitest::Test
     assert_equal 3, r.next!(3).size
   end
 
+  def test_r19_a_search_may_spend_exactly_the_step_budget
+    x = rule("every day").send(:expander)
+    x.send(:spend, Acute::Rule::STEPS)
+    assert_raises(Acute::Rule.const_get(:Expand)::Exhausted) { x.send(:spend, 1) }
+  end
+
   def test_r19_the_step_budget_stops_a_long_search
     r = rule("every weekday at 9am 1000000 times")
     t = Process.clock_gettime(Process::CLOCK_MONOTONIC)

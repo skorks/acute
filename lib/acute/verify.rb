@@ -30,14 +30,15 @@ module Acute
     def initialize(text, status, message, expected)
       @text = text
       @status = status
-      @message = message
+      @message = Acute.visible(message)
       @expected = expected
       freeze
     end
 
     def ok? = OK.include?(@status)
 
-    def to_h = { kind: "verdict", text: @text, status: @status.to_s, ok: ok?, message: @message, expected: @expected&.to_h }
+    # JSON can't hold invalid UTF-8, so such a text is given scrubbed
+    def to_h = { kind: "verdict", text: @text.dup.force_encoding(Encoding::UTF_8).scrub, status: @status.to_s, ok: ok?, message: @message, expected: @expected&.to_h }
 
     def to_json(*args) = to_h.to_json(*args)
 

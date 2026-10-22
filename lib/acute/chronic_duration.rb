@@ -61,6 +61,11 @@ module ChronicDuration
   self.days_per_month = 30
 
   def parse(string, opts = {})
+    # T3: past the 512 bytes acute reads, before the rewrites rather than after them
+    if string.bytesize > Acute::MAX_LENGTH
+      raise DurationParseError, "The string is longer than #{Acute::MAX_LENGTH} bytes." if ChronicDuration.raise_exceptions
+      return
+    end
     words, skipped = clean(string)
     result = acute_seconds(string, opts) unless skipped.empty?
     if result.nil?
@@ -174,7 +179,6 @@ module ChronicDuration
   # is 12.5 days. A business day has no such length, so the gem's answer stands. A fraction anywhere makes a
   # Float, as the gem's own decimals do.
   def acute_seconds(string, opts)
-    return if string.bytesize > Acute::MAX_LENGTH
     tokens = Acute::Lexer.lex(string)
     return if Acute::Failure === tokens
     units = Acute::Grammar.duration(tokens)
