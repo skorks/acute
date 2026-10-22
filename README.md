@@ -31,6 +31,8 @@ gem "acute"
 
 Or `gem install acute`. acute needs Ruby 3.3 or later and has no runtime dependencies. Its zone data is IANA 2026e, shipped with the gem (`Acute::TZDATA`).
 
+What each kind of release may change: [docs/stability.md](docs/stability.md).
+
 ## Usage
 
 The examples pin `now:` to Saturday 17 October 2026, 14:00, in New York. `now:` takes a Time or an ISO 8601 string, and without it acute uses the clock. Every call takes the same options (`now:`, `zone:`, `context:`, `locale:`, `strict:`, `dst:`…) and checks them, and `Acute.with` checks them once and returns a frozen parser to share across threads and Ractors. Every call, option and result field: [docs/usage.md](docs/usage.md).
@@ -162,6 +164,7 @@ Over ten everyday phrases on Ruby 4.0.7, acute takes 5–19 µs a parse to chron
 - [docs/chronic.md](docs/chronic.md): why acute exists, moving from chronic, and speed.
 - [docs/gotchas.md](docs/gotchas.md): the answers people don't expect, why, and the option that changes each.
 - [docs/rules.md](docs/rules.md): every convention acute follows, by topic, with examples.
+- [docs/stability.md](docs/stability.md): what SemVer covers, and what a minor or patch release may change.
 - [schema/](schema): JSON Schemas for the JSON of a Result, Duration, Extraction and Verdict, and for the agent tools.
 
 ## Contributing

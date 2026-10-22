@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/skorks/acute/v0.0.1/schema/description.json",
+  "$id": "https://raw.githubusercontent.com/skorks/acute/v1.0.0/schema/description.json",
   "title": "Acute.describe",
   "description": "A value written as English that acute reads back as that value.",
   "type": "object",
