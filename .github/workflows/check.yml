@@ -35,8 +35,10 @@ jobs:
           bundler-cache: true
       - name: System zoneinfo, the corpus's oracle
         run: test -f /usr/share/zoneinfo/America/New_York
+      # Chronic gives system-local Times, and macOS's zoneinfo has no pre-1900 LMT, so its chronic stage
+      # differs from the recorded "this day 1800"
       - if: ${{ !matrix.tz }}
-        run: bundle exec bin/check --skip lint,coverage,gem
+        run: bundle exec bin/check --skip lint,coverage,gem${{ runner.os == 'macOS' && ',chronic' || '' }}
       - if: ${{ matrix.tz }}
         run: sudo locale-gen "$LOCALE"
         env:
@@ -51,6 +53,7 @@ jobs:
   windows:
     name: bin/check (windows-latest, Ruby 4.0, no corpus)
     runs-on: windows-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ruby/setup-ruby@824c0e29fdfc7d689c191c27acc969d2d04b7dd8 # v1.331.0
