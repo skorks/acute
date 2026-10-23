@@ -20,7 +20,14 @@ module Acute
         return :conflict if r.unit && !freq
         interval = (r.interval || 1) * (mult || 1)
         return :invalid_date if interval == 0 # R15
-        if r.window # R27: the steps inside the window are the rule's clocks, on each day it runs
+        if r.minute_span || !r.minutes.empty?
+          steps = marks(r, freq, interval, ctx)
+          return steps if Symbol === steps
+          if freq != :daily
+            freq = nil
+            interval = 1
+          end
+        elsif r.window # R27: the steps inside the window are the rule's clocks, on each day it runs
           return :conflict unless FINE[freq] && r.clocks.empty? && !r.part
           steps = window(r.window, interval * STEP[freq], ctx)
           return steps if Symbol === steps
@@ -123,6 +130,24 @@ module Acute
         b -= day * DAY
         return :conflict if e > DAY || e <= b
         (b...e).step(step).to_a
+      end
+
+      # R28: each minute mark in each hour the rule runs, as seconds of the day: every hour, every n hours from
+      # midnight (n dividing the day), each step of a window (R27), or the hours named, on the days a daily rule
+      # runs. A span of marks keeps its last: ":10" names a minute, not the end of a window as R27's clock does
+      def self.marks(r, freq, interval, ctx)
+        return :conflict unless r.clocks.empty? && !r.part
+        return :conflict unless r.hours.empty? ? freq.nil? || freq == :hourly : freq.nil? || freq == :daily
+        minutes = r.minute_span ? (r.minute_span[0]..r.minute_span[1]).step(r.minute_span[2]).to_a : r.minutes.uniq.sort
+        return :conflict if minutes.empty?
+        hours = if r.hours.any? then r.hours.map { clock(_1, nil, ctx) }.uniq.sort
+                elsif r.window then window(r.window, interval * 3600, ctx)
+                elsif DAY % (interval * 3600) == 0 then (0...DAY).step(interval * 3600).to_a
+                else :conflict
+                end
+        return hours if Symbol === hours
+        return :conflict unless hours.all? { _1 % 3600 == 0 }
+        hours.flat_map { |h| minutes.map { h + _1 * 60 } }
       end
 
       def self.first(node, ctx)

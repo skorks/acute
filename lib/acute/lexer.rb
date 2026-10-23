@@ -37,8 +37,9 @@ module Acute
     # the field count, and a fraction of a second as a CLOCK keeps it
     FIELDS = 25
     ISO = 26 # D52: an ISO 8601 duration, "PT1H30M": value: its units and counts in turn, [:hour, 1, :minute, 30]
+    MINUTE = 27 # value: the minute of an hour, ":05" (R28)
     KIND_NAMES = Ractor.make_shareable(%w[NUM CLOCK MER DAY NAMED NOW AT WDAY MONTH UNIT REL ORD PART SEASON HOLIDAY WEEKEND ZONE FUZZ ART
-                                          WORD SLASH DASH DOT PLUS DECADE FIELDS ISO])
+                                          WORD SLASH DASH DOT PLUS DECADE FIELDS ISO MINUTE])
 
     DIGITS = 15
     ZERO = 16
@@ -438,6 +439,14 @@ module Acute
             unknown << i << i + 1
             i += 1
           else
+            # R28: ":05" starting a word, two digits under 60 and nothing joined after them, is a minute of each hour
+            if c == 58 && i + 2 < n && (i == 0 || CLASS[s.getbyte(i - 1)] == SPACE) && CLASS[a = s.getbyte(i + 1)] == DIGIT &&
+               CLASS[b = s.getbyte(i + 2)] == DIGIT && (m = a * 10 + b - 528) < 60 &&
+               (i + 3 == n || ((e = CLASS[s.getbyte(i + 3)]) == SPACE || (e == PUNCT && s.getbyte(i + 3) != 58)))
+              t.push(MINUTE, m, 0, i, i + 3)
+              i += 3
+              next
+            end
             st = i
             i += 1
             i += 1 while i < n && CLASS[s.getbyte(i)] == PUNCT
