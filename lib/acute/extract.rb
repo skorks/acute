@@ -59,7 +59,7 @@ module Acute
         i = a
         e = a
         # The words in the run that make a rule. Lenient parse (whole) wants a time, so it looks for none.
-        marks = whole ? [] : (a...b).select { |k| Grammar.rule?(tokens[k * S, S]) }
+        marks = whole ? [] : (a...b).select { |k| Grammar.rule?(tokens[k * S, S]) || hours_mark?(tokens, a, k) }
         while i < b
           # No mention is longer than a phrase parse takes, so the grammar sees no more than that
           start = from[tokens[i * S + 3]]
@@ -131,6 +131,18 @@ module Acute
         head = run[0, run[KEEP - 1] == "." ? KEEP + 1 : KEEP] # a dot before a space would lex as a dot
         tail = run[-KEEP..].sub(/\A[.½]+/, "") # so would a dot or "½" after one
         head + (" " * (run.bytesize - head.bytesize - tail.bytesize)) + tail
+      end
+    end
+
+    SPAN_WORDS = { to: true, through: true, till: true, until: true }.freeze
+    HEAD = 6 # tokens back that a span of days' "to" may be, as "oct 26 to oct 30"
+
+    # R29: the "from" or "between" of "monday to friday from 9 to 5", a span of days with daily hours, which no
+    # word that makes a rule marks: one after a "to", "through" or dash a few words back in the run
+    def self.hours_mark?(tokens, a, k)
+      return false unless tokens[k * S] == L::WORD && ((v = tokens[k * S + 1]) == :from || v == :between)
+      ([a, k - HEAD].max...k).any? do |j|
+        (t = tokens[j * S]) == L::DASH || (t == L::WORD && SPAN_WORDS[tokens[j * S + 1]])
       end
     end
 

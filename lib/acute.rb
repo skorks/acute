@@ -33,9 +33,17 @@ module Acute
                   fiscal_year_start: nil, strict: true, dst: nil, holidays: nil, business_days: nil, year_bias: nil)
     out = run(text, Context.new(now, zone, context, locale, week_start, hemisphere, fiscal_year_start, strict, dst,
                                 holidays, business_days, year_bias))
-    raise Explain.error(out, utf8(text) || text) if Failure === out
-    out
+    return out unless Failure === out
+    e = Explain.error(out, utf8(text) || text)
+    # A repeating time is no one-off: say which call reads it
+    if !e.hint && Rule === rule(text, Context.new(now, zone, context, locale, week_start, hemisphere, fiscal_year_start,
+                                                  strict, dst, holidays, business_days, year_bias))
+      e = ParseError.new(e.message, code: e.code, position: e.position, unknown: e.unknown, hint: RULE_HINT)
+    end
+    raise e
   end
+
+  RULE_HINT = "a repeating time: recurrence reads it as a rule".freeze
 
   # A length of time, or nil when the text is not one ("next friday" is a time). The options are taken, and
   # checked, for the same calls as everything else; a length doesn't depend on them.
@@ -88,7 +96,7 @@ module Acute
   # The failures a rule that says how often but not when (R15) meets first: "twice" is no word, "3 times a day"
   # has no rule word, "every morning" no clock
   VAGUE_CODES = { unknown_word: true, not_rule: true, conflict: true }.freeze
-  private_constant :SKIPPED, :VAGUE_CODES
+  private_constant :SKIPPED, :VAGUE_CODES, :RULE_HINT
 
   def self.rule(given, ctx, tokens = nil, tree = nil)
     unless tokens

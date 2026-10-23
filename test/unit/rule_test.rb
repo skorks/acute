@@ -227,13 +227,90 @@ class RuleTest < Minitest::Test
   def test_to_h_and_json
     r = rule("Every day at 9")
     h = { kind: "rule", text: "Every day at 9", description: "every day at 9am", rrule: "FREQ=DAILY;BYHOUR=9;BYMINUTE=0",
-          dtstart: "2026-10-18T09:00:00-04:00", exdates: [], zone: "America/New_York", ical: r.to_ical,
+          dtstart: "2026-10-18T09:00:00-04:00", exdates: [], zone: "America/New_York", duration: nil, ical: r.to_ical,
           cron: "0 9 * * *", cron_reason: nil }
     assert_equal h, r.to_h
     assert_equal h.transform_keys(&:to_s), JSON.parse(r.to_json)
     assert_equal h.transform_keys(&:to_s), r.as_json
     assert_equal "2026-10-19", rule("every monday").to_h[:dtstart]
     assert_equal [nil, "cron can't express \"until\""], rule("every monday until june").to_h.values_at(:cron, :cron_reason)
+  end
+
+  def test_r29_daily_hours_are_a_start_and_a_length
+    r = rule("every weekday from 9 to 5")
+    assert_equal Acute::Duration.new(hours: 8), r.duration
+    assert_equal "DTSTART;TZID=America/New_York:20261019T090000\nDURATION:PT8H\nRRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0",
+                 r.to_ical
+    assert_equal "every weekday from 9am to 5pm", r.to_s
+    assert_equal r, rule(r.to_s)
+    assert_equal Time.new(2026, 10, 19, 9, 0, 0, "-04:00"), r.next
+    assert_equal "PT8H", r.to_h[:duration]
+    assert_equal "PT8H", JSON.parse(r.to_json)["duration"]
+    assert_equal [nil, "cron has no length"], [r.cron, r.cron_reason]
+    assert_nil rule("every weekday at 9am").duration
+    assert_equal "DTSTART;TZID=America/New_York:20261018T093000\nDURATION:PT7H45M\nRRULE:FREQ=DAILY;BYHOUR=9;BYMINUTE=30",
+                 rule("every day from 9:30 to 5:15").to_ical
+  end
+
+  # R29: the wall-clock difference, past midnight too; nil when there is none or no end
+  def test_r29_the_length_is_the_wall_clock_difference
+    assert_equal "PT4H", rule("every monday from 10pm to 2am").duration.iso8601
+    assert_equal "every Monday from 10pm to 2am", rule("every monday from 10pm to 2am").to_s
+    assert_equal "PT2H", rule("every day from 10pm to midnight").duration.iso8601
+    assert_equal "PT8H", rule("every day between 9 and 5").duration.iso8601
+    { "every monday from 9am" => :incomplete, "every day from 9am to 9am" => :conflict,
+      "every day from 9am to 10am tomorrow" => :conflict, "every day from 9 to 5 at 9" => :conflict }.each do |text, code|
+      assert_nil rule(text), text
+      assert_equal code, assert_raises(Acute::ParseError) { Acute.recurrence!(text, **OPTS) }.code, text
+    end
+  end
+
+  # R29: DURATION is exact time, so an occurrence across a clock change ends an hour off on the wall clock
+  def test_r29_the_length_is_exact_time
+    r = rule("every sunday from 1am to 4am")
+    first = r.next(after: Time.new(2026, 10, 31, 12, 0, 0, "-04:00"))
+    assert_equal Time.new(2026, 11, 1, 1, 0, 0, "-04:00"), first
+    assert_equal Time.new(2026, 11, 1, 3, 0, 0, "-05:00"), first + r.duration.seconds
+  end
+
+  # R29: a step finer than a day keeps R27's window, and R2 still picks the first start
+  def test_r29_only_a_daily_or_coarser_rule_has_a_length
+    r = rule("every 2 hours from 9 to 5")
+    assert_nil r.duration
+    assert_equal "FREQ=DAILY;BYHOUR=9,11,13,15;BYMINUTE=0", r.rrule
+    assert_equal Time.new(2026, 10, 18, 9, 0, 0, "-04:00"), rule("every day from 9 to 5").dtstart
+    assert_equal Time.new(2026, 10, 17, 22, 0, 0, "-04:00"), rule("every day from 10pm to midnight").dtstart
+  end
+
+  # R29: a span of days without "every" is R13's window, two weekdays as BYDAY (R6), other spans daily
+  def test_r29_a_span_of_days_with_daily_hours
+    r = rule("monday to friday from 9 to 5")
+    assert_equal "DTSTART;TZID=America/New_York:20261019T090000\nDURATION:PT8H\n" \
+                 "RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0;UNTIL=20261024T035959Z", r.to_ical
+    assert_equal r, rule(r.to_s)
+    assert_equal "DTSTART;TZID=America/New_York:20261018T090000\nDURATION:PT8H\n" \
+                 "RRULE:FREQ=DAILY;BYHOUR=9;BYMINUTE=0;UNTIL=20261020T035959Z", rule("tomorrow through monday from 9 to 5").to_ical
+    assert_nil rule("monday from 9 to 5")
+    assert_nil rule("monday to friday from home")
+  end
+
+  def test_r29_equality_takes_the_length
+    a = rule("every day from 9 to 5")
+    assert_equal a, rule("every day between 9 and 5")
+    assert_equal a.hash, rule("every day between 9 and 5").hash
+    refute_equal a, rule("every day at 9am")
+    refute_equal a.hash, rule("every day at 9am").hash
+    refute_equal a, rule("every day from 9 to 6")
+  end
+
+  # R29: a repeating time is no one-off, so parse! says which call reads it
+  def test_r29_parse_bang_points_at_recurrence
+    ["every weekday from 9 to 5", "monday to friday from 9 to 5", "every day at 9am"].each do |text|
+      e = assert_raises(Acute::ParseError) { Acute.parse!(text, **OPTS) }
+      assert_equal "a repeating time: recurrence reads it as a rule", e.hint, text
+    end
+    assert_nil Acute.parse("monday to friday from 9 to 5", **OPTS)
+    refute_equal "a repeating time: recurrence reads it as a rule", assert_raises(Acute::ParseError) { Acute.parse!("tomorow", **OPTS) }.hint
   end
 
   def test_text_is_the_input_and_to_s_the_wording

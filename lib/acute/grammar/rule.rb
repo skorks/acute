@@ -54,8 +54,41 @@ module Acute
       (count && !days) || (part && rule?(t))
     end
 
+    # A Recur, or a Failure. Only text that fails as a rule is looked at as R29's days with hours, which no word
+    # that makes a rule marks
     def rule
-      r = Recur.new(nil, nil, [], [], [], nil, nil, nil, [], nil, nil, nil, nil, [], [], nil, nil, nil, [], nil, [], [], nil)
+      out = recur
+      Failure === out && (days = days_with_hours) ? days : out
+    end
+
+    private
+
+    def blank = Recur.new(nil, nil, [], [], [], nil, nil, nil, [], nil, nil, nil, nil, [], [], nil, nil, nil, [], nil, [], [], nil)
+
+    # R29: a span of days then a span of clocks, "monday to friday from 9 to 5", "tomorrow through sunday from 9
+    # to 5": every day of the span (R13's window, as "in" gives), those hours each day. A span of weekdays is
+    # those weekdays (R6), as "every monday to friday" has them. Nil when the tokens are no such thing.
+    def days_with_hours
+      f = (S...@n).step(S).find { |j| @t[j] == L::WORD && ((w = @t[j + 1]) == :from || w == :between) }
+      return unless f
+      hours = Grammar.new(@t[f...@n]).phrase
+      return unless Range === hours && Clock === hours.from && Clock === hours.to
+      days = Grammar.new(@t[0...f]).phrase
+      return unless Range === days && !(Clock === days.from) && !(Clock === days.to)
+      r = blank
+      r.unit = :day
+      r.within = days
+      r.window = hours
+      if Weekday === days.from && Weekday === days.to
+        @i = 0
+        r.days, = rule_days(true)
+        return unless @i == f
+      end
+      r
+    end
+
+    def recur
+      r = blank
       every = false
       while @i < @n
         k = @t[@i]
@@ -151,7 +184,7 @@ module Acute
           r.minute_span = [@t[@i + S + 1], @t[j + S + 1], r.interval || 1]
           r.unit = r.interval = nil
           @i = j + 2 * S
-        elsif k == L::WORD && (v == :from || v == :between) && r.unit && !r.window # R27: "every 15 minutes from 9 to 5"
+        elsif k == L::WORD && (v == :from || v == :between) && !r.window # R27, R29: "every 15 minutes from 9 to 5"
           stop = @i + S
           stop += S while stop < @n && !window_end?(stop)
           r.window = Grammar.new(@t[@i...stop]).phrase
@@ -266,8 +299,6 @@ module Acute
       end
       every ? r : failure(:incomplete)
     end
-
-    private
 
     # R5: an ORD 2 after "every" that is "second" written as a word, and ends the phrase, goes on with a rule word
     # or is "of the day": "every second", "every second until 5pm". Before a day, a unit or "of the month" it is

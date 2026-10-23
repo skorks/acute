@@ -50,6 +50,9 @@ class ToolTest < Minitest::Test
     other = call("recurrence", { "text" => "every other tuesday" })
     assert_equal ["cron can't express \"every other\"", %w[2026-10-20 2026-11-03 2026-11-17]], other.values_at("cron_reason", "next")
     refute other.key?("cron")
+    hours = call("recurrence", { "text" => "every weekday from 9 to 5" })
+    assert_equal ["PT8H", "cron has no length"], hours.values_at("duration", "cron_reason")
+    refute hours.key?("ical")
     assert_equal "DTSTART;VALUE=DATE:20261019\nRRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR\nEXDATE;VALUE=DATE:20261102",
                  call("recurrence", { "text" => "every weekday except nov 2" })["ical"]
   end

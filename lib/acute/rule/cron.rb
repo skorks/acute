@@ -178,6 +178,7 @@ module Acute
       return cant("#{@count} times") if @count
       return cant("starting") if @started
       return cant("except") unless @exdates.empty?
+      return [nil, "cron has no length"] if @duration # R29
       return cant("the #{list(p.nths.sort_by(&:first).map { ordinal(_1[0]) })} #{DAY_NAMES[p.nths[0][1]]}") unless p.nths.empty? # R24
       return cant("the #{list(p.setpos.map { ordinal(_1) })} weekday") if p.setpos
       return cant("the last day") if p.monthdays.any?(&:negative?)
