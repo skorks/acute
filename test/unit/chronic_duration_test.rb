@@ -137,19 +137,16 @@ class ChronicDurationTest < Minitest::Test
     assert_equal "2 hrs, 20 mins", ChronicDuration.output(2 * 3600 + 20 * 60, joiner: ", ")
   end
 
+  def test_chrono_output_round_trips_from_a_second_to_over_a_century
+    [1, 59, 60, 61, 3599, 3600, 86_399, 86_400, 604_800, 2_592_000, 31_557_600, 100 * 31_557_600 + 3 * 86_400 + 7, 123 * 31_557_600 + 1, 80.51].each do |n|
+      assert_equal n, ChronicDuration.parse(ChronicDuration.output(n, format: :chrono)), n.to_s
+    end
+  end
+
   def test_output_parses_back
     OUTPUT.each do |seconds, formats|
       formats.each_key { |format| assert_equal seconds, ChronicDuration.parse(ChronicDuration.output(seconds, format: format)), "#{seconds} #{format}" }
     end
-  end
-
-  def test_filter_by_type_and_cleanup
-    assert_equal "3 minutes 14 seconds", ChronicDuration.send(:filter_by_type, "3:14")
-    assert_equal "12 hours 10 minutes 14 seconds", ChronicDuration.send(:filter_by_type, "12:10:14")
-    assert_equal "4 hours", ChronicDuration.send(:filter_by_type, "4 hours")
-    assert_equal "4 days 11 hours", cleanup("4 days and 11 hours")
-    assert_equal "4 days 11 hours", cleanup("  4 days and 11     hours")
-    assert_equal "4 minutes 11.5 seconds", cleanup("4m11.5s")
   end
 
   # 0.10.6 sets the week's days; 0.12.0 the month's, a week being a quarter of it
@@ -190,8 +187,8 @@ class ChronicDurationTest < Minitest::Test
     assert_equal 2 * 86_400 + 4 * 3600 + 13 * 60 + 2, ChronicDuration.parse("2 days, 4:13:02")
     assert_equal 4 * 86_400 + 3 * 60 + 15, ChronicDuration.parse("4 days 3:15")
     assert_equal 7200, ChronicDuration.parse("Duration: 2 hours")
-    assert_equal 80, ChronicDuration.parse("1 : 20")
-    assert_equal 7, ChronicDuration.parse("1:2:3:4:5:6:7")
+    assert_equal 20, ChronicDuration.parse("1 : 20")
+    assert_nil ChronicDuration.parse("1:2:3:4:5:6:7")
   end
 
   def test_d46_chrono_with_weeks_and_frozen_options

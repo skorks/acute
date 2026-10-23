@@ -104,6 +104,7 @@ unit:
   hour: hour
   hours: hour
   d: day
+  dy: day
   day: day
   days: day
   w: week
@@ -116,6 +117,7 @@ unit:
   fortnight's: fortnight
   fortnights: fortnight
   mo: month
+  mos: month
   month: month
   month's: month
   months: month
@@ -352,6 +354,7 @@ word:           # function words; the grammar gives them their meaning
   closest: closest  # D48
   nearest: closest
   and: and
+  plus: plus  # D44: joins a length's parts, as "and" does: "1 hour plus 30 minutes"
   or: or
   of: of
   the: the
@@ -701,7 +704,7 @@ english: [may, march, following, sat, sun, tu, fr, second, fall, a, mon, wed, st
 # D44: plurals, which only count ("3 fridays from now"); alone they recur, which is not a time. Plural units
 # let "2 upcoming weeks" be "next 2 weeks" while "3 next week" is not.
 plural: [thanksgivings, springs, summers, autumns, falls, winters, seasons, sundays, mondays, tuesdays, wednesdays, thursdays, fridays, saturdays, weekends, weekdays, black fridays, memorial days,
-         secs, seconds, mins, minutes, hrs, hours, days, wks, weeks, fortnights, months, quarters, yrs, years,
+         secs, seconds, mins, minutes, hrs, hours, days, wks, weeks, fortnights, mos, months, quarters, yrs, years,
          decades, centuries, mornings, afternoons, evenings, nights]
 
 # D18: a fixed table, only misspellings the corpus has. Each maps to the word it stands for.

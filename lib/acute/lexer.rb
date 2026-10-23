@@ -33,8 +33,11 @@ module Acute
     DOT = 22    # only between digits
     PLUS = 23
     DECADE = 24 # value: the number as written, 90 or 1990; flags: digit count, WORDY
+    # D46: chronic_duration's clock of four to six fields, "6:01:00:00": value: the fields as base-100 digits; flags:
+    # the field count, and a fraction of a second as a CLOCK keeps it
+    FIELDS = 25
     KIND_NAMES = Ractor.make_shareable(%w[NUM CLOCK MER DAY NAMED NOW AT WDAY MONTH UNIT REL ORD PART SEASON HOLIDAY WEEKEND ZONE FUZZ ART
-                                          WORD SLASH DASH DOT PLUS DECADE])
+                                          WORD SLASH DASH DOT PLUS DECADE FIELDS])
 
     DIGITS = 15
     ZERO = 16
@@ -248,6 +251,28 @@ module Acute
             # the commonest number, a plain one: none of the forms below
             flags |= SHORT if nd == 2 && st > 0 && s.getbyte(st - 1) == 39
             t.push(NUM, v, flags, st, i)
+          elsif i < n && c == 58 && s.getbyte(i + 6) == 58 && (j = fields_end(s, i, n, nd))
+            # D46: "6:01:00:00", "1:00:01:00:00:00": chronic_duration's days, months and years before a clock
+            flags = 1
+            while i < j
+              v = v * 100 + s.getbyte(i + 1) * 10 + s.getbyte(i + 2) - 528
+              i += 3
+              flags += 1
+            end
+            if i + 1 < n && s.getbyte(i) == 46 && CLASS[s.getbyte(i + 1)] == DIGIT
+              i += 1
+              f = 0
+              nf = 0
+              while i < n && CLASS[c = s.getbyte(i)] == DIGIT
+                if nf < 31
+                  f = f * 10 + c - 48
+                  nf += 1
+                end
+                i += 1
+              end
+              flags |= (f << 5 | nf) << FRACTION if f > 0
+            end
+            t.push(FIELDS, v, flags, st, i)
           elsif i < n && c == 58
             # the minutes, and below the seconds: two digits, each byte less 48
             unless nd <= 2 && i + 2 < n && CLASS[a = s.getbyte(i + 1)] == DIGIT && CLASS[b = s.getbyte(i + 2)] == DIGIT
@@ -502,6 +527,17 @@ module Acute
         i, word = match
       end
       i < n && s.getbyte(i) == 41 && word[0] == ZONE
+    end
+
+    # D46: where three to five more fields of two digits end after a number, or nil. A first field past two digits
+    # needs four or five after it, months or years, so a log's "2023:06:36:02" stays a year and its time.
+    def self.fields_end(s, i, n, nd)
+      k = 0
+      while i + 2 < n && s.getbyte(i) == 58 && CLASS[s.getbyte(i + 1)] == DIGIT && CLASS[s.getbyte(i + 2)] == DIGIT
+        i += 3
+        k += 1
+      end
+      i if k.between?(nd > 2 ? 4 : 3, 5) && (i == n || (CLASS[c = s.getbyte(i)] != DIGIT && c != 58))
     end
 
     # A malformed clock ("4:3", "123:00") is one unknown word, to the end of its digits, colons and letters
