@@ -68,7 +68,7 @@ module Acute
           return x if Symbol === x
           from = x.begin if x.begin && (r.start || x.begin > from)
         end
-        rule = Rule::Parts.new(freq, interval, month, monthdays, r.nths.any? ? [] : days, r.nths, r.setpos, secs)
+        rule = Rule::Parts.new(freq, interval, month ? [month] : [], monthdays, r.nths.any? ? [] : days, r.nths, r.setpos, secs)
         start = dtstart(rule, from, ctx)
         return :invalid_date unless start
 

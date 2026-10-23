@@ -156,7 +156,8 @@ class RuleCronTest < Minitest::Test
     now = Time.utc(2026, 10, 17, 14, 7)
     ["0 9 * * 1-5", "30 0,12 1,15 * *", "*/20 * * * *", "0 */3 * * *", "15 4 29 2 *", "0 0 31 */2 *", "45 23 * * 0",
      "0 6 13 * *", "1 2 3 4 *", "0 0 1 2-12/3 *", "0 9 1-31 * 1", "0 14 * * 6", "7 14 * * *", "*/15 9-17 * * 1-5",
-     "0,30 9 * * *", "5-59/15 * * * *", "*/7 * * * *", "10,40 */6 1,15 * *"].each do |line|
+     "0,30 9 * * *", "5-59/15 * * * *", "*/7 * * * *", "10,40 */6 1,15 * *", "0 9 * 11,12 *", "0 9 1,15 11 *",
+     "30 8 * 12 1-5"].each do |line|
       assert_equal first_run(line, now), Acute::Rule.from_cron(line, now: now, zone: "UTC").dtstart, line
     end
   end
@@ -187,12 +188,34 @@ class RuleCronTest < Minitest::Test
       assert_equal r, rule(english), english
     end
     assert_equal from("*/7 9 * * *"), rule(from("*/7 9 * * *").to_s)
+    assert_equal "every hour from 9am to 6pm", from("0 9-17 * * *").to_s
+    assert_equal from("0 9-17 * * *"), rule("every hour from 9am to 6pm")
+  end
+
+  # R4, R27: hours against minutes read as one phrase, not every time listed. A window's end is the step after
+  # the last only where that is the top of an hour; otherwise it is the last time.
+  def test_r27_hours_against_minutes_read_as_one_phrase
+    { "0-10 11 * * *" => "every minute from 11am to 11:10am",
+      "0-59 9 * * *" => "every minute from 9am to 10am",
+      "5,10 * * * *" => "every hour at :05 and :10",
+      "15 * * * 1" => "every hour at :15 on Mondays",
+      "5,10 9-17 * * *" => "every hour from 9am to 6pm at :05 and :10",
+      "10,40 */2 * * *" => "every 2 hours at :10 and :40",
+      "0 */2 * * 1-5" => "every 2 hours on weekdays",
+      "0-10 9-17 * * *" => "every minute from :00 to :10 of every hour from 9am to 6pm",
+      "0-30/10 * 1 * *" => "the 1st of every month every 10 minutes from :00 to :30 of every hour",
+      "0-10 9,11 * * *" => "every minute from :00 to :10 in the 9am and 11am hours",
+      "5,10 9,11,15,16,20 * * 6" => "every Saturday at :05 and :10 in the 9am, 11am, 3pm, 4pm and 8pm hours",
+      "5,10 * * 3 *" => "every hour at :05 and :10 in March" }.each do |line, english|
+      assert_equal english, from(line).to_s, line
+    end
   end
 
   def test_r25_minute_lists_occur_where_cron_runs
     start = Time.utc(2026, 10, 14)
     stop = start + 3 * 86_400
-    ["*/15 9-17 * * 1-5", "0,30 9 * * *", "5-59/15 * * * *", "*/7 * * * *", "10,40 */6 1,15 * *"].each do |line|
+    ["*/15 9-17 * * 1-5", "0,30 9 * * *", "5-59/15 * * * *", "*/7 * * * *", "10,40 */6 1,15 * *", "5,10 * * 10 *",
+     "0-10 11 * 9-11 4-6", "0 9 14,16 10,11 *", "0 9 * */5 *"].each do |line|
       f = line.split
       sets = cron_sets(f)
       want = (start.to_i...stop.to_i).step(60).map { Time.at(_1).utc }.select { match?(_1, sets, f[2].start_with?("*"), f[4].start_with?("*")) }
@@ -217,11 +240,34 @@ class RuleCronTest < Minitest::Test
     assert_operator seen, :>, 80
   end
 
+  # R25: a month field is BYMONTH, read as the other fields are: numbers, names, lists, ranges and steps
+  def test_r25_a_month_field_is_bymonth
+    { "0 9 * 3 *" => ["FREQ=DAILY;BYMONTH=3;BYHOUR=9;BYMINUTE=0", "every day in March at 9am", "2027-03-01T09:00:00-05:00"],
+      "0 9 * mar,jun *" => ["FREQ=DAILY;BYMONTH=3,6;BYHOUR=9;BYMINUTE=0", "every day in March and June at 9am", "2027-03-01T09:00:00-05:00"],
+      "0 9 * */4 *" => ["FREQ=DAILY;BYMONTH=1,5,9;BYHOUR=9;BYMINUTE=0", "every day in January, May and September at 9am",
+                        "2027-01-01T09:00:00-05:00"],
+      "30 8 * 6-8 1-5" => ["FREQ=WEEKLY;BYMONTH=6,7,8;BYDAY=MO,TU,WE,TH,FR;BYHOUR=8;BYMINUTE=30",
+                           "every weekday in June, July and August at 8:30am", "2027-06-01T08:30:00-04:00"],
+      "0 9 * 7 *" => ["FREQ=DAILY;BYMONTH=7;BYHOUR=9;BYMINUTE=0", "every day in July at 9am", "2027-07-01T09:00:00-04:00"],
+      "0 9 1 1,8 *" => ["FREQ=YEARLY;BYMONTH=1,8;BYMONTHDAY=1;BYHOUR=9;BYMINUTE=0", "every year on the 1st of January and August at 9am",
+                        "2027-01-01T09:00:00-05:00"],
+      "0 9 1,15 7 *" => ["FREQ=YEARLY;BYMONTH=7;BYMONTHDAY=1,15;BYHOUR=9;BYMINUTE=0", "every year on July 1 and 15 at 9am",
+                         "2027-07-01T09:00:00-04:00"],
+      "*/30 9-10 * dec *" => ["FREQ=DAILY;BYMONTH=12;BYHOUR=9,10;BYMINUTE=0,30", "every 30 minutes from 9am to 11am in December",
+                              "2026-12-01T09:00:00-05:00"] }.each do |line, (rrule, english, start)|
+      r = from(line)
+      assert_equal rrule, r.rrule, line
+      assert_equal english, r.to_s, line
+      assert_equal start, r.dtstart.iso8601, line
+    end
+    { "0 9 * mar,jun *" => "0 9 * 3,6 *", "0 9 * */4 *" => "0 9 * */4 *", "30 8 * 6-8 1-5" => "30 8 * 6-8 1-5",
+      "0 9 1 1,8 *" => "0 9 1 */7 *", "0 9 1,15 7 *" => "0 9 1,15 7 *" }.each do |line, back|
+      assert_equal back, from(line).cron, line
+    end
+  end
+
   def test_r25_unsupported_lines_say_why
-    { "0 9 * 7 *" => "a rule can't hold those days and months together",
-      "0 9 1 1,8 *" => "a rule can't hold those days and months together",
-      "0 9 1,15 7 *" => "a rule can't hold those days and months together",
-      "0 9 * * 1#2" => '"1#2" is not standard cron: no L, W, # or ?',
+    { "0 9 * * 1#2" => '"1#2" is not standard cron: no L, W, # or ?',
       "0 9 L * *" => '"L" is not standard cron: no L, W, # or ?',
       "0 9 15W * *" => '"15W" is not standard cron: no L, W, # or ?',
       "0 9 ? * 5L" => '"?" is not standard cron: no L, W, # or ?',

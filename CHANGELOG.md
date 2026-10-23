@@ -3,6 +3,8 @@
 ## Unreleased
 
 - **Fixed:** a rule on a range of weekdays had no reading: "every Monday through Friday at 19:20" was nil and `extract` split it into "every Monday" and a time. It is now weekly on Monday to Friday at 19:20, as "every monday to friday" and "every mon-fri" are; "every friday through monday" wraps to Friday, Saturday, Sunday and Monday, where it read as Fridays until Monday (R6).
+- **Fixed:** `Rule.from_cron` gave nil for a line with a month field: `0 9 * 3 *` was nil. A month field is BYMONTH, with numbers, names, lists, ranges and steps: "every day in March at 9am" (R25).
+- **Fixed:** a rule's description listed every clock of a cron line: `5,10 * * * *` was 48 times. Hours against minutes read as one phrase, "every hour at :05 and :10", and `0-10 11 * * *` is "every minute from 11am to 11:10am", not "every 1 minutes from 11am to 11:11am" (R27).
 - **Changed:** digits beside a part of day are a clock that part allows: "1140 in the morning" → 11:40 and "tonight 1140" → 23:40, not the year 1140; "815 in the morning" and "134 this afternoon" read too. "2027 in the morning" and "christmas 2015 in the evening" stay years (D5, D52).
 - **Added:** `require "acute/numerizer"` gives numerizer's `Numerizer.numerize`, answered by acute (D46).
 - **Changed:** the `acute/chronic_duration` layer reads through acute's lexer and duration grammar, not the gems' tokeniser (D46). It skips what it can't read, as `strict: false` does, and `raise_exceptions` raises only for text acute can't read. "1 hour 30" is 5400, not 3630 (D44). `output(format: :chrono, weeks: true)` returns the clock form, where the gems raise. Differences from the gems are listed in `test/chronic_duration/differences.yml`.
