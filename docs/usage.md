@@ -144,6 +144,8 @@ d.to_s      # => "1h 30m"
 d.to_s(:long)  # => "1 hour 30 minutes"
 ```
 
+`Acute.duration` reads ISO 8601 back, so `Acute.duration("PT1H30M") == d` ([D52](rules.md#durations)).
+
 A month stays a month rather than becoming a guess in seconds: `parts` keeps each unit (`{months: 1}`), and `seconds` raises when a part has no fixed length. `after(time)` adds the duration on the calendar, and `seconds(from: time)` counts it from that time. Its JSON is [schema/duration.json](../schema/duration.json), where `seconds` is null for such a duration.
 
 `Acute.read` returns whichever the text is, a time, a duration or a repeating time. Text that is both a time and a duration, such as "1530 hrs", is the time ([read](rules.md#read)).

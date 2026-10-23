@@ -29,7 +29,7 @@ module Acute
         unit = u.unit
         loop do
           part, k = UNIT_PART.fetch(unit)
-          n = (smaller = Resolve::Period::SMALLER[unit]) ? count.floor : count
+          n = (smaller = Resolve::Period::SMALLER[unit]) ? count.truncate : count # "-PT1.5H" is -1h -30m (D52)
           parts[part] += n * k
           break if (count -= n).zero?
           unit, m = smaller
@@ -75,9 +75,10 @@ module Acute
       Time.at(epoch, in: ctx.zone.offset_at(epoch)) + (seconds - seconds.floor) + (Time === time ? time.subsec : 0)
     end
 
-    # Weeks alone stay weeks ("P2W"); ISO 8601 has no business days, so those give nil
+    # Weeks alone stay weeks ("P2W"); ISO 8601 has no business days, so those give nil; no parts is "PT0S" (D52)
     def iso8601
       return if @parts.key?(:business_days)
+      return "PT0S" if @parts.empty?
       return "P#{@parts[:weeks]}W" if @parts.keys == [:weeks]
       p = @parts
       days = p.fetch(:days, 0) + p.fetch(:weeks, 0) * 7
@@ -114,7 +115,12 @@ module Acute
 
     def whole(n) = Rational === n && n.denominator == 1 ? n.to_i : n
 
-    # "123.45s": a fraction of a second as a decimal
-    def num(n) = Rational === n ? n.to_f.to_s : n.to_s
+    # "123.45s": a fraction of a second as a decimal, never with an exponent ("0.00001", not "1.0e-05": D52)
+    def num(n)
+      return n.to_s unless Rational === n || Float === n
+      s = n.to_f.to_s
+      return s unless (e = s.index("e-"))
+      "#{"-" if n.negative?}0.#{"0" * (s[(e + 2)..].to_i - 1)}#{s[0, e].delete("-.").sub(/0+\z/, "")}"
+    end
   end
 end
