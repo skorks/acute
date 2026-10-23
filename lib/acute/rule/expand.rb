@@ -104,7 +104,7 @@ module Acute
         @notes = Notes.new
         @steps = STEPS
         @d0 = timed ? start.div(DAY) : start
-        @month = parts.month
+        @months = parts.months
         @monthdays = parts.monthdays
         @days = parts.days
         @nths = parts.nths
@@ -167,7 +167,7 @@ module Acute
           @monthdays = [ymd % 100] if bare
         when :yearly
           if bare
-            @month ||= ymd / 100 % 100
+            @months = [ymd / 100 % 100] if @months.empty?
             @monthdays = [ymd % 100]
           end
         end
@@ -240,16 +240,16 @@ module Acute
                when :weekly
                  @first = monday(@d0) + 7 * step
                  list = @days.map { @first + (_1 + 6) % 7 }.sort
-                 @month ? list.select { month_of(_1) == @month } : list
+                 @months.empty? ? list : list.select { @months.include?(month_of(_1)) }
                when :monthly
                  y, m = (month_index(@d0) + step).divmod(12)
                  @first = Calendar.days_from_civil(y, m + 1, 1)
-                 @month && @month != m + 1 ? NONE : in_month(@first, Calendar.days_in_month(y, m + 1))
+                 !@months.empty? && !@months.include?(m + 1) ? NONE : in_month(@first, Calendar.days_in_month(y, m + 1))
                else
                  y = year(@d0) + step
                  @first = Calendar.year_start(y)
-                 if @month
-                   in_month(Calendar.days_from_civil(y, @month, 1), Calendar.days_in_month(y, @month))
+                 if !@months.empty?
+                   @months.flat_map { in_month(Calendar.days_from_civil(y, _1, 1), Calendar.days_in_month(y, _1)) }
                  elsif @monthdays.empty?
                    by_weekday(@first, Calendar.year_start(y + 1)).sort.uniq # RFC 5545: an ordinal counts in the year
                  else
@@ -329,14 +329,14 @@ module Acute
         end
       end
 
-      def every_day? = @month.nil? && @monthdays.empty? && @days.empty? && @nths.empty?
+      def every_day? = @months.empty? && @monthdays.empty? && @days.empty? && @nths.empty?
 
       # BYMONTH, BYMONTHDAY and BYDAY as limits on one day
       def day_ok?(d)
         return true if every_day?
         ymd = Calendar.civil_from_days(d)
         m = ymd / 100 % 100
-        return false if @month && @month != m
+        return false unless @months.empty? || @months.include?(m)
         dim = Calendar.days_in_month(ymd / 10_000, m)
         unless @monthdays.empty?
           md = ymd % 100

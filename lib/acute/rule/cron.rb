@@ -100,12 +100,12 @@ module Acute
         end
         secs = hours.flat_map { |h| minutes.map { h * 3600 + _1 * 60 } } # R25: each hour with each minute (R4)
         step = grid(months, 1, 12, offset: true)
-        parts = if every_day then [:daily, 1, nil, [], []]
-                elsif all_doms && all_months then [:weekly, 1, nil, [], dows]
-                elsif all_dows && step && step < 12 then [:monthly, step, nil, doms, []] # R23: every n months
-                elsif all_dows && months.size == 1 && doms.size == 1 then [:yearly, 1, months[0], doms, []]
+        by = all_months ? [] : months # R25: BYMONTH
+        parts = if all_doms && all_dows then [:daily, 1, by, [], []]
+                elsif all_doms then [:weekly, 1, by, [], dows]
+                elsif step && step < 12 then [:monthly, step, [], doms, []] # R23: every n months
+                else [:yearly, 1, months, doms, []]
                 end
-        return [:unsupported_cron, "a rule can't hold those days and months together"] unless parts
         rule = Parts.new(*parts, [], nil, secs)
         start = first(rule, rule.interval > 1 && months, ctx) or return [:invalid_cron, "the line never runs"]
         Rule.new(rule, ctx.zone.name, start, true, nil, nil, [], false, ctx.dst_policy, now: ctx.now, text: line)
@@ -124,7 +124,7 @@ module Acute
         step = n * FINE[freq]
         local = ctx.local(ctx.now)
         start = (local + step - 1).div(step) * step
-        Rule.new(Parts.new(freq, n, nil, [], [], [], nil, []), ctx.zone.name, start, true, nil, nil, [], false,
+        Rule.new(Parts.new(freq, n, [], [], [], [], nil, []), ctx.zone.name, start, true, nil, nil, [], false,
                  ctx.dst_policy, now: ctx.now, text: line)
       end
 
@@ -209,9 +209,10 @@ module Acute
         doms = p.monthdays.empty? ? [ymd % 100] : p.monthdays.sort
         months = months.select { (_1 - ymd / 100 % 100) % n == 0 }
       when :yearly
-        doms = p.month ? p.monthdays : [ymd % 100]
-        months = [p.month || ymd / 100 % 100]
+        doms = p.months.empty? ? [ymd % 100] : p.monthdays
+        months = [ymd / 100 % 100] if p.months.empty?
       end
+      months &= p.months unless p.months.empty?
       [cron_line([minute, hours, doms, months, dows]), nil]
     end
 

@@ -12,14 +12,15 @@ module Acute
     UNITS = Ractor.make_shareable({ secondly: "second", minutely: "minute", hourly: "hour", daily: "day", weekly: "week",
                                     monthly: "month", yearly: "year" })
     DAY = 86_400
+    LISTED = 8 # R4: more clocks than this read as their hours with their minutes
 
     # What repeats: secs are seconds of the day, sorted, each hour said with each minute said (R4)
     # @api private
-    Parts = Struct.new(:freq, :interval, :month, :monthdays, :days, :nths, :setpos, :secs) do
+    Parts = Struct.new(:freq, :interval, :months, :monthdays, :days, :nths, :setpos, :secs) do
       def on?(day)
         ymd = Calendar.civil_from_days(day)
         m = ymd / 100 % 100
-        return false if month && month != m
+        return false unless months.empty? || months.include?(m)
         d = ymd % 100
         wday = Calendar.weekday(day)
         dim = Calendar.days_in_month(ymd / 10_000, m) unless monthdays.empty? && nths.empty? && !setpos
@@ -62,7 +63,7 @@ module Acute
       p = @parts
       out = ["FREQ=#{p.freq.upcase}"]
       out << "INTERVAL=#{p.interval}" if p.interval > 1
-      out << "BYMONTH=#{p.month}" if p.month
+      out << "BYMONTH=#{p.months.join(",")}" unless p.months.empty?
       out << "BYMONTHDAY=#{p.monthdays.join(",")}" unless p.monthdays.empty?
       byday = p.nths.map { |n, w| "#{n}#{DAYS[w]}" } + sorted_days.map { DAYS[_1] }
       out << "BYDAY=#{byday.join(",")}" unless byday.empty?
@@ -92,16 +93,20 @@ module Acute
 
     def to_s
       p = @parts
-      if (window = steps)
-        return "#{window}#{tail}" if p.freq == :daily && p.interval == 1
-        return "#{window} on #{weekdays(plural: true)}#{tail}" if p.freq == :weekly && p.interval == 1 && !p.days.empty?
+      months = p.months.empty? || p.freq == :yearly ? "" : " in #{list(p.months.map { MONTH_NAMES[_1] })}"
+      said = clocks
+      if said&.start_with?("every") && p.interval == 1 # the clocks' phrase stands for every day
+        return "#{said}#{months}#{tail}" if p.freq == :daily
+        return "#{said} on #{weekdays(plural: true)}#{months}#{tail}" if p.freq == :weekly && !p.days.empty?
       end
       out = +if !p.nths.empty?
                "the #{list(p.nths.sort_by(&:first).map { ordinal(_1[0]) })} #{DAY_NAMES[p.nths[0][1]]} of #{every("month")}"
              elsif p.setpos
                "the #{list(p.setpos.map { ordinal(_1) })} weekday of #{every("month")}"
-             elsif p.month
-               "#{every("year")} on #{MONTH_NAMES[p.month]} #{p.monthdays[0]}"
+             elsif p.freq == :yearly && !p.months.empty?
+               names = p.months.map { MONTH_NAMES[_1] }
+               on = names.size == 1 ? "#{names[0]} #{list(p.monthdays)}" : "the #{list(p.monthdays.map { nth(_1) })} of #{list(names)}"
+               "#{every("year")} on #{on}"
              elsif !p.monthdays.empty?
                "the #{list(p.monthdays.map { _1 == -1 ? "last day" : nth(_1) })} of #{every("month")}"
              elsif !p.days.empty?
@@ -109,9 +114,8 @@ module Acute
              else
                every(UNITS[p.freq])
              end
-      if window then out << " #{window}"
-      elsif !p.secs.empty? then out << " at #{list(p.secs.map { Describe.clock(_1) })}"
-      end
+      out << months
+      out << " #{said || "at #{list(p.secs.map { Describe.clock(_1) })}"}" unless p.secs.empty?
       out << tail
     end
 
@@ -142,7 +146,7 @@ module Acute
 
     Notes = Struct.new(:dst)
     FINE = { hourly: true, minutely: true, secondly: true }.freeze
-    private_constant :DAY, :FINE, :DAYS, :DAY_NAMES, :MONTH_NAMES, :ORDINALS, :UNITS, :Notes
+    private_constant :DAY, :LISTED, :FINE, :DAYS, :DAY_NAMES, :MONTH_NAMES, :ORDINALS, :UNITS, :Notes
 
     # The count, start and end, as to_s ends with them
     def tail
@@ -154,15 +158,47 @@ module Acute
       out
     end
 
-    # R4: several minutes past the hour, evenly spaced through a window of the day, as "every 15 minutes from
-    # 9am to 6pm", its end left out (R27); nil for one minute, two times, or times no step reaches
-    def steps
+    # R4, R27: the clocks as one phrase, or nil to list them. Minutes evenly spaced through a window of the day
+    # are "every 15 minutes from 9am to 6pm"; more than LISTED clocks are their hours with their minutes,
+    # "every hour at :05 and :10"
+    def clocks
       secs = @parts.secs
-      return if secs.size < 3 || secs.map { _1 / 60 % 60 }.uniq.size < 2
-      step = secs[1] - secs[0]
-      return unless 3600 % step == 0 && secs.each_cons(2).all? { _2 - _1 == step }
-      stop = secs[-1] + step >= DAY ? "midnight" : Describe.clock(secs[-1] + step)
-      "every #{step / 60} minutes from #{Describe.clock(secs[0])} to #{stop}"
+      return if secs.size < 3 || secs[0] % 60 != 0
+      minutes = secs.map { _1 / 60 % 60 }.uniq.sort
+      step = even(secs)
+      return stepping(step, secs[0], secs[-1]) if minutes.size > 1 && step && 3600 % step == 0
+      return if secs.size <= LISTED
+      hours = secs.map { _1 / 3600 }.uniq
+      at = if minutes.size > 2 && (m = even(minutes))
+             "#{every_n(m, "minute")} from #{format(":%02d", minutes[0])} to #{format(":%02d", minutes[-1])}"
+           elsif minutes != [0]
+             "at #{list(minutes.map { format(":%02d", _1) })}"
+           end
+      if hours.size > 2 && (h = even(hours))
+        span = hours[0] == 0 && hours[-1] + h == 24 ? every_n(h, "hour") : stepping(h * 3600, hours[0] * 3600, hours[-1] * 3600)
+        return span unless at
+        at.start_with?("at") ? "#{span} #{at}" : "#{at} of #{span}"
+      elsif at && hours.size > 1
+        "#{at} in the #{list(hours.map { Describe.clock(_1 * 3600) })} hours"
+      end
+    end
+
+    # "every 15 minutes from 9am to 6pm": its end the step after the last where that is the top of an hour, so
+    # it reads back as R27's end left out, else the last itself
+    def stepping(step, first, last)
+      stop = last + step
+      stop = if stop >= DAY then "midnight"
+             else Describe.clock(stop % 3600 == 0 ? stop : last)
+             end
+      "#{step % 3600 == 0 ? every_n(step / 3600, "hour") : every_n(step / 60, "minute")} from #{Describe.clock(first)} to #{stop}"
+    end
+
+    def every_n(n, unit) = n == 1 ? "every #{unit}" : "every #{n} #{unit}s"
+
+    # The gap between each value and the next, when it is always the same
+    def even(values)
+      gap = values[1] - values[0]
+      gap if values.each_cons(2).all? { _2 - _1 == gap }
     end
 
     def form = @timed ? ";TZID=#{@zone}" : ";VALUE=DATE"

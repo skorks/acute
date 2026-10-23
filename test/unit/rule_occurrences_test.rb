@@ -234,7 +234,7 @@ class RuleOccurrencesTest < Minitest::Test
 
   # Shapes no phrase makes yet, checked against python-dateutil
   def built(freq, start, interval: 1, month: nil, monthdays: [], days: [], nths: [], secs: [], count: nil, until_: nil)
-    parts = Acute::Rule::Parts.new(freq, interval, month, monthdays, days, nths, nil, secs)
+    parts = Acute::Rule::Parts.new(freq, interval, month ? [month] : [], monthdays, days, nths, nil, secs)
     timed = start.size > 3
     start = timed ? Time.utc(*start).to_i : Date.new(*start).jd - 2_440_588
     Acute::Rule.new(parts, NY, start, timed, count, until_, [], false, now: AFTER.to_i, text: "built")
@@ -312,7 +312,7 @@ class RuleOccurrencesTest < Minitest::Test
   end
 
   def test_r19_a_rule_that_never_occurs_ends_at_the_budget
-    parts = Acute::Rule::Parts.new(:yearly, 1, 2, [30], [], [], nil, [])
+    parts = Acute::Rule::Parts.new(:yearly, 1, [2], [30], [], [], nil, [])
     r = Acute::Rule.new(parts, "UTC", 20_000, false, nil, nil, [], false, now: AFTER.to_i, text: "built")
     assert_nil r.next
     assert_nil r.between(Date.new(2026, 1, 1), Date.new(2400, 1, 1))
