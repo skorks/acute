@@ -46,6 +46,15 @@ module Acute
         return Within.new(Range.new(from, to.inner), to.outer)
       end
       return Within.new(Range.new(from.inner, to), from.outer) if Within === from && Clock === from.inner && Clock === to
+      # D44: "monday 3-5pm in march": a day before a clock range and a longer period after it are both ends',
+      # nested as if said together ("3-5pm monday in march"). Two of the same size are the ends ("monday 9am to
+      # friday 5pm"). Each item's atoms already nested, so these two do too.
+      if Within === from && Within === to && Clock === from.inner && Clock === to.inner && size(from.outer) < size(to.outer)
+        atoms = [from.outer, to.outer]
+        starts = [fs, ts]
+        merge_year(atoms, starts)
+        return Within.new(Range.new(from.inner, to.inner), combine(atoms, starts))
+      end
       # D51: "Friday, between 9-6 PT": the zone is the day's too
       if Within === from && Clock === from.inner && Weekday === from.outer && Zoned === to && Clock === to.node
         return Zoned.new(Within.new(Range.new(from.inner, to.node), from.outer), to.offset, to.numeric)
