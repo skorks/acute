@@ -33,6 +33,13 @@ module Acute
           return steps if Symbol === steps
           freq = nil
           interval = 1
+        elsif (freq == :hourly || freq == :minutely) && r.days.any? && r.clocks.empty? && !r.part
+          # R23: "every 2 hours on weekdays" is cron's */2 on those days, counted from midnight as R28's hours are
+          step = interval * STEP[freq]
+          return :conflict unless DAY % step == 0
+          steps = (0...DAY).step(step).to_a
+          freq = nil
+          interval = 1
         end
         days = r.days.uniq
         days = EVERY_DAY if days.empty? && r.except_days.any? && (freq.nil? || freq == :daily)
@@ -77,7 +84,8 @@ module Acute
           from = x.begin if x.begin && (r.start || x.begin > from)
         end
         rule = Rule::Parts.new(freq, interval, month ? [month] : r.months.uniq.sort, monthdays, r.nths.any? ? [] : days, r.nths, r.setpos, secs)
-        start = dtstart(rule, from, ctx)
+        start = r.anchor ? counted(rule, r.anchor, from, ctx) : dtstart(rule, from, ctx)
+        return start if Symbol === start
         return :invalid_date unless start
 
         last = r.until || r.within
@@ -170,6 +178,23 @@ module Acute
           end
           day += 1
         end
+      end
+
+      # R23: the first step on or after from counted as cron counts: "every 3 hours from midnight" on midnight's
+      # grid, the step dividing the day; "the 1st of every 3 months from January" in January, April, July or
+      # October, the step dividing the year
+      def self.counted(rule, anchor, from, ctx)
+        n = rule.interval
+        if anchor == 0
+          step = n * STEP[rule.freq] if rule.freq == :hourly || rule.freq == :minutely
+          return :conflict unless step && DAY % step == 0 && rule.secs.empty?
+          local = ctx.local(from)
+          return (local + step - 1).div(step) * step
+        end
+        return :conflict unless rule.freq == :monthly && n > 1 && 12 % n == 0 && rule.monthdays.any?
+        grid = rule.dup
+        grid.months = ((anchor - 1) % n + 1).step(12, n).to_a
+        dtstart(grid, from, ctx)
       end
 
       # R12: the wall times of an hourly or finer rule's occurrences on a local day, however many hours DST gives

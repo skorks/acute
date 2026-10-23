@@ -7,10 +7,10 @@ module Acute
     # what was said (R9); until, start, within, except and window hold one-off trees; length the Units of "for 6
     # weeks"; minutes the minute marks said and minute_span [first, last, step] of "every 15 minutes from :00 to
     # :45", hours the Clocks of "in the 9am and 11am hours" (R28); months those of "in March and June, every
-    # year" (R25)
+    # year" (R25); anchor what the steps count from (R23), 0 for "from midnight", else the month of "from January"
     Recur = Struct.new(:interval, :unit, :days, :nths, :monthdays, :setpos, :month, :date, :clocks, :part,
                        :until, :start, :within, :except_days, :except, :count, :length, :window, :minutes, :minute_span, :hours,
-                       :months)
+                       :months, :anchor)
 
     # R5
     FREQUENCY = { daily: [:day, 1], hourly: [:hour, 1], weekly: [:week, 1], monthly: [:month, 1], yearly: [:year, 1],
@@ -55,7 +55,7 @@ module Acute
     end
 
     def rule
-      r = Recur.new(nil, nil, [], [], [], nil, nil, nil, [], nil, nil, nil, nil, [], [], nil, nil, nil, [], nil, [], [])
+      r = Recur.new(nil, nil, [], [], [], nil, nil, nil, [], nil, nil, nil, nil, [], [], nil, nil, nil, [], nil, [], [], nil)
       every = false
       while @i < @n
         k = @t[@i]
@@ -88,9 +88,17 @@ module Acute
         elsif k == L::WORD && v == :of
           @i += S
           k = @t[@i]
-          if k == L::WORD && ((w = @t[@i + 1]) == :every || w == :the) && @t[@i + S] == L::UNIT && @t[@i + S + 1] == :month
+          w = @t[@i + 1] if k == L::WORD
+          j = @i + S
+          n = if w == :every && @t[j] == L::NUM then @t[j + 1] # "the 1st of every 3 months"
+              elsif w == :every && @t[j] == L::WORD && @t[j + 1] == :other then 2 # R5
+              end
+          j += S if n
+          if (w == :every || w == :the) && @t[j] == L::UNIT && @t[j + 1] == :month
+            return failure(:conflict) if n && r.interval
             every ||= w == :every
-            @i += 2 * S
+            r.interval = n if n
+            @i = j + S
           elsif k != L::MONTH && !(r.minute_span && !r.unit && k == L::WORD && @t[@i + 1] == :every) # R28: "of every hour"
             return failure(:conflict)
           end
@@ -120,6 +128,19 @@ module Acute
           @i += S
           r.start = tail_phrase
           return r.start if Failure === r.start
+        elsif k == L::WORD && v == :from && !r.anchor &&
+              (@t[@i + S] == L::MONTH || (@t[@i + S] == L::NAMED && @t[@i + S + 1] == 0 && (@i + 2 * S >= @n || window_end?(@i + 2 * S))))
+          # R23: "every 3 hours from midnight", "the 1st of every 3 months from January" count as cron does; "from
+          # midnight to 6am" is R27's window
+          @i += S
+          if @t[@i] == L::NAMED
+            r.anchor = 0
+            @i += S
+          else
+            d = month_atom
+            return failure(:conflict) if d.year || d.day
+            r.anchor = d.month
+          end
         elsif k == L::WORD && (v == :from || v == :between) && r.unit == :minute && @t[@i + S] == L::MINUTE
           # R28: "every 15 minutes from :00 to :45" runs in each hour; the hours, if said, come after
           return failure(:conflict) if r.minute_span || !r.minutes.empty?

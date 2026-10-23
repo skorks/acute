@@ -106,12 +106,14 @@ module Acute
                "the #{list(p.setpos.map { ordinal(_1) })} weekday of #{every("month")}"
              elsif p.freq == :yearly && !p.months.empty?
                names = p.months.map { MONTH_NAMES[_1] }
-               on = names.size == 1 ? "#{names[0]} #{list(p.monthdays)}" : "the #{list(p.monthdays.map { nth(_1) })} of #{list(names)}"
-               "#{every("year")} on #{on}"
+               on = names.size == 1 && p.monthdays.size == 1 ? "#{names[0]} #{p.monthdays[0]}" : "the #{list(p.monthdays.map { nth(_1) })} of #{list(names)}"
+               "#{every("year")} on #{on}" # R9: "the 1st and 15th of November" reads back, "November 1 and 15" doesn't
              elsif !p.monthdays.empty?
-               "the #{list(p.monthdays.map { _1 == -1 ? "last day" : nth(_1) })} of #{every("month")}"
+               "the #{list(p.monthdays.map { _1 == -1 ? "last day" : nth(_1) })} of #{every("month")}#{from_month}"
              elsif !p.days.empty?
                "#{every(nil)} #{weekdays}"
+             elsif FINE[p.freq] && !@started && dtstart.to_i != @now.to_i
+               "#{every(UNITS[p.freq])} from midnight" # R23: cron's grid, where reading it at now would start at now
              else
                every(UNITS[p.freq])
              end
@@ -190,6 +192,13 @@ module Acute
       stop = last + step
       stop = stop >= DAY ? "midnight" : Describe.clock(stop)
       "#{step % 3600 == 0 ? every_n(step / 3600, "hour") : every_n(step / 60, "minute")} from #{Describe.clock(first)} to #{stop}"
+    end
+
+    # R23: " from January" for the months a step of months that divides the year falls in, as cron's */3 does
+    def from_month
+      n = @parts.interval
+      return "" unless n > 1 && 12 % n == 0
+      " from #{MONTH_NAMES[(civil(@timed ? @start.div(DAY) : @start)[1] - 1) % n + 1]}"
     end
 
     def every_n(n, unit) = n == 1 ? "every #{unit}" : "every #{n} #{unit}s"
