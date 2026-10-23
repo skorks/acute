@@ -160,7 +160,7 @@ module Acute
             r.monthdays.concat(ords)
           end
         elsif k == L::WDAY
-          days, plural = rule_days
+          days, plural = rule_days(true)
           every ||= plural
           r.days.concat(days)
         elsif k == L::WEEKEND || (k == L::UNIT && v == :business_day) # R6
@@ -236,14 +236,24 @@ module Acute
       out
     end
 
-    # "monday and wednesday", "mondays, wednesdays and fridays", and whether one was plural (R6)
-    def rule_days
+    # "monday and wednesday", "mondays, wednesdays and fridays", "monday to friday", and whether one was plural
+    # (R6)
+    def rule_days(range = false)
       out = []
       plural = false
       loop do
-        out << @t[@i + 1]
+        out << (d = @t[@i + 1])
         plural ||= @t[@i + 2] & L::PLURAL != 0
         @i += S
+        k = @t[@i]
+        # R6: "monday through friday" is each day of it, and "friday to monday" wraps as a one-off range does (D48).
+        # An ordinal's day takes no range (R8): "every first monday through friday" is no set of nths
+        if range && @t[@i + S] == L::WDAY && (k == L::DASH || (k == L::WORD && ((w = @t[@i + 1]) == :to || w == :through)))
+          @i += S
+          out << (d = (d + 1) % 7) while d != @t[@i + 1]
+          plural ||= @t[@i + 2] & L::PLURAL != 0
+          @i += S
+        end
         break unless @t[@i] == L::WDAY || (@t[@i] == L::WORD && @t[@i + 1] == :and && @t[@i + S] == L::WDAY)
         @i += S if @t[@i] == L::WORD
       end
