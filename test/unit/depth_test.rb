@@ -286,7 +286,8 @@ class DepthTest < Minitest::Test
     assert_reads "330 p.m.", "2026-10-17 15:30:00 -04:00"
     assert_reads "tonight 815", "2026-10-17 20:15:00 -04:00"
     assert_reads "at 730 in the evening", "2026-10-17 19:30:00 -04:00"
-    assert_equal :incomplete, assert_raises(Acute::ParseError) { parse("134 this afternoon") }.code
+    assert_reads "134 this afternoon", "2026-10-17 13:34:00 -04:00" # D52
+    assert_equal :incomplete, assert_raises(Acute::ParseError) { parse("975 this afternoon") }.code
     assert_equal :invalid_date, assert_raises(Acute::ParseError) { parse("at 975") }.code
   end
 

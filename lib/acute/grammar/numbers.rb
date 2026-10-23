@@ -2,6 +2,7 @@ module Acute
   # Atoms led by digits or a number word: clocks, numeric and ISO dates, years
   class Grammar
     MULTIPLIERS = { hundred: 100, thousand: 1000, million: 1_000_000, billion: 1_000_000_000, trillion: 1_000_000_000_000 }.freeze
+    PM_PARTS = { afternoon: true, evening: true, night: true, tonight: true, lunch: true }.freeze # D52
 
     # D47: the hundreds, thousands and millions of a count, from token j, the first of them, with group the number
     # said before it (1 for "a") at i: [the count, the index of its last token]. Each thousand or million is smaller
@@ -220,15 +221,33 @@ module Acute
     # "5 on may 28", "5 on friday", as "at 5 on may 28"
     def part_next?(j)
       k = @t[j]
-      return true if k == L::PART || k == L::DAY || (k == L::REL && @t[j + S] == L::PART)
-      if k == L::WORD && @t[j + 1] == :on
-        k = @t[j + S]
-        return k == L::MONTH || k == L::WDAY || k == L::HOLIDAY
+      return true if k == L::DAY || part_after(j)
+      return false unless k == L::WORD && @t[j + 1] == :on
+      k = @t[j + S]
+      k == L::MONTH || k == L::WDAY || k == L::HOLIDAY
+    end
+
+    # The part of day said at j, if one is: "morning", "this morning", "in the morning", "at night"
+    def part_after(j)
+      k = @t[j]
+      if k == L::AT || (k == L::WORD && @t[j + 1] == :in)
+        j += S
+        j += S if @t[j + 1] == :the
+      elsif k == L::REL
+        j += S
       end
-      return false unless k == L::AT || (k == L::WORD && @t[j + 1] == :in)
-      j += S
-      j += S if @t[j + 1] == :the
-      @t[j] == L::PART
+      @t[j + 1] if @t[j] == L::PART
+    end
+
+    # D5, D52: digits with a part of day just before or after them are a clock when that part allows it:
+    # "1140 in the morning", "tonight 1140", "815 in the morning". Not after a holiday or season ("christmas
+    # 2015 in the evening"), nor when the part can't hold the clock ("2027 in the morning", "1975 in the evening")
+    def part_clock?(v, at)
+      return false if v % 100 > 59 || v / 100 > 23
+      k = at >= S && @t[at - S]
+      return false if k == L::HOLIDAY || k == L::SEASON
+      part = k == L::PART ? @t[at - S + 1] : part_after(at + S)
+      part && (v / 100 <= 12 || PM_PARTS[part])
     end
 
     # D13: the year of "2026-W42", "2026W01"; the week follows as its own atom
@@ -396,7 +415,7 @@ module Acute
       elsif kind == L::NAMED && v == 12 && digits <= 2
         @i += S
         named(@t[@i - S + 1])
-      elsif (digits == 3 && at >= S && (@t[at - S] == L::AT || @t[at - S] == L::PART)) || ((digits == 3 || digits == 4) && kind == L::MER)
+      elsif (digits == 3 && ((at >= S && @t[at - S] == L::AT) || part_clock?(v, at))) || ((digits == 3 || digits == 4) && kind == L::MER)
         three_digits(v, at)
       elsif digits == 4
         four_digits(v, flags, at)
