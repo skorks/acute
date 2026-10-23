@@ -100,6 +100,23 @@ class DurationTest < Minitest::Test
     assert_nil Acute.duration("PT1H 30 minutes")
   end
 
+  def test_d52_all_negative_parts_take_one_leading_minus
+    assert_equal "-PT2H30M", Acute::Duration.new(hours: -2, minutes: -30).iso8601
+    assert_equal "-P1D", Acute::Duration.new(days: -1).iso8601
+    assert_equal "-P1Y2M", Acute::Duration.new(years: -1, months: -2).iso8601
+    assert_equal "-P1DT2H", Acute::Duration.new(days: -1, hours: -2).iso8601
+    assert_equal "PT-2H30M", Acute::Duration.new(hours: -2, minutes: 30).iso8601
+    ["-PT2H30M", "-P1Y2M", "PT-2H30M"].each { |t| assert_equal t, Acute.duration(t).iso8601 }
+  end
+
+  def test_d52_a_zero_length_is_the_empty_duration
+    ["0 seconds", "0 days", "0 hours", "zero minutes"].each { |t| assert_equal Acute::Duration.new, Acute.duration(t), t }
+    assert_equal "PT0S", Acute.duration("0 days").iso8601
+    assert_equal "PT5H", Acute.duration("0 days 5 hours").iso8601
+    assert Acute.parse("in 0 days")
+    assert_nil Acute.recurrence("every 0 days")
+  end
+
   def test_d52_weeks_beside_days_read_back_as_days
     d = Acute::Duration.new(weeks: 2, days: 3)
     assert_equal "P17D", d.iso8601
