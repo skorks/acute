@@ -1,13 +1,14 @@
 module Acute
   # Lengths of time: counted units only, so "next friday" is not one
   class Grammar
-    def self.duration(tokens, bare = nil, skip = false) = new(tokens).duration(bare, skip)
+    def self.duration(tokens, bare = nil, skip = false, zero = false) = new(tokens).duration(bare, skip, zero)
 
     # "3 days", "1h 30m", "2 weeks and 3 days", "1 hour plus 30 minutes", "an hour and a half", "half an hour",
     # "for 5 days": the Units said. With a bare unit, chronic_duration's forms too (D46): see chrono. With skip,
     # a token no part reads is passed over, as the chronic_duration gems pass over words they don't know.
-    def duration(bare = nil, skip = false)
+    def duration(bare = nil, skip = false, zero = false)
       @bare = bare
+      @zero = zero
       parts = []
       @i += S if @t[0] == L::WORD && @t[1] == :for
       if @t[@i] == L::ISO # D52: "PT1H30M" is the whole length, so extract finds it before other words
@@ -36,7 +37,7 @@ module Acute
             elsif !half || @t[@i] == L::ART # D47: "half an hour", not "half145h"
               duration_quantity
             end
-        unless q && (q.count.positive? || (bare && q.count == 0))
+        unless q && (q.count.positive? || ((bare || zero) && q.count == 0))
           return failure(@i < @n ? :conflict : :incomplete) unless skip
           @i = start + S
           next
@@ -121,6 +122,10 @@ module Acute
       if @t[i] == L::DECADE && @t[i + 2] & (L::WORDY | L::QUOTED) == 0 # "5400s": in a length, seconds, whatever the digits; not "70's" or "nineties" (D50)
         @i = i + S
         return Unit.new(:second, @t[i + 1])
+      end
+      if @zero && @t[i] == L::WORD && @t[i + 1] == :oh && (unit = unit_at(i + S)) # "zero minutes": the lexer reads "zero" as the spoken "oh"
+        @i = i + 2 * S
+        return Unit.new(unit, 0)
       end
       return quantity unless @t[i] == L::NUM
       if @t[i + S + 1] == :and && (f = fraction(i + 2 * S))

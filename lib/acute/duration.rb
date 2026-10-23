@@ -84,6 +84,8 @@ module Acute
       days = p.fetch(:days, 0) + p.fetch(:weeks, 0) * 7
       date = [[p[:years], "Y"], [p[:months], "M"], [days.nonzero?, "D"]].filter_map { |n, l| "#{num(n)}#{l}" if n }.join
       time = [[p[:hours], "H"], [p[:minutes], "M"], [p[:seconds], "S"]].filter_map { |n, l| "#{num(n)}#{l}" if n }.join
+      # one minus before the "P" when every part is negative, as ISO 8601-2 writes it (D52)
+      return "-P#{date.delete("-")}#{"T#{time.delete("-")}" unless time.empty?}" if p.values.all?(&:negative?)
       "P#{date}#{"T#{time}" unless time.empty?}"
     end
 

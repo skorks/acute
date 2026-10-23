@@ -62,7 +62,7 @@ module Acute
     return Failure.new(:too_long, 0, text.bytesize) if text.bytesize > MAX_LENGTH
     tokens = Lexer.lex(text)
     return tokens if Failure === tokens
-    units = Grammar.duration(tokens)
+    units = Grammar.duration(tokens, nil, false, true) # D52: a zero length is the empty Duration, as "PT0S" is
     Failure === units ? units : Duration.from_units(units)
   end
   private_class_method :length
