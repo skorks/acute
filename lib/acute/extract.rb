@@ -349,6 +349,12 @@ module Acute
       # E5: "'40s": the apostrophe for the century left out is part of it
       st -= 1 if slice[0] == L::DECADE && st > 0 && text.getbyte(st - 1) == 39
       piece = text.byteslice(st, stop - st)
+      # D48: "[5pm] tomorrow", "lunch [5pm]": a mention that reads across one bracket takes the other too
+      if st > 0 && text.getbyte(st - 1) == 91 && piece.include?("]")
+        piece = text.byteslice(st -= 1, stop - st)
+      elsif text.getbyte(stop) == 93 && piece.include?("[")
+        piece = text.byteslice(st, (stop += 1) - st)
+      end
       value = (tree && time(piece, tree, make_context, whole)) || (units && Duration.from_units(units))
       return unless value
       # E2: "for 2 hours" is the duration's mention, "for" included

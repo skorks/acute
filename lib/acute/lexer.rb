@@ -130,6 +130,7 @@ module Acute
       n = s.bytesize
       t = []
       i = 0
+      open = nil # a "[" before a digit, undecided until its "]" shows whether a clock sits between
       while i < n
         c = s.getbyte(i)
         cl = CLASS[c]
@@ -339,8 +340,31 @@ module Acute
             t.push(AT, 0, 0, i, i + 1)
             i += 1
           when 91, 93
-            # D48: "[Sept] 04": brackets around a word, as in a citation, are dropped
-            if c == 91 ? i + 1 < n && ALPHA[s.getbyte(i + 1)] : i > 0 && ALPHA[s.getbyte(i - 1)]
+            # D48: "[Sept] 04", "[5pm]": brackets around a word, as in a citation, or a clock are dropped; "[2]"
+            # is a footnote
+            if c == 91
+              if i + 1 < n && ALPHA[s.getbyte(i + 1)]
+                i += 1
+                next
+              elsif i + 1 < n && CLASS[s.getbyte(i + 1)] == DIGIT && !open
+                open = [i, t.size, unknown&.size]
+                i += 1
+                next
+              end
+            elsif open
+              st, tn, un = open
+              open = nil
+              k = t.size - tn
+              if k == 5 ? t[tn] == CLOCK : k == 10 && t[tn + 5] == MER && (t[tn] == CLOCK || t[tn] == NUM)
+                i += 1
+                next
+              end
+              return Failure.new(:unknown_word, st, st + 1) unless unknown
+              unknown.insert(un, st, st + 1)
+              unknown << i << i + 1
+              i += 1
+              next
+            elsif i > 0 && ALPHA[s.getbyte(i - 1)]
               i += 1
               next
             end
@@ -370,6 +394,10 @@ module Acute
             unknown << st << i
           end
         end
+      end
+      if open
+        return Failure.new(:unknown_word, open[0], open[0] + 1) unless unknown
+        unknown.insert(open[2], open[0], open[0] + 1)
       end
       t
     end

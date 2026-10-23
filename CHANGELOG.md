@@ -7,6 +7,7 @@
 - **Added:** billion, trillion, ordinals up to trillionth, and the misspellings fourty, fourtieth, ninteen and nineth (D18).
 - **Fixed:** a month before the fiscal year's start month had no reading: "march FY2027" with `fiscal_year_start: 7` was nil. It is now March 2027, inside the fiscal year (D38).
 - **Fixed:** word order changed a clock range's day: "monday 3-5pm in march" ran from the coming Monday 15:00 to 1 March 17:00. A day before the range and a longer period after it are now both ends', so it is 1 March 15:00–17:00, as "3-5pm monday in march" is (D44).
+- **Fixed:** a clock in brackets was not read: "[5pm]" was nil, and `extract` of "meet [5pm] tomorrow" mentioned "5pm] tomorrow". Brackets around a clock are dropped, as around a word, and a mention across a bracket takes both (D48).
 
 ## 1.0.1
 
