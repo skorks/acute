@@ -115,10 +115,12 @@ module Acute
       end
     end.freeze
     # Unicode spaces and dashes by their UTF-8 bytes as one Integer: no-break, thin and ideographic spaces;
-    # hyphens, en and em dashes and the minus sign; ½; and the curly apostrophe
+    # hyphens, en and em dashes and the minus sign; ½; the curly single quotes, as the apostrophe; and the curly
+    # double quotes, as '"'
     WIDE = [0xC2A0, *0xE28080..0xE2808A, 0xE280AF, 0xE2819F, 0xE38080].to_h { [_1, SPACE] }
                                                                       .merge([*0xE28090..0xE28095, 0xE28892].to_h { [_1, DASH] })
-                                                                      .merge(0xC2BD => WORD, 0xE28099 => 39).freeze
+                                                                      .merge(0xC2BD => WORD, 0xE28098 => 39, 0xE28099 => 39,
+                                                                             0xE2809C => 34, 0xE2809D => 34).freeze
     # Whether a byte is an ASCII letter, a lookup rather than a call
     ALPHA = Array.new(256) { |c| (c >= 97 && c <= 122) || (c >= 65 && c <= 90) }.freeze
     # An ordinal's suffix ("3rd"), its two bytes lower-cased and packed
@@ -142,6 +144,10 @@ module Acute
             t.push(DASH, 0, 0, i, i + 3)
           elsif w == WORD
             t.push(WORD, :half, 0, i, i + 2) # D48: "½ hour"
+          elsif w == 34 || (w == 39 && CLASS[s.getbyte(i + 3).to_i] != DIGIT)
+            # D48: "“3 days”", "‘tomorrow’": a curly quote is a quote, as '"' is; "’90s" leaves out a century
+            return Failure.new(:unknown_word, i, i + 3) unless unknown
+            unknown << i << i + 3
           end
           i += c < 224 ? 2 : 3
         elsif cl == LETTER
@@ -151,8 +157,15 @@ module Acute
             i += 1
             next
           end
+          if c == 39 && i + 1 < n && ALPHA[s.getbyte(i + 1)]
+            # D48: "'tomorrow'": an apostrophe before a word is a quote, as '"' is
+            return Failure.new(:unknown_word, i, i + 1) unless unknown
+            unknown << i << (i += 1)
+            next
+          end
           st = i
           k = 0
+          q = nil # where an apostrophe with no letter after it is, and the key before it
           while i < n
             x = CODE[b = s.getbyte(i)]
             if x == 0
@@ -161,17 +174,25 @@ module Acute
                 x = 27
               elsif b >= 194 && (w = wide(s, i, b)) == 39
                 # D51: "fortnight’s": a curly apostrophe is an apostrophe
+                q, kq = i, k unless i == st || (i + 3 < n && ALPHA[s.getbyte(i + 3)])
                 k = k * 32 + 28
                 i += 3
                 next
-              elsif b >= 194 && w != SPACE && w != DASH
+              elsif b >= 194 && w != SPACE && w != DASH && w != 34
                 x = 31 # a UTF-8 letter, or "½"
               else
-                break # "10am–2pm": a Unicode dash or space ends the word
+                break # "10am–2pm", "3 days”": a Unicode dash, space or quote ends the word
               end
+            elsif x == 28 && i > st && !(i + 1 < n && ALPHA[s.getbyte(i + 1)])
+              q, kq = i, k
             end
             k = k * 32 + x
             i += 1
+          end
+          # D48: "days'", "days’": an apostrophe ending no word is a quote; "presidents' day" keeps it
+          if q && !((wd = WORDS[k]) && (wd[0] || (wd[4] && phrase(s, i, n, wd[4]))))
+            i = q
+            k = kq
           end
           if i < n && s.getbyte(i) == 47
             if (zone = iana(s, st, i, n))
