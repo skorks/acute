@@ -208,6 +208,40 @@ class ZoneTest < Minitest::Test
     assert_equal [-21_600], [2030, 2100, 2199].flat_map { |y| months.map { mexico.offset_at(Time.utc(y, _1).to_i) } }.uniq
   end
 
+  # Eastern US rules, as the changes a source holding exactly these years would list
+  def us_changes(years)
+    years.flat_map do |y|
+      march = Acute::Calendar.days_from_civil(y, 3, 8)
+      march += (0 - Acute::Calendar.weekday(march)) % 7
+      nov = Acute::Calendar.days_from_civil(y, 11, 1)
+      nov += (0 - Acute::Calendar.weekday(nov)) % 7
+      [[march * 86_400 + 7200 + 18_000, -14_400, "EDT"], [nov * 86_400 + 7200 + 14_400, -18_000, "EST"]]
+    end
+  end
+
+  def carried_on(years)
+    ats, offsets, abbreviations = us_changes(years).transpose
+    Acute::Zone.send(:recurring, ats, offsets, abbreviations, -18_000)
+  end
+
+  def test_d47_carries_on_only_from_two_rule_years_of_changes_that_run_past_2037
+    assert_equal 2 * (2200 - 2039), carried_on(2031..2038).size
+    assert_empty carried_on(2023..2030)
+    fifteen = us_changes(2031..2038).drop(1).transpose
+    assert_empty Acute::Zone.send(:recurring, *fifteen.first(3), -18_000)
+  end
+
+  def test_d47_an_odd_rule_in_the_oldest_of_the_years_is_no_yearly_rule
+    ats, offsets, abbreviations = us_changes(2031..2038).transpose
+    ats[0] += 3600
+    ats[1] += 3600
+    assert_empty Acute::Zone.send(:recurring, ats, offsets, abbreviations, -18_000)
+  end
+
+  def test_d47_a_missing_year_among_the_changes_is_no_yearly_rule
+    assert_empty carried_on([2031, 2032, 2033, 2034, 2036, 2037, 2038, 2039])
+  end
+
   def test_rejects_unknown_zones
     e = assert_raises(Acute::OptionError) { Acute::Zone.for("Mars/Olympus") }
     assert_equal ["unknown zone \"Mars/Olympus\"", :zone, "Mars/Olympus"], [e.message, e.option, e.value]
