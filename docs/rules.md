@@ -757,6 +757,7 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 - **D42.** Business days have no ISO form, so `iso8601` returns nil.
 - **D44.** A fraction goes to the next smaller unit: "1.5 hours" → 1h 30m, "3.5 years" → 3y 6mo. A fraction of a second stays: "123.45 sec" → PT123.45S.
 - **D44.** A bare number last, after hours or minutes, is the next smaller unit: "1 hour thirty", "2 minutes 30". Not after days: "2 days 5" → nil.
+- **D44.** "plus", like "and", joins parts: "3 weeks plus 2 days". "with" doesn't.
 - **D44.** "for" before a duration, and "more", "extra" or "additional" after its count, change nothing: "2 more minutes". So does a dash: "3-min".
 - **D45.** "5400s" is 5400 seconds as a length, whatever the digits.
 - **D47.** `Acute.duration!` raises the ParseError that `duration` returns nil for, with the same codes as `parse!`.
@@ -882,19 +883,18 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 - **D46.** Misspellings outside acute's table ("satterday") → nil.
 
 **The ChronicDuration layer:**
-- **D46.** Every phrase either gem reads gives the same seconds, at the gems' fixed lengths: a 365.25-day year, a 30-day month, a 7-day week, a 24-hour day.
-- **D46.** Where the gem would skip a word, acute reads it: "half an hour" → 1800, "1 fortnight" → two weeks.
-- **D46.** `raise_exceptions` raises only when acute can't read the text either.
-- **D46.** A clock group counts wherever it stands: "2 days, 4:13:02".
+- **D46.** `parse` reads through acute's lexer and duration grammar, at the gems' fixed lengths: a 365.25-day year, a 30-day month, a 7-day week, a 24-hour day. Its answers are the gems', bar the cases in `test/chronic_duration/differences.yml`.
+- **D46.** Words acute can't read are skipped, as `strict: false` does (D22). Where the gem would skip a word, acute reads it: "half an hour" → 1800, "1 fortnight" → two weeks.
+- **D46.** `raise_exceptions` raises only when acute can't read the text either. "with" isn't a joiner (D44), so it raises.
+- **D46.** A bare number after hours or minutes is the next smaller unit (D44): "1 hour 30" → 5400, where the gems read 3630.
+- **D46.** A clock group counts wherever it stands: "2 days, 4:13:02". It has 2 to 6 plain fields; "1:2", "100:00" and "1 : 20" aren't clocks.
 - **D46.** `days_per_week` and `days_per_month` are both settable; the one set last counts.
-- **D46.** `output(format: :chrono, weeks: true)` returns the clock form.
+- **D46.** `output(format: :chrono, weeks: true)` returns the clock form, with no weeks, where the gems raise. `parse` reads it back.
 - **D46.** Neither `parse` nor `output` changes the options passed.
 
 **The numerizer layer:**
 - **D46.** `Numerizer.numerize` is answered by acute's lexer, so it reads the number words acute does, billion and trillion and the ordinals up to trillionth among them.
 - **D46.** The answers numerizer 0.2.0 gives, bar the differences listed in `test/numerizer/differences.yml`.
-- **D46.** The chronic_duration layer reads its numbers through it.
-
 ## Assumptions
 
 Every code a result can carry. `rule` is nil only for `zone_inferred`, which records a fact rather than a convention.

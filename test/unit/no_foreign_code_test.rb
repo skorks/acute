@@ -15,8 +15,7 @@ class NoForeignCodeTest < Minitest::Test
     /\b(ported|copied|adapted) from\b/i
   ].freeze
 
-  # Ticket 09 (the chronic_duration rebuild) removes this file's copied code, and this exception goes with it.
-  ALLOWED = { "lib/acute/chronic_duration.rb" => "the chronic_duration gems' tokeniser and formatter, to be rebuilt" }.freeze
+  ALLOWED = {}.freeze
 
   def offences
     DIRS.flat_map { |dir| Dir[File.join(ROOT, dir, "**/*")] }.select { |path| File.file?(path) }.flat_map do |path|

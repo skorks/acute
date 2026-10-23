@@ -45,7 +45,7 @@ class RactorCompatTest < Minitest::Test
   end
 
   def test_the_constants_are_shareable
-    [Chronic::Parser::DEFAULT_OPTIONS, ChronicDuration::UNITS, ChronicDuration::MAPPINGS, ChronicDuration::DIVIDERS,
+    [Chronic::Parser::DEFAULT_OPTIONS, ChronicDuration::UNITS, ChronicDuration::NAMES,
      Acute::Grammar::MULTIPLIERS].each { assert Ractor.shareable?(_1) }
   end
 end

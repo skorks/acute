@@ -1,9 +1,9 @@
 require_relative "../acute"
-require_relative "numerize"
 
-# chronic_duration's API, 0.10.6 and GitLab's 0.12.0 fork, on acute. Its tokeniser, number words and fixed unit
-# lengths are kept, so answers match the gems. Where the gem would skip words and acute reads the whole text as
-# a duration ("half an hour", "1 fortnight"), acute's reading wins, at the same fixed lengths (D46).
+# chronic_duration's API, 0.10.6 and GitLab's 0.12.0 fork, answered by acute (D46). Text is read by acute's lexer
+# and duration grammar, which also reads the gems' clock groups, a unit alone and a bare count; each unit read
+# counts at the gems' fixed lengths, set by the settings below. Where acute reads text differently from the gems,
+# test/chronic_duration/differences.yml says how and why.
 module ChronicDuration
   extend self
 
@@ -13,30 +13,16 @@ module ChronicDuration
   VERSION = "0.12.0".freeze
   FULL_WEEKS_PER_MONTH = 4
   YEAR = 31_557_600
-  UNITS = Ractor.make_shareable(%w[seconds minutes hours days weeks months years])
-  CHRONO_UNITS = Ractor.make_shareable(UNITS - ["weeks"])
-  JOIN_WORDS = Ractor.make_shareable(%w[and with plus])
-  FLOAT = /[0-9]*\.?[0-9]+/
-  # "4:13:02" wherever it stands (D46). GitLab's 0.12 read it only as the whole text, so "2 days, 4:13:02" lost
-  # its 4:13; upstream split the whole text at colons, so "Duration: 2 hours" gained a minute.
-  CHRONO = /(?<![\d:.])\d+(?:\s*:\s*\d+){1,5}(?:\.\d*)?(?![\d:])/
-  MAPPINGS = Ractor.make_shareable({
-    "seconds" => "seconds", "second" => "seconds", "secs" => "seconds", "sec" => "seconds", "s" => "seconds",
-    "minutes" => "minutes", "minute" => "minutes", "mins" => "minutes", "min" => "minutes", "m" => "minutes",
-    "hours" => "hours", "hour" => "hours", "hrs" => "hours", "hr" => "hours", "h" => "hours",
-    "days" => "days", "day" => "days", "dy" => "days", "d" => "days",
-    "weeks" => "weeks", "week" => "weeks", "wks" => "weeks", "wk" => "weeks", "w" => "weeks",
-    "months" => "months", "mo" => "months", "mos" => "months", "month" => "months",
-    "years" => "years", "year" => "years", "yrs" => "years", "yr" => "years", "y" => "years"
-  })
-  DIVIDERS = Ractor.make_shareable({
-    micro: { years: "y", months: "mo", weeks: "w", days: "d", hours: "h", minutes: "m", seconds: "s" },
-    short: { years: "y", months: "mo", weeks: "w", days: "d", hours: "h", minutes: "m", seconds: "s" },
-    default: { years: " yr", months: " mo", weeks: " wk", days: " day", hours: " hr", minutes: " min", seconds: " sec",
-               pluralize: true },
-    long: { years: " year", months: " month", weeks: " week", days: " day", hours: " hour", minutes: " minute",
-            seconds: " second", pluralize: true },
-    chrono: { years: ":", months: ":", weeks: ":", days: ":", hours: ":", minutes: ":", seconds: ":", keep_zero: true }
+  # default_unit's names, as acute's units
+  UNITS = Ractor.make_shareable({ "seconds" => :second, "minutes" => :minute, "hours" => :hour, "days" => :day,
+                                  "weeks" => :week, "months" => :month, "years" => :year })
+  # Each format's name for a count of each unit, and whether a count other than one takes an "s"
+  NAMES = Ractor.make_shareable({
+    micro: [{ years: "y", months: "mo", weeks: "w", days: "d", hours: "h", minutes: "m", seconds: "s" }, false],
+    short: [{ years: "y", months: "mo", weeks: "w", days: "d", hours: "h", minutes: "m", seconds: "s" }, false],
+    default: [{ years: " yr", months: " mo", weeks: " wk", days: " day", hours: " hr", minutes: " min", seconds: " sec" }, true],
+    long: [{ years: " year", months: " month", weeks: " week", days: " day", hours: " hour", minutes: " minute",
+             seconds: " second" }, true]
   })
 
   class << self
@@ -60,95 +46,65 @@ module ChronicDuration
   self.hours_per_day = 24
   self.days_per_month = 30
 
+  # Any token the duration grammar doesn't read is skipped, as the gems skip words, unless raise_exceptions, which
+  # reads strictly and raises where acute can't read the text (D46). A fraction anywhere makes a Float, as the
+  # gems' decimals do.
   def parse(string, opts = {})
-    # T3: past the 512 bytes acute reads, before the rewrites rather than after them
+    strict = ChronicDuration.raise_exceptions
+    # T3: past the 512 bytes acute reads
     if string.bytesize > Acute::MAX_LENGTH
-      raise DurationParseError, "The string is longer than #{Acute::MAX_LENGTH} bytes." if ChronicDuration.raise_exceptions
+      raise DurationParseError, "The string is longer than #{Acute::MAX_LENGTH} bytes." if strict
       return
     end
-    words, skipped = clean(string)
-    result = acute_seconds(string, opts) unless skipped.empty?
-    if result.nil?
-      if !skipped.empty? && ChronicDuration.raise_exceptions
-        raise DurationParseError, "An invalid word #{skipped[0].inspect} was used in the string to be parsed."
-      end
-      result = calculate_from_words(words, opts)
+    tokens = strict ? Acute::Lexer.lex(string) : Acute::Lexer.lex(string, [])
+    return (0 if opts[:keep_zero]) if Array === tokens && tokens.empty?
+    units = Acute::Failure === tokens ? tokens : Acute::Grammar.duration(tokens, UNITS[opts[:default_unit] || "seconds"] || :nothing, !strict)
+    if Acute::Failure === units
+      raise DurationParseError, refusal(units, string) if strict
+      return
     end
-    !opts[:keep_zero] && result == 0 ? nil : result
+    seconds = total(units, opts)
+    !opts[:keep_zero] && seconds == 0 ? nil : seconds
   end
 
   def output(seconds, opts = {})
-    int = seconds.to_i
-    seconds = int if seconds - int == 0
-    style = opts[:format] || :default
-    hours_per_day, days_per_month, days_per_week = settings(opts)
-    years = months = weeks = days = hours = minutes = 0
-    decimal_places = seconds.to_s.split(".").last.length if seconds.is_a?(Float)
-
-    day = hours_per_day * 3600
-    month = days_per_month * day
-    if seconds >= YEAR && seconds % YEAR < seconds % month
-      years = seconds / YEAR
-      months = seconds % YEAR / month
-      days = seconds % YEAR % month / day
-      hours = seconds % YEAR % month % day / 3600
-      minutes = seconds % YEAR % month % day % 3600 / 60
-      seconds = seconds % YEAR % month % day % 3600 % 60
-    elsif seconds >= 60
-      minutes = (seconds / 60).to_i
-      seconds %= 60
-      if minutes >= 60
-        hours = (minutes / 60).to_i
-        minutes = (minutes % 60).to_i
-        if !opts[:limit_to_hours] && hours >= hours_per_day
-          days = (hours / hours_per_day).to_i
-          hours = (hours % hours_per_day).to_i
-          if opts[:weeks]
-            if days >= days_per_week
-              weeks = (days / days_per_week).to_i
-              days = (days % days_per_week).to_i
-              if weeks >= FULL_WEEKS_PER_MONTH
-                months = (weeks / FULL_WEEKS_PER_MONTH).to_i
-                weeks = (weeks % FULL_WEEKS_PER_MONTH).to_i
-              end
-            end
-          elsif days >= days_per_month
-            months = (days / days_per_month).to_i
-            days = (days % days_per_month).to_i
-          end
-        end
-      end
+    seconds = seconds.to_i if seconds % 1 == 0
+    places = seconds.to_s.split(".").last.length if Float === seconds
+    weeks = opts[:weeks] && opts[:format] != :chrono
+    counts = split(seconds, opts, weeks)
+    counts.delete(:weeks) unless weeks
+    if opts[:format] == :chrono
+      chrono(counts.values.first(opts[:units] || counts.size), places)
+    else
+      text(counts, opts, places)
     end
-
-    dividers = DIVIDERS[style]
-    joiner = %i[micro chrono].include?(style) ? "" : opts.fetch(:joiner, " ")
-    counts = { years: years, months: months, weeks: weeks, days: days, hours: hours, minutes: minutes, seconds: seconds }
-    # the gem's compact! returned nil when no unit was dropped, so weeks: true with every unit shown raised (D46)
-    result = counts.filter_map do |unit, num|
-      next if unit == :weeks && !opts[:weeks]
-      num = format("%.#{decimal_places}f", num) if num.is_a?(Float) && unit == :seconds
-      keep_zero = dividers[:keep_zero] || (opts[:keep_zero] if unit == :seconds)
-      humanize_time_unit(num, dividers[unit], dividers[:pluralize], keep_zero)
-    end
-    result = result[0...opts[:units]] if opts[:units]
-    result = result.join(joiner)
-    result = chrono(result, decimal_places) if style == :chrono
-    result.empty? ? nil : result
   end
 
   private
 
-  def humanize_time_unit(number, unit, pluralize, keep_zero)
-    return if number == 0 && !keep_zero
-    res = "#{number}#{unit}"
-    res << "s" if number != 1 && pluralize
-    res
+  def refusal(failure, string)
+    return Acute::Explain.error(failure, string).message if failure.start == failure.stop
+    "An invalid word #{string.byteslice(failure.start, failure.stop - failure.start).inspect} was used in the string to be parsed."
   end
 
-  # Pad each part to two digits, then drop leading zero parts, a leading zero and the trailing colon
-  def chrono(str, decimal_places)
-    str.split(":").map { |n| n.include?(".") ? format("%04.#{decimal_places}f", n) : format("%02d", n) }
-       .join(":").gsub(/^(00:)+/, "").gsub(/^0/, "").gsub(/:$/, "")
+  def total(units, opts)
+    lengths = lengths(opts)
+    whole = true
+    sum = units.sum do |u|
+      whole = false if u.count.to_r.denominator != 1
+      part, k = Acute::Duration::UNIT_PART.fetch(u.unit) { next [:nothing, 0] }
+      u.count * k * lengths.fetch(part)
+    end
+    return sum.to_f unless whole
+    Rational === sum ? sum.to_i : sum
+  end
+
+  # A unit's seconds; a business day has none of its own, so it is a day, as the gems skip "business"
+  def lengths(opts)
+    hours_per_day, days_per_month, days_per_week = settings(opts)
+    day = 3600 * hours_per_day
+    { years: YEAR, months: day * days_per_month, weeks: day * days_per_week, days: day, business_days: day,
+      hours: 3600, minutes: 60, seconds: 1, nothing: 0 }
   end
 
   # Per-call options over the module's settings; GitLab's per-call days_per_month also sets the week
@@ -160,84 +116,55 @@ module ChronicDuration
     [hours_per_day, days_per_month, days_per_week]
   end
 
-  def lengths(opts)
+  # The seconds as counts of each unit, largest first. Past a year, when whole years leave less over than whole
+  # months would, they are years, months, days, hours, minutes and seconds. Otherwise each unit carries into the
+  # next once it fills it: minutes into hours, hours into days (unless limit_to_hours), then days into months,
+  # or with weeks into weeks and four weeks into a month.
+  def split(seconds, opts, weeks)
     hours_per_day, days_per_month, days_per_week = settings(opts)
     day = 3600 * hours_per_day
-    { "years" => YEAR, "months" => day * days_per_month, "weeks" => day * days_per_week, "days" => day,
-      "hours" => 3600, "minutes" => 60, "seconds" => 1 }
-  end
-
-  def calculate_from_words(string, opts)
-    seconds = lengths(opts)
-    words = string.split
-    words.each_with_index.sum do |v, k|
-      v.match?(FLOAT) ? convert_to_number(v) * seconds.fetch(words[k + 1] || opts[:default_unit] || "seconds", 0) : 0
-    end
-  end
-
-  # acute's reading of the whole text, each unit said at the gem's fixed lengths, so "2.5 weeks" of 5-day weeks
-  # is 12.5 days. A business day has no such length, so the gem's answer stands. A fraction anywhere makes a
-  # Float, as the gem's own decimals do.
-  def acute_seconds(string, opts)
-    tokens = Acute::Lexer.lex(string)
-    return if Acute::Failure === tokens
-    units = Acute::Grammar.duration(tokens)
-    return if Acute::Failure === units
-    parts = units.map { |u| [*Acute::Duration::UNIT_PART.fetch(u.unit), u.count] }
-    return if parts.any? { |part, *| part == :business_days }
-    seconds = lengths(opts)
-    total = parts.sum { |part, k, count| count * k * seconds.fetch(part.to_s) }
-    parts.all? { |*, count| count.to_r.denominator == 1 } ? total.to_i : total.to_f
-  end
-
-  def cleanup(string) = clean(string)[0]
-
-  def clean(string)
-    res = filter_by_type(Acute::Numerize.call(string.downcase))
-    res = res.gsub(FLOAT) { " #{_1} " }.squeeze(" ").strip
-    filter_through_white_list(res)
-  end
-
-  def convert_to_number(string) = string.to_f % 1 > 0 ? string.to_f : string.to_i
-
-  # "3:41:59" is 3 hours 41 minutes 59 seconds
-  def filter_by_type(string)
-    string.gsub(CHRONO) do |chrono|
-      chrono.delete(" ").split(":").reverse.each_with_index.map { |v, k| "#{v} #{CHRONO_UNITS[k]}" }.reverse.join(" ")
-    end
-  end
-
-  # The units named, with numbers kept and other words skipped; the skipped words come back too
-  def filter_through_white_list(string)
-    res = []
-    skipped = []
-    string.split.each do |word|
-      next res << word.strip if word.match?(FLOAT)
-      stripped = word.strip.delete_prefix(",").delete_suffix(",")
-      if MAPPINGS.key?(stripped) then res << MAPPINGS[stripped]
-      elsif !JOIN_WORDS.include?(stripped) then skipped << word
+    month = day * days_per_month
+    counts = { years: 0, months: 0, weeks: 0, days: 0, hours: 0, minutes: 0, seconds: seconds }
+    if seconds >= YEAR && seconds % YEAR < seconds % month
+      { years: YEAR, months: month, days: day, hours: 3600, minutes: 60 }.each do |unit, length|
+        counts[unit], counts[:seconds] = counts[:seconds].divmod(length)
+        counts[unit] = counts[unit].to_i
       end
+      return counts
     end
-    # "day" or "minute 30sec": a unit first counts one
-    res.unshift(1) if !res.empty? && MAPPINGS[res[0]]
-    [res.join(" "), skipped]
+    steps = [[:minutes, 60], [:hours, 60]]
+    unless opts[:limit_to_hours]
+      steps << [:days, hours_per_day]
+      steps.push(*(weeks ? [[:weeks, days_per_week], [:months, FULL_WEEKS_PER_MONTH]] : [[:months, days_per_month]]))
+    end
+    smaller = :seconds
+    steps.each do |unit, size|
+      break if counts[smaller] < size
+      counts[unit] = (counts[smaller] / size).to_i
+      counts[smaller] %= size
+      counts[smaller] = counts[smaller].to_i unless smaller == :seconds
+      smaller = unit
+    end
+    counts
+  end
+
+  # "1 hr 20 mins": the counts that aren't zero, and with keep_zero the seconds even so
+  def text(counts, opts, places)
+    names, plural = NAMES[opts[:format] || :default]
+    parts = counts.filter_map do |unit, count|
+      next if count == 0 && !(opts[:keep_zero] && unit == :seconds)
+      count = format("%.#{places}f", count) if Float === count
+      "#{count}#{names[unit]}#{"s" if plural && count != 1}"
+    end
+    parts = parts.first(opts[:units]) if opts[:units]
+    parts.join(opts[:format] == :micro ? "" : opts.fetch(:joiner, " ")) unless parts.empty?
+  end
+
+  # "1:20", "6:01:00:00:00": every count from the first that isn't zero, two digits each but the first
+  def chrono(counts, places)
+    digits = counts.map { |c| Float === c ? format("%0#{places + 3}.#{places}f", c) : format("%02d", c) }
+    digits.shift while digits.size > 1 && digits[0] == "00"
+    digits[0] = digits[0].sub(/\A0+(?=[\d.])/, "")
+    digits.join(":")
   end
 end
-
-# Ported from chronic_duration 0.10.6 and gitlab_chronic_duration 0.12.0:
-#
-# Copyright (c) Henry Poydar
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
-# documentation files (the "Software"), to deal in the Software without restriction, including without limitation
-# the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
-# permit persons to whom the Software is furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all copies or substantial portions of
-# the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
-# THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.

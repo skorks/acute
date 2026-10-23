@@ -68,7 +68,7 @@ module Acute
     BEFORE_DAY = { the: true, from: true, between: true }.freeze # words that make "ninth" a day
     SHIFT_TAIL = { ago: true, hence: true, later: true, from: true, after: true, before: true }.freeze
     # The kinds item looks at before taking an atom; any other token starts one
-    ITEM_SPECIAL = Array.new(L::DECADE + 1) { [L::AT, L::WORD, L::ZONE, L::PLUS, L::DASH, L::DOT, L::SLASH].include?(_1) }.freeze
+    ITEM_SPECIAL = Array.new(L::FIELDS + 1) { [L::AT, L::WORD, L::ZONE, L::PLUS, L::DASH, L::DOT, L::SLASH].include?(_1) }.freeze
     UNIT_SIZE = { second: 0, minute: 0, hour: 0, day: 2, business_day: 2, week: 3, fortnight: 3, month: 5,
                   quarter: 6, season: 6, year: 7, decade: 8, century: 9 }.freeze
 
@@ -104,6 +104,8 @@ module Acute
       @n = tokens.size
       @i = 0
       @approx = false
+      @bare = nil
+      @lone = false
     end
 
     attr_reader :stuck

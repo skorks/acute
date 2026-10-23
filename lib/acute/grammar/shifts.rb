@@ -181,7 +181,7 @@ module Acute
         if @t[i + S] == L::SLASH && @t[i + 2 * S] == L::NUM && @t[i + 2 * S + 1] > 0
           count = Rational(count, @t[i + 2 * S + 1])
           i += 2 * S
-        elsif @t[i + S] == L::DOT && @t[i + 2 * S] == L::NUM && unit_at(i + 3 * S) && touching?(i, i + 2 * S) # "2.5 hours", not "1. 5 hours" (D47)
+        elsif @t[i + S] == L::DOT && @t[i + 2 * S] == L::NUM && (unit_at(i + 3 * S) || bare?(i + 3 * S)) && touching?(i, i + 2 * S) # "2.5 hours", not "1. 5 hours" (D47)
           count += Rational(@t[i + 2 * S + 1], 10**(@t[i + 2 * S + 2] & L::DIGITS))
           i += 2 * S
         end
@@ -195,11 +195,17 @@ module Acute
         return Unit.new(:second, @t[i + 1])
       else return
       end
-      unit = unit_at(i + S)
-      return unless unit
-      @i = i + 2 * S
+      if (unit = unit_at(i + S))
+        @i = i + 2 * S
+      elsif bare?(i + S) # D46: chronic_duration's "5", a count alone
+        unit = @bare
+        @i = i + S
+      else return
+      end
       Unit.new(unit, count)
     end
+
+    def bare?(i) = @bare && @lone && i == @n
 
     # "this time tomorrow", "same time next week": now moved by the day or unit
     def same_time
