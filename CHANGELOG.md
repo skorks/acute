@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Added:** `require "acute/numerizer"` gives numerizer's `Numerizer.numerize`, answered by acute (D46). The chronic_duration layer reads its numbers through it.
+- **Added:** billion, trillion, ordinals up to trillionth, and the misspellings fourty, fourtieth, ninteen and nineth (D18).
+
 ## 1.0.1
 
 - **Changed:** the gem includes the README, CHANGELOG and docs/, so they can be read offline beside the code.

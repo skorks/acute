@@ -862,7 +862,7 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 
 ## Compatibility layers
 
-`require "acute/chronic"` and `require "acute/chronic_duration"` give the APIs of those gems, read by acute.
+`require "acute/chronic"`, `require "acute/chronic_duration"` and `require "acute/numerizer"` give the APIs of those gems, read by acute.
 
 **The chronic layer:**
 - **D46.** `guess: true` and `:middle` take the middle of the span on the wall clock, so a day's guess is noon. **D47.** A clock time someone said stays its instant: "4pm", "monday 3pm". Every other span is guessed, so "next hour" at 14:00 is 14:30.
@@ -884,6 +884,11 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 - **D46.** `days_per_week` and `days_per_month` are both settable; the one set last counts.
 - **D46.** `output(format: :chrono, weeks: true)` returns the clock form.
 - **D46.** Neither `parse` nor `output` changes the options passed.
+
+**The numerizer layer:**
+- **D46.** `Numerizer.numerize` is answered by acute's lexer, so it reads the number words acute does, billion and trillion and the ordinals up to trillionth among them.
+- **D46.** The answers numerizer 0.2.0 gives, bar the differences listed in `test/numerizer/differences.yml`.
+- **D46.** The chronic_duration layer reads its numbers through it.
 
 ## Assumptions
 
