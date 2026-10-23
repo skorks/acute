@@ -123,8 +123,9 @@ module Acute
           r.window = Grammar.new(@t[@i...stop]).phrase
           return r.window if Failure === r.window
           @i = stop
-        elsif k == L::WORD && v == :in
-          @i += S
+        elsif (k == L::WORD && v == :in) || (k == L::REL && (v == :next || v == :this)) # R13: "in november", "next month"
+          return failure(:conflict) if r.within
+          @i += S if k == L::WORD
           r.within = tail_phrase
           return r.within if Failure === r.within
         elsif k == L::WORD && v == :for

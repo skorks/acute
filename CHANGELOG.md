@@ -3,7 +3,7 @@
 ## Unreleased
 
 - **Changed:** `require "acute/chronic"`, `acute/chronic_duration` and `acute/numerizer` mark the real gem's feature loaded (`chronic`, `chronic_duration` and `gitlab_chronic_duration`, `numerizer`), so a gem that requires it later, as ransack_chronic does, no longer replaces acute's `Chronic.parse`. If the real gem was loaded first, the layer warns once (D46).
-
+- **Fixed:** a rule with a window named without "in" was nil: "every day next month" had no reading, and `extract` of "everyday next month" mentioned only "next month". A "next" or "this" period ends the rule as "in" does: daily from 1 to 30 November (R13). And a range no longer swallows a dangling "from": `extract` of "tomorrow through sunday from 9 to 5" mentioned "tomorrow through sunday from"; it is now "tomorrow through sunday" and "from 9 to 5" (D50).
 - **Fixed:** a rule on a range of weekdays had no reading: "every Monday through Friday at 19:20" was nil and `extract` split it into "every Monday" and a time. It is now weekly on Monday to Friday at 19:20, as "every monday to friday" and "every mon-fri" are; "every friday through monday" wraps to Friday, Saturday, Sunday and Monday, where it read as Fridays until Monday (R6).
 - **Fixed:** `Rule.from_cron` gave nil for a line with a month field: `0 9 * 3 *` was nil. A month field is BYMONTH, with numbers, names, lists, ranges and steps: "every day in March at 9am" (R25).
 - **Fixed:** a rule's description listed every clock of a cron line: `5,10 * * * *` was 48 times. Hours against minutes read as one phrase, "every hour at :05 and :10", and `0-10 11 * * *` is "every minute from 11am to 11:11am", not "every 1 minutes" (R27).

@@ -28,6 +28,16 @@ class RuleTest < Minitest::Test
     assert_equal "FREQ=WEEKLY;BYDAY=MO;UNTIL=20261023", rule("every monday until friday").rrule
   end
 
+  def test_r13_a_window_named_without_in_is_read_as_with_it
+    november = "DTSTART;VALUE=DATE:20261101\nRRULE:FREQ=DAILY;UNTIL=20261130"
+    assert_equal november, rule("every day in november").to_ical
+    assert_equal november, rule("every day next month").to_ical
+    assert_equal november, rule("everyday next month").to_ical
+    assert_equal "DTSTART;VALUE=DATE:20261019\nRRULE:FREQ=WEEKLY;BYDAY=MO,WE;UNTIL=20261024", rule("every monday and wednesday next week").to_ical
+    assert_equal "DTSTART;VALUE=DATE:20261017\nRRULE:FREQ=DAILY;UNTIL=20261017", rule("daily this week").to_ical
+    assert_nil rule("every day next month in november")
+  end
+
   def test_r1_a_rule_of_whole_days_has_a_date
     r = rule("every monday except november 2")
     assert_equal Date.new(2026, 10, 19), r.dtstart
