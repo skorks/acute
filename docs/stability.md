@@ -21,6 +21,7 @@ Changing or removing any of these needs a major release.
 
 - Zone data (tzdata) updates.
 - Bug fixes that change no documented answer.
+- Fixes that make acute do what its docs already promised, even where a rule's wording changes with them.
 
 ## Outside SemVer
 
