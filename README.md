@@ -163,6 +163,7 @@ Over ten everyday phrases on Ruby 4.0.7, acute takes 5–19 µs a parse to chron
 - [docs/cli.md](docs/cli.md): the `acute` command and its options.
 - [docs/agents.md](docs/agents.md): acute as tools for an LLM, through `Acute::Tool` or `acute mcp`.
 - [docs/chronic.md](docs/chronic.md): why acute exists, moving from chronic, and speed.
+- [docs/migrating.md](docs/migrating.md): acute in place of, or alongside, GitLab's chronic forks, cronex, ice_cube, montrose, rrule, business, business_time, nickel and tickle.
 - [docs/gotchas.md](docs/gotchas.md): the answers people don't expect, why, the option that changes each, and what acute won't read.
 - [docs/rules.md](docs/rules.md): every convention acute follows, by topic, with examples.
 - [docs/stability.md](docs/stability.md): what SemVer covers, and what a minor or patch release may change.

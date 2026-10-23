@@ -163,7 +163,7 @@ module Chronic
       return if epoch.nil?
       klass = Chronic.time_class
       return klass.at(epoch) if klass.respond_to?(:tzinfo)
-      time = Time.at(epoch)
+      time = ::Time.at(epoch)
       if klass == ::Date then time.to_date
       elsif klass == ::DateTime then time.to_datetime
       else time
@@ -175,4 +175,4 @@ module Chronic
     end
   end
 end
-Acute::Shadow.call("acute/chronic", "chronic", "chronic")
+Acute::Shadow.call("acute/chronic", "chronic", "chronic", "gitlab-chronic")

@@ -45,6 +45,27 @@ class ShadowTest < Minitest::Test
     assert_match(%r{chronic gem was loaded before acute/chronic.*require acute/chronic first, or drop}, err)
   end
 
+  # The real gem defines Chronic::Time, which a bare Time in the layer would find before Ruby's.
+  def test_real_gem_first_still_parses
+    out, = run_ruby(<<~RUBY, gem_name: "chronic")
+      require "chronic"
+      require "acute/chronic"
+      p Chronic.parse("tomorrow 3pm", now: Time.new(2026, 10, 17, 14, 0, 0, "-04:00")).class
+      puts Chronic.method(:parse).source_location.first
+    RUBY
+    assert_equal "Time", out.lines.first.strip
+    assert_includes out, "acute/chronic.rb"
+  end
+
+  # GitLab's fork loads as "gitlab-chronic", which Bundler requires for `gem "gitlab-chronic"`.
+  def test_later_require_of_gitlab_chronic_is_a_no_op
+    out, = run_ruby(<<~RUBY)
+      require "acute/chronic"
+      p require("gitlab-chronic")
+    RUBY
+    assert_equal "false", out
+  end
+
   def test_chronic_duration_names_and_gitlab_fork
     %w[chronic_duration gitlab_chronic_duration].each do |name|
       out, err = run_ruby(<<~RUBY, gem_name: name)
