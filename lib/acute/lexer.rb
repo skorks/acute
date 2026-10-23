@@ -36,8 +36,9 @@ module Acute
     # D46: chronic_duration's clock of four to six fields, "6:01:00:00": value: the fields as base-100 digits; flags:
     # the field count, and a fraction of a second as a CLOCK keeps it
     FIELDS = 25
+    ISO = 26 # D52: an ISO 8601 duration, "PT1H30M": value: its units and counts in turn, [:hour, 1, :minute, 30]
     KIND_NAMES = Ractor.make_shareable(%w[NUM CLOCK MER DAY NAMED NOW AT WDAY MONTH UNIT REL ORD PART SEASON HOLIDAY WEEKEND ZONE FUZZ ART
-                                          WORD SLASH DASH DOT PLUS DECADE FIELDS])
+                                          WORD SLASH DASH DOT PLUS DECADE FIELDS ISO])
 
     DIGITS = 15
     ZERO = 16
@@ -154,6 +155,10 @@ module Acute
           end
           i += c < 224 ? 2 : 3
         elsif cl == LETTER
+          if c | 32 == 112 && (i == 0 || CLASS[s.getbyte(i - 1)] != DIGIT) && (iso = iso_duration(s, i + 1, n, 1))
+            t.push(ISO, iso[1], 0, i, i = iso[0])
+            next
+          end
           # the "T" between an ISO date and its time, or before a time alone: "T13:23:42"
           if c | 32 == 116 && i + 1 < n && CLASS[s.getbyte(i + 1)] == DIGIT &&
              (i > 0 && CLASS[p = s.getbyte(i - 1)] == DIGIT || ((i == 0 || CLASS[p] == SPACE) && i + 3 < n && s.getbyte(i + 3) == 58))
@@ -360,6 +365,12 @@ module Acute
                                            spaced_dot?(s, i, n, t)
             i += 1
           when 45
+            # D52: "-P1D", a negative ISO 8601 duration
+            if i + 2 < n && s.getbyte(i + 1) | 32 == 112 && (i == 0 || CLASS[s.getbyte(i - 1)] == SPACE) &&
+               (iso = iso_duration(s, i + 2, n, -1))
+              t.push(ISO, iso[1], 0, i, i = iso[0])
+              next
+            end
             # A hyphen inside a word ("twenty-four", "mid-october") is a space; after a month or weekday it
             # is a range ("jun-aug", "mon-fri")
             if !(i > 0 && i + 1 < n && ALPHA[s.getbyte(i - 1)] && ALPHA[s.getbyte(i + 1)]) ||
@@ -486,6 +497,63 @@ module Acute
         return [j, entry]
       end
       nil
+    end
+
+    # Each designator, lower-cased, as [its place in order, unit]: "M" is months before the "T", minutes after it
+    ISO_DATE = Ractor.make_shareable({ 121 => [0, :year], 109 => [1, :month], 119 => [2, :week], 100 => [3, :day] })
+    ISO_TIME = Ractor.make_shareable({ 104 => [0, :hour], 109 => [1, :minute], 115 => [2, :second] })
+
+    # D52: an ISO 8601 duration from just after its "P", as [stop, units and counts], or nil. Designators come in
+    # order, each once; a "T" needs a part after it; only the last part may have a fraction, after a dot or a
+    # comma. A part may carry its own minus, as Duration#iso8601 writes it ("PT-2H30M"); sign is -1 after "-P".
+    def self.iso_duration(s, i, n, sign)
+      return unless i < n && ((c = s.getbyte(i)) | 32 == 116 || CLASS[c] == DIGIT || c == 45) # not "pm", "past"
+      units = []
+      names = ISO_DATE
+      place = -1
+      timed = false
+      fraction = false
+      while i < n
+        c = s.getbyte(i)
+        if c | 32 == 116 && !timed
+          timed = true
+          names = ISO_TIME
+          place = -1
+          i += 1
+          next
+        end
+        break unless CLASS[c] == DIGIT || (c == 45 && sign == 1)
+        return if fraction
+        count_sign = sign
+        if c == 45
+          count_sign = -1
+          i += 1
+        end
+        st = i
+        v = 0
+        while i < n && CLASS[c = s.getbyte(i)] == DIGIT
+          v = v * 10 + c - 48
+          i += 1
+        end
+        return if i == st || i - st > 18 || i == n
+        if c == 46 || c == 44
+          fs = i += 1
+          f = 0
+          while i < n && CLASS[c = s.getbyte(i)] == DIGIT
+            f = f * 10 + c - 48
+            i += 1
+          end
+          return if i == fs || i - fs > 18 || i == n
+          v += Rational(f, 10**(i - fs))
+          fraction = true
+        end
+        return unless (d = names[c | 32]) && d[0] > place
+        place = d[0]
+        units << d[1] << v * count_sign
+        i += 1
+      end
+      return if units.empty? || (timed && place == -1) || (i < n && (ALPHA[c = s.getbyte(i)] || CLASS[c] == DIGIT))
+      [i, units.freeze]
     end
 
     def self.wide(s, i, c)

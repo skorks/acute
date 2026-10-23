@@ -10,6 +10,12 @@ module Acute
       @bare = bare
       parts = []
       @i += S if @t[0] == L::WORD && @t[1] == :for
+      if @t[@i] == L::ISO # D52: "PT1H30M" is the whole length, so extract finds it before other words
+        v = @t[@i + 1]
+        @i += S
+        return failure(:conflict) if @i < @n
+        return Array.new(v.size / 2) { Unit.new(v[2 * _1], v[2 * _1 + 1]) }
+      end
       while @i < @n
         @i += S if parts.any? && ((w = @t[@i + 1]) == :and || w == :plus || @t[@i] == L::PLUS) # D44
         if parts.any? && (q = duration_tail(parts.last.unit))

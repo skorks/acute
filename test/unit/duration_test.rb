@@ -83,6 +83,54 @@ class DurationTest < Minitest::Test
     assert_nil Acute.duration("5 business days").iso8601
   end
 
+  # D52
+  def test_d52_iso8601_reads_back
+    durations = [
+      {}, { hours: 1, minutes: 30 }, { weeks: 2 }, { years: 1, months: 2, days: 3, hours: 4, minutes: 5, seconds: 6 },
+      { months: 18 }, { seconds: Rational(1, 2) }, { minutes: 1, seconds: Rational(12_345, 100) }, { seconds: Rational(1, 100_000) },
+      { days: 1, hours: 12 }, { seconds: 10**12 }, { days: -3 }, { hours: -2, minutes: 30 }, { seconds: Rational(-1, 4) }
+    ].map { Acute::Duration.new(**_1) }
+    durations += ["1h30m", "2 weeks", "two and a half years", "123.45 sec", "3 days + 4 hours", "half an hour"].map { Acute.duration(_1) }
+    durations.each { |d| assert_equal d, Acute.duration(d.iso8601), d.iso8601 }
+  end
+
+  def test_d52_extract_finds_an_iso_duration_as_a_length
+    found = Acute.extract("it took PT1H30M, then P2W tomorrow").mentions.map { [_1.text, _1.kind] }
+    assert_equal [["PT1H30M", :duration], ["P2W", :duration], ["tomorrow", :time]], found
+    assert_nil Acute.duration("PT1H 30 minutes")
+  end
+
+  def test_d52_weeks_beside_days_read_back_as_days
+    d = Acute::Duration.new(weeks: 2, days: 3)
+    assert_equal "P17D", d.iso8601
+    assert_equal({ days: 17 }, Acute.duration(d.iso8601).parts)
+  end
+
+  def test_d52_fraction_of_a_second_is_written_without_an_exponent
+    assert_equal "PT0.00001S", Acute::Duration.new(seconds: Rational(1, 100_000)).iso8601
+    assert_equal "-0.000015s", Acute::Duration.new(seconds: Rational(-15, 1_000_000)).to_s
+  end
+
+  def test_d52_iso8601_forms
+    {
+      "PT1H30M" => { hours: 1, minutes: 30 }, "P1Y2M3DT4H5M6S" => { years: 1, months: 2, days: 3, hours: 4, minutes: 5, seconds: 6 },
+      "P2W" => { weeks: 2 }, "PT0.5S" => { seconds: Rational(1, 2) }, "PT0,5S" => { seconds: Rational(1, 2) },
+      "P1DT12H" => { days: 1, hours: 12 }, "p1dt12h" => { days: 1, hours: 12 }, "pt1h30m" => { hours: 1, minutes: 30 },
+      "P1M" => { months: 1 }, "PT1M" => { minutes: 1 }, "P1.5Y" => { years: 1, months: 6 }, "PT1.5H" => { hours: 1, minutes: 30 },
+      "P1W2D" => { weeks: 1, days: 2 }, "P0D" => {}, "PT0S" => {}, "P0Y1D" => { days: 1 }, "-P1DT2H" => { days: -1, hours: -2 },
+      "P-1D" => { days: -1 }, " PT45M " => { minutes: 45 }
+    }.each { |text, parts| assert_equal parts, Acute.duration(text)&.parts, text }
+  end
+
+  def test_d52_bad_iso8601_forms
+    ["P", "PT", "P1H", "PT1D", "P1.5Y2M", "PT1.5H30M", "P1D1Y", "PT1S1M", "P1DT", "P1D2D", "PT.5S", "PT1.S", "P1", "PT1H30",
+     "P1Dx", "P1D5", "PT1H-", "P--1D", "P1DT1H 2M", "1P1D", "P1D/P2D", "PT1234567890123456789S"].each do |text|
+      assert_nil Acute.duration(text), text
+    end
+    assert_nil Acute.parse("PT1H30M")
+    assert_nil Acute.parse("P2W")
+  end
+
   def test_to_s_and_to_h
     d = Acute.duration("1h30m")
     assert_equal "1h 30m", d.to_s
