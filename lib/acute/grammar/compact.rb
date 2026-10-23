@@ -209,9 +209,11 @@ module Acute
         meridiem = kind == L::ART || @t[@i + 1] == 0 ? :am : :pm
         @i += S
         Clock.new(hour, min, sec, meridiem, nil, false, flags & L::SECONDS != 0, frac)
-      elsif kind == L::NAMED && hour == 12 && min == 0 && sec == 0
+      elsif kind == L::NAMED && hour == 12
         @i += S
-        named(@t[@i - S + 1])
+        return named(@t[@i - S + 1]) if min == 0 && sec == 0 && !frac
+        # D30: "12:15 noon", "12:30 midnight": the named hour fixes am or pm, as a meridiem does
+        Clock.new(12, min, sec, @t[@i - S + 1] == 12 ? :pm : :am, nil, false, flags & L::SECONDS != 0, frac)
       # D44: "06:00h"; D48: "06:00 hours", "18:30 hours", written as a 24-hour clock
       elsif kind == L::UNIT && @t[@i + 1] == :hour && (@t[@i + 4] - @t[at + 4] == 1 || flags & L::ZERO != 0 || hour > 12)
         @i += S
