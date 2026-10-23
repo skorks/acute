@@ -3,6 +3,70 @@ module Acute
   class Grammar
     MULTIPLIERS = { hundred: 100, thousand: 1000, million: 1_000_000, billion: 1_000_000_000, trillion: 1_000_000_000_000 }.freeze
 
+    # D47: the hundreds, thousands and millions of a count, from token j, the first of them, with group the number
+    # said before it (1 for "a") at i: [the count, the index of its last token]. Each thousand or million is smaller
+    # than the one before, and "and" or a number in words follows only a hundred or a thousand. With the text s
+    # (the numerizer layer, D46) only spaces or hyphens may join the tokens, digits may come before a hundred ("10
+    # thousand and 5 hundred"), and an ordinal ends the count ("two hundredth", "a hundred and fifth").
+    def self.spoken(t, n, i, j, group, s)
+      total = 0
+      hundred = false
+      below = nil
+      after = false # straight after a hundred, a thousand or their "and"
+      last = i
+      while j < n
+        break if s && j != i && !spaced?(s, t, j)
+        k = t[j]
+        if (m = multiplier(t, j, s))
+          if m == 100
+            break if hundred || group < 1 || group > 99
+            group *= 100
+            hundred = true
+          else
+            break if group < 1 || (below && m >= below)
+            total += group * m
+            group = 0
+            hundred = false
+            below = m
+          end
+          after = true
+        elsif after && k == L::WORD && t[j + 1] == :and && ((x = t[j + S]) == L::NUM || (s && x == L::ORD))
+          j += S
+          next
+        elsif after && (k == L::NUM || (s && k == L::ORD)) && group % 100 == 0 && t[j + 1].between?(1, 99) &&
+              (t[j + 2] & L::WORDY != 0 || (s && k == L::NUM && multiplier(t, j + S, s)))
+          group += t[j + 1]
+          after = false
+        else
+          break
+        end
+        last = j
+        return [total + group, j] if k == L::ORD
+        j += S
+      end
+      [total + group, last]
+    end
+
+    # "hundred", "thousand", or with the text s a "hundredth" at j: its value
+    def self.multiplier(t, j, s)
+      k = t[j]
+      if k == L::WORD then MULTIPLIERS[t[j + 1]]
+      elsif s && k == L::ORD && t[j + 2] & L::WORDY != 0 && t[j + 1] >= 100 then t[j + 1]
+      end
+    end
+
+    # Only spaces and hyphens, or nothing, in the text s between token j and the one before
+    def self.spaced?(s, t, j)
+      from = t[j - S + 4]
+      to = t[j + 3]
+      while from < to
+        c = s.getbyte(from)
+        return false unless c == 32 || c == 45
+        from += 1
+      end
+      true
+    end
+
     private
 
     # D47: a count said past ninety-nine, "two million eight hundred and sixty seven thousand five hundred and
@@ -21,36 +85,7 @@ module Acute
       elsif t[i] == L::NUM && t[i + 1].between?(1, 99) then group = t[i + 1]
       else return
       end
-      total = 0
-      hundred = false
-      below = nil # each thousand or million is smaller than the one before
-      last = i
-      while j < @n
-        k = t[j]
-        m = k == L::WORD && MULTIPLIERS[t[j + 1]]
-        if m == 100
-          break if hundred || group < 1 || group > 99
-          group *= 100
-          hundred = true
-        elsif m
-          break if group < 1 || (below && m >= below)
-          total += group * m
-          group = 0
-          hundred = false
-          below = m
-        elsif k == L::WORD && t[j + 1] == :and && t[j + S] == L::NUM && t[last] == L::WORD
-          j += S
-          next
-        elsif k == L::NUM && t[last] == L::WORD && group % 100 == 0 && t[j + 1].between?(1, 99) &&
-              t[j + 2] & L::WORDY != 0
-          group += t[j + 1]
-        else
-          break
-        end
-        last = j
-        j += S
-      end
-      [total + group, last]
+      Grammar.spoken(t, @n, i, j, group, nil)
     end
 
     def number_atom(loose)

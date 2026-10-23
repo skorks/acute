@@ -8,7 +8,6 @@ module Acute
   module Numerize
     L = Lexer
     S = L::STRIDE
-    BIG = Grammar::MULTIPLIERS
 
     def self.call(s)
       t = L.lex(s, [])
@@ -46,7 +45,7 @@ module Acute
       return [j, t[j - S + 4], ordinal(value), i] if ord
       if !big && (wordy?(t, i) || t[i + 1] < 100) && (d = denominator(s, t, j, n))
         return [d[1], d[2], "#{value}/#{d[0]}", i]
-      elsif j < n && joined?(s, t, j) && (f = mixed(s, t, j, n))
+      elsif j < n && Grammar.spaced?(s, t, j) && (f = mixed(s, t, j, n))
         return [f[1], f[2], (value + f[0].to_f).to_s, i]
       end
       return if !big && t[i + 2] & L::WORDY == 0
@@ -54,73 +53,28 @@ module Acute
     end
 
     # A count said in words, or digits before "hundred": [value, the token after it, whether it has a hundred or
-    # more, whether it ends in an ordinal]
+    # more, whether it ends in an ordinal] (D47)
     def self.cardinal(s, t, i, n)
       k = t[i]
       if k == L::NUM
         group = t[i + 2] & L::WORDY == 0 ? s.byteslice(t[i + 3], t[i + 4] - t[i + 3]).to_i : t[i + 1]
         j = i + S
-      elsif (k == L::ART || k == L::WORD) && big(t, k == L::ART ? i + S : i)
-        group = 1
+      elsif k == L::ART || k == L::WORD
         j = k == L::ART ? i + S : i
+        return unless Grammar.multiplier(t, j, s)
+        group = 1
       else
         return
       end
-      total = 0
-      hundred = false
-      below = nil
-      big = false
-      after = false # straight after a hundred, a thousand or their "and"
-      while j < n && (j == i || joined?(s, t, j))
-        k = t[j]
-        if (m = big(t, j))
-          if m == 100
-            break if hundred || group < 1 || group > 99
-            group *= 100
-            hundred = true
-          else
-            break if group < 1 || (below && m >= below)
-            total += group * m
-            group = 0
-            hundred = false
-            below = m
-          end
-          big = after = true
-          j += S
-          return [total + group, j, true, true] if k == L::ORD
-        elsif after && k == L::WORD && t[j + 1] == :and && t[j - S + 1] != :and && part?(t, j + S)
-          j += S
-        elsif after && part?(t, j) && group % 100 == 0 && t[j + 1].between?(1, 99)
-          group += t[j + 1]
-          after = false
-          j += S
-          return [total + group, j, true, true] if k == L::ORD
-        else
-          break
-        end
-      end
-      [total + group, j, big, false]
-    end
-
-    # What follows a hundred or a thousand: a number or ordinal in words, or digits before another ("10 thousand
-    # and 5 hundred")
-    def self.part?(t, j)
-      k = t[j]
-      (k == L::NUM || k == L::ORD) && (wordy?(t, j) || (k == L::NUM && big(t, j + S)))
-    end
-
-    # "hundred", "thousand", or "hundredth" at j: its value
-    def self.big(t, j)
-      k = t[j]
-      if k == L::WORD then BIG[t[j + 1]]
-      elsif k == L::ORD && wordy?(t, j) && t[j + 1] >= 100 then t[j + 1]
-      end
+      value, last = Grammar.spoken(t, n, i, j, group, s)
+      big = last >= j
+      [value, last + S, big, big && t[last] == L::ORD]
     end
 
     # "half", "quarter", "third" to "ninth", or "eighths", after token j - S: [the denominator, the token after
     # it, its stop]
     def self.denominator(s, t, j, n)
-      if j < n && joined?(s, t, j)
+      if j < n && Grammar.spaced?(s, t, j)
         k = t[j]
         d = if k == L::WORD && t[j + 1] == :half && ALPHA[s.getbyte(t[j + 3])] then 2
             elsif k == L::UNIT && t[j + 1] == :quarter then 4
@@ -148,7 +102,7 @@ module Acute
     def self.mixed(s, t, j, n)
       if t[j] == L::WORD && t[j + 1] == :and
         j += S
-        return unless j < n && joined?(s, t, j)
+        return unless j < n && Grammar.spaced?(s, t, j)
         if t[j] == L::ART || (t[j] == L::NUM && t[j + 2] & L::WORDY != 0)
           num = t[j] == L::ART ? 1 : t[j + 1]
           if (d = denominator(s, t, j + S, n))
@@ -175,18 +129,6 @@ module Acute
     end
 
     def self.wordy?(t, j) = t[j + 2] & L::WORDY != 0
-
-    # Only spaces and hyphens, or nothing, between token j and the one before
-    def self.joined?(s, t, j)
-      from = t[j - S + 4]
-      to = t[j + 3]
-      while from < to
-        c = s.getbyte(from)
-        return false unless c == 32 || c == 45
-        from += 1
-      end
-      true
-    end
 
     ALPHA = L::ALPHA
   end
