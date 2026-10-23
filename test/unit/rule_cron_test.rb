@@ -192,10 +192,10 @@ class RuleCronTest < Minitest::Test
     assert_equal from("0 9-17 * * *"), rule("every hour from 9am to 6pm")
   end
 
-  # R4, R27: hours against minutes read as one phrase, not every time listed. A window's end is the step after
-  # the last only where that is the top of an hour; otherwise it is the last time.
+  # R4, R27: hours against minutes read as one phrase, not every time listed. A window's end is always the step
+  # after the last, so the description reads back.
   def test_r27_hours_against_minutes_read_as_one_phrase
-    { "0-10 11 * * *" => "every minute from 11am to 11:10am",
+    { "0-10 11 * * *" => "every minute from 11am to 11:11am",
       "0-59 9 * * *" => "every minute from 9am to 10am",
       "5,10 * * * *" => "every hour at :05 and :10",
       "15 * * * 1" => "every hour at :15 on Mondays",
@@ -208,6 +208,14 @@ class RuleCronTest < Minitest::Test
       "5,10 9,11,15,16,20 * * 6" => "every Saturday at :05 and :10 in the 9am, 11am, 3pm, 4pm and 8pm hours",
       "5,10 * * 3 *" => "every hour at :05 and :10 in March" }.each do |line, english|
       assert_equal english, from(line).to_s, line
+    end
+  end
+
+  def test_r27_description_reads_back_to_the_same_rrule
+    ["0-10 11 * * *", "0 9-17 * * *"].each do |line|
+      r = from(line)
+      assert_equal r.to_s, rule(r.to_s).to_s, line
+      assert_equal from(line), rule(r.to_s), line
     end
   end
 
