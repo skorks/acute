@@ -100,7 +100,7 @@ module Acute
         return "#{said} on #{weekdays(plural: true)}#{months}#{tail}" if p.freq == :weekly && !p.days.empty?
       end
       out = +if !p.nths.empty?
-               "the #{list(p.nths.sort_by(&:first).map { ordinal(_1[0]) })} #{DAY_NAMES[p.nths[0][1]]} of #{every("month")}"
+               "the #{nths} of #{every("month")}"
              elsif p.setpos
                "the #{list(p.setpos.map { ordinal(_1) })} weekday of #{every("month")}"
              elsif p.freq == :yearly && !p.months.empty?
@@ -258,6 +258,15 @@ module Acute
       return "every #{unit}".rstrip if n == 1
       return "every other #{unit}".rstrip if n == 2
       unit ? "every #{n} #{unit}s" : "every #{n} weeks on"
+    end
+
+    # R8: "first and third Monday and Friday" when each ordinal goes with each weekday, in the BYDAY's order, as
+    # the grammar reads it back; otherwise, which no phrase reads, "first Monday and last Friday"
+    def nths
+      ords = @parts.nths.map(&:first).uniq
+      days = @parts.nths.map(&:last).uniq
+      return "#{list(ords.map { ordinal(_1) })} #{list(days.map { DAY_NAMES[_1] })}" if ords.product(days) == @parts.nths
+      list(@parts.nths.map { |n, w| "#{ordinal(n)} #{DAY_NAMES[w]}" })
     end
 
     def ordinal(n) = n == -1 ? "last" : n < 0 ? "#{ORDINALS[-n]} to last" : ORDINALS[n]
