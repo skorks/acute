@@ -72,6 +72,13 @@ class BusinessDaysTest < Minitest::Test
     assert_equal "more than 10000 business days in one call is too many to count", e.message
   end
 
+  def test_a_count_past_the_limit_is_still_a_length
+    mentions = ->(text) { Acute.extract(text, now: NOW, zone: NY).mentions.map { [_1.kind, _1.text] } }
+    assert_equal [[:duration, "20000 business days"]], mentions.("in 20000 business days")
+    assert_equal [[:time, "in 6000 business days"], [:duration, "6000 business days"]],
+                 mentions.("in 6000 business days or in 6000 business days")
+  end
+
   def test_each_call_of_a_shared_parser_gets_its_own_budget
     parser = Acute.with(now: NOW, zone: NY)
     2.times { assert_equal 1, times(parser.extract("in 9000 business days or in 9000 business days")).size }
