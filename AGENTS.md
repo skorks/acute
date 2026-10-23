@@ -48,6 +48,10 @@ Before a release, `bin/mutant [SUBJECT]` runs mutation testing (too slow for bin
 5. Run `bin/check`. A case that used to pass and now fails is a regression: fix it, or explain why the case is wrong.
 6. Run `bin/check --record` to add the new passing ids to the ratchet.
 
+## Compatibility layers
+
+Never copy another library's code into acute. A layer for another gem's API (`acute/chronic`, `acute/chronic_duration`) answers through acute's own lexer, grammar and resolver. The original gem is only a test oracle: record its answers, and list each place acute differs, with the reason, as `test/chronic/differences.yml` does.
+
 ## Releasing
 
 1. In a PR, bump `lib/acute/version.rb`, add the version to `CHANGELOG.md`, and move every schema's `$id` to the new tag (`schema_test.rb` checks they name `v` + `Acute::VERSION`): `sed -i 's|/acute/v[^/]*/schema/|/acute/vX.Y.Z/schema/|' schema/*.json schema/tools/*.json`. Merge it.
