@@ -19,6 +19,7 @@ module Acute
         freq, mult = FREQ[r.unit] if r.unit
         return :conflict if r.unit && !freq
         interval = (r.interval || 1) * (mult || 1)
+        length = nil
         return :invalid_date if interval == 0 # R15
         if r.minute_span || !r.minutes.empty?
           steps = marks(r, freq, interval, ctx)
@@ -27,12 +28,21 @@ module Acute
             freq = nil
             interval = 1
           end
-        elsif r.window # R27: the steps inside the window are the rule's clocks, on each day it runs
-          return :conflict unless FINE[freq] && r.clocks.empty? && !r.part
+        elsif r.window && FINE[freq] # R27: the steps inside the window are the rule's clocks, on each day it runs
+          return :conflict unless r.clocks.empty? && !r.part
           steps = window(r.window, interval * STEP[freq], ctx)
           return steps if Symbol === steps
           freq = nil
           interval = 1
+        elsif r.window # R29: daily or coarser, a span of clocks is a clock and how long each occurrence lasts
+          w = r.window
+          return :conflict unless r.clocks.empty? && !r.part && G::Range === w && G::Clock === w.from && G::Clock === w.to
+          span = span(r.window, ctx)
+          return span if Symbol === span
+          b, e = span
+          return :conflict unless e > b && e - b < DAY
+          steps = [b]
+          length = e - b
         elsif (freq == :hourly || freq == :minutely) && r.days.any? && r.clocks.empty? && !r.part
           # R23: "every 2 hours on weekdays" is cron's */2 on those days, counted from midnight as R28's hours are
           step = interval * STEP[freq]
@@ -112,7 +122,7 @@ module Acute
           walls
         end
         Rule.new(rule, ctx.zone.name, start, timed, r.count, until_, exdates.flatten, r.start || r.within ? true : false,
-                 ctx.dst_policy, now: ctx.now, text: text)
+                 ctx.dst_policy, now: ctx.now, text: text, length: length)
       end
 
       # R4: seconds of the day, as D4, D30 and D35 read the clock, first reading only
@@ -130,15 +140,22 @@ module Acute
 
       # R27: the seconds of the day from the window's start, a step apart, before its end; within one day
       def self.window(node, step, ctx)
+        span = span(node, ctx)
+        return span if Symbol === span
+        b, e = span
+        return :conflict if e > DAY || e <= b
+        (b...e).step(step).to_a
+      end
+
+      # R27, R29: a span of clocks as wall seconds of its first day, [begin, end]; end past DAY when it runs past
+      # midnight. Wall time, so a span on the day the clocks change is as long as on any other.
+      def self.span(node, ctx)
         x = first(node, ctx)
         return x if Symbol === x
         return :incomplete unless x.begin && x.end
         b = ctx.local(x.begin)
         day = b.div(DAY)
-        e = ctx.local(x.end) - day * DAY
-        b -= day * DAY
-        return :conflict if e > DAY || e <= b
-        (b...e).step(step).to_a
+        [b - day * DAY, ctx.local(x.end) - day * DAY]
       end
 
       # R28: each minute mark in each hour the rule runs, as seconds of the day: every hour, every n hours from

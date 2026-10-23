@@ -20,6 +20,16 @@ class ReadTest < Minitest::Test
     assert_nil read("every morning")
   end
 
+  # R29: no word that makes a rule marks a span of days with daily hours, so the rule is tried last
+  def test_r29_a_span_of_days_with_daily_hours_is_a_rule
+    r = read("monday to friday from 9 to 5")
+    assert_kind_of Acute::Rule, r
+    assert_equal "PT8H", r.duration.iso8601
+    assert_kind_of Acute::Result, read("monday to friday")
+    assert_kind_of Acute::Result, read("tomorrow from 9 to 5")
+    assert_nil read("monday to friday from home")
+  end
+
   def test_a_length_is_a_duration
     d = read("1h 30m")
     assert_kind_of Acute::Duration, d

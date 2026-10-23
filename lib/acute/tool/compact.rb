@@ -3,9 +3,10 @@ module Acute
     # The model pays for every char of a result on every call, so a tool gives the library's JSON without what
     # repeats: the input's echo, a begin equal to time, a mention's kind and text again in its value, the expected
     # reading of a verdict that holds, now's offset, which the now string ends with, a rule's ical when it holds
-    # only its dtstart and rrule, a rule's exdates, which ical's EXDATE line holds, whichever of cron and cron_reason
-    # is null, and empty lists. An assumption's message is its short form, the gist in about half the chars. The
-    # schema rules make the same cuts in the output schemas, so the two can't drift.
+    # only its dtstart, duration and rrule, a rule's exdates, which ical's EXDATE line holds, a null duration,
+    # whichever of cron and cron_reason is null, and empty lists. An assumption's message is its short form, the
+    # gist in about half the chars. The schema rules make the same cuts in the output schemas, so the two can't
+    # drift.
     # @api private
     module Compact
       def self.call(out)
@@ -46,6 +47,7 @@ module Acute
         r.delete("text")
         r.delete("exdates")
         r.delete("ical") unless r["ical"].include?("\nEXDATE")
+        r.delete("duration") unless r["duration"]
         r.delete(r["cron"] ? "cron_reason" : "cron")
       end
       private_class_method :rule
@@ -60,8 +62,8 @@ module Acute
         defs["extraction"]["properties"]["more"] = { "type" => "integer" } if defs["extraction"]
         trim(defs["verdict"], drop: %w[text], optional: %w[expected unread])
         if (rule = defs["rule"])
-          trim(rule, drop: %w[text exdates], optional: %w[ical cron cron_reason])
-          rule["properties"] = rule["properties"].merge("cron" => { "type" => "string" }, "cron_reason" => { "type" => "string" })
+          trim(rule, drop: %w[text exdates], optional: %w[duration ical cron cron_reason])
+          rule["properties"] = rule["properties"].merge(%w[duration cron cron_reason].to_h { [_1, { "type" => "string" }] })
         end
         if tool == "recurrence"
           rule["properties"]["next"] = { "type" => "array", "items" => { "type" => "string" }, "maxItems" => OCCURRENCES }

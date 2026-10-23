@@ -33,13 +33,15 @@ module Acute
       end
     end
 
-    # text: the input it was read from; zone: the zone its wall times are in
-    attr_reader :text, :zone
+    # text: the input it was read from; zone: the zone its wall times are in; duration: how long each occurrence
+    # lasts, an Acute::Duration, or nil when the rule says none (R29)
+    attr_reader :text, :zone, :duration
 
     # @api private: rules come from recurrence and from_cron.
     # start: local wall seconds when timed, else a day number; until_: a UTC epoch when timed, else a day number;
-    # exdates: as start; dst: the dst: policy occurrences follow (R18); now: the epoch it was read at
-    def initialize(parts, zone, start, timed, count, until_, exdates, started, dst = nil, now:, text:)
+    # exdates: as start; dst: the dst: policy occurrences follow (R18); now: the epoch it was read at; length: the
+    # seconds each occurrence lasts, or nil (R29)
+    def initialize(parts, zone, start, timed, count, until_, exdates, started, dst = nil, now:, text:, length: nil)
       @parts = parts
       @zone = zone
       @start = start
@@ -51,6 +53,8 @@ module Acute
       @dst = dst
       @now = now
       @text = -text
+      @length = length
+      @duration = length && Duration.new(hours: length / 3600, minutes: length / 60 % 60, seconds: length % 60)
       Ractor.make_shareable(self)
     end
 
@@ -89,7 +93,9 @@ module Acute
     def exdates = expander.excepted.freeze
 
     def to_ical
-      lines = ["DTSTART#{form}:#{stamp(@start)}", "RRULE:#{rrule}"]
+      lines = ["DTSTART#{form}:#{stamp(@start)}"]
+      lines << "DURATION:#{@duration.iso8601}" if @duration # R29
+      lines << "RRULE:#{rrule}"
       lines << "EXDATE#{form}:#{@exdates.map { stamp(_1) }.join(",")}" unless @exdates.empty?
       lines.join("\n")
     end
@@ -122,7 +128,7 @@ module Acute
              end
       out << months
       out << "," unless months.empty? || p.secs.empty?
-      out << " #{said || "at #{list(p.secs.map { Describe.clock(_1) })}"}" unless p.secs.empty?
+      out << " #{said || at}" unless p.secs.empty?
       out << tail
     end
 
@@ -130,7 +136,7 @@ module Acute
       line, reason = cron_or_reason
       { kind: "rule", text: @text, description: to_s, rrule: rrule, dtstart: @timed ? dtstart.iso8601 : dtstart.to_s,
         exdates: exdates.map { @timed ? _1.iso8601 : _1.to_s },
-        zone: @zone, ical: to_ical, cron: line, cron_reason: reason }
+        zone: @zone, duration: @duration&.iso8601, ical: to_ical, cron: line, cron_reason: reason }
     end
 
     def to_json(*args) = to_h.to_json(*args)
@@ -191,6 +197,13 @@ module Acute
       end
     end
 
+    # The clocks listed, "at 9am and 5pm", or R29's one clock with its length, "from 9am to 5pm"
+    def at
+      secs = @parts.secs
+      return "at #{list(secs.map { Describe.clock(_1) })}" unless @length
+      "from #{Describe.clock(secs[0])} to #{Describe.clock((secs[0] + @length) % DAY)}"
+    end
+
     # "every 15 minutes from 9am to 6pm": its end the step after the last, so it reads back as R27's end left out
     def stepping(step, first, last)
       stop = last + step
@@ -244,7 +257,7 @@ module Acute
 
     # The wall times this rule, without its exceptions, occurs at on a local day
     def day_walls(day)
-      base = Rule.new(@parts, @zone, @start, @timed, @count, @until, [], @started, @dst, now: @now, text: @text)
+      base = Rule.new(@parts, @zone, @start, @timed, @count, @until, [], @started, @dst, now: @now, text: @text, length: @length)
       lead = Time.at(day * DAY - 15 * 3600)
       base.each(after: lead).lazy.map { _1.to_i + _1.utc_offset }.select { _1 >= day * DAY }
           .take_while { _1 < (day + 1) * DAY }.to_a.uniq

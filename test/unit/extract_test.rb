@@ -328,10 +328,18 @@ class ExtractTest < Minitest::Test
   end
 
   def test_d50_a_range_does_not_end_in_a_dangling_from
-    assert_equal([[:time, "tomorrow through sunday"], [:time, "from 9 to 5"]],
-                 mentions("tomorrow through sunday from 9 to 5").map { _1.take(2) })
-    assert_equal([[:time, "monday to friday"], [:time, "from 9 to 5"]],
-                 mentions("monday to friday from 9 to 5").map { _1.take(2) })
+    assert_equal([[:time, "monday to friday"]], mentions("I work monday to friday from home").map { _1.take(2) })
+    assert_equal([[:time, "tomorrow through sunday"], [:time, "9am"]],
+                 mentions("tomorrow through sunday from 9am").map { _1.take(2) })
+  end
+
+  def test_e6_r29_a_span_of_days_with_daily_hours_is_one_rule
+    x = extract("I am available monday to friday from 9 to 5.")
+    assert_equal([[:rule, "monday to friday from 9 to 5", 15...43]], x.mentions.map { [_1.kind, _1.text, _1.offset] })
+    assert_equal "PT8H", x.mentions[0].value.duration.iso8601
+    assert_equal "I am available.", x.remainder
+    assert_equal([[:rule, "tomorrow through sunday from 9 to 5"]], mentions("tomorrow through sunday from 9 to 5").map { _1.take(2) })
+    assert_equal([[:rule, "every weekday from 9 to 5"]], mentions("every weekday from 9 to 5 at the office").map { _1.take(2) })
   end
 
   def test_e6_lenient_parse_finds_no_rule

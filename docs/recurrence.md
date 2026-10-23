@@ -22,6 +22,17 @@ puts r.to_ical
 # RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0
 ```
 
+A rule said "from 9 to 5" runs at 9am for 8 hours, written as DURATION ([R29](rules.md#windows-of-the-day)). A span of days without "every" runs until its last day:
+
+```ruby
+work = Acute.recurrence("monday to friday from 9 to 5", now:, zone:)
+work.duration  # => #<Acute::Duration 8h>
+puts work.to_ical
+# DTSTART;TZID=America/New_York:20261019T090000
+# DURATION:PT8H
+# RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0;UNTIL=20261024T035959Z
+```
+
 `Acute.recurrence!` raises an `Acute::ParseError` instead of returning nil. `Acute.read` tries a rule first, so it returns an `Acute::Rule` for these phrases. `Acute.parse` returns nil for them. Every option from [usage](usage.md#the-calls) works.
 
 DTSTART is the first occurrence on or after now ([R2](rules.md#recurrence)). A rule with no clock is of whole days: its DTSTART is a Date, and its occurrences are Dates.
@@ -30,7 +41,8 @@ A Rule has:
 
 | Method | Gives |
 |---|---|
-| `rrule`, `dtstart`, `exdates`, `to_ical` | the RRULE value, the first occurrence, the "except" occurrences (Times, or Dates for whole days; `[]` if none), and all the iCalendar lines (DTSTART, RRULE, any EXDATE) |
+| `rrule`, `dtstart`, `exdates`, `to_ical` | the RRULE value, the first occurrence, the "except" occurrences (Times, or Dates for whole days; `[]` if none), and all the iCalendar lines (DTSTART, any DURATION, RRULE, any EXDATE) |
+| `duration` | how long each occurrence lasts, an `Acute::Duration`, or nil: "every weekday from 9 to 5" is 8 hours ([R29](rules.md#windows-of-the-day)) |
 | `to_s` | the rule in words, which reads back to the same rule; `description` in the JSON |
 | `text` | the input it was read from: the whole text, a mention's own words, or the cron line |
 | `now` | the now it was read at, in its zone; `next` counts from it |
@@ -41,7 +53,7 @@ A Rule has:
 
 ```ruby
 puts r.to_json
-# {"kind":"rule","text":"every weekday at 9am","description":"every weekday at 9am","rrule":"FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0","dtstart":"2026-10-19T09:00:00-04:00","exdates":[],"zone":"America/New_York","ical":"DTSTART;TZID=America/New_York:20261019T090000\nRRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0","cron":"0 9 * * 1-5","cron_reason":null}
+# {"kind":"rule","text":"every weekday at 9am","description":"every weekday at 9am","rrule":"FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0","dtstart":"2026-10-19T09:00:00-04:00","exdates":[],"zone":"America/New_York","duration":null,"ical":"DTSTART;TZID=America/New_York:20261019T090000\nRRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0","cron":"0 9 * * 1-5","cron_reason":null}
 ```
 
 ## Occurrences
