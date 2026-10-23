@@ -353,12 +353,12 @@ module Acute
     # The date with its optional year after it: four digits, "of 2026", "'26", or after a day two digits that
     # are not a clock ("3 jan 10", "may 27 79") (D23)
     def dated(m, day)
-      @i += S if @t[@i + 1] == :of && @t[@i + S] == L::NUM
+      @i += S if @t[@i] == L::WORD && @t[@i + 1] == :of && @t[@i + S] == L::NUM
       # D48: "march of next year" as "march next year"
-      @i += S if @t[@i + 1] == :of && @t[@i] == L::WORD && @t[@i + S] == L::REL && @t[@i + 2 * S + 1] == :year && @t[@i + 2 * S] == L::UNIT
+      @i += S if @t[@i] == L::WORD && @t[@i + 1] == :of && @t[@i + S] == L::REL && @t[@i + 2 * S + 1] == :year && @t[@i + 2 * S] == L::UNIT
       @i += S if day && @t[@i] == L::DOT && @t[@i + S] == L::NUM && @t[@i + S + 2] & L::DIGITS == 4 # D48: "Sep.25.2003"
       f = @t[@i + 2]
-      if @t[@i] == L::NUM && @t[@i + S + 1] == :ad && @t[@i + S] == L::WORD && f & L::WORDY == 0 # D44: "10 August 88 AD"
+      if @t[@i] == L::NUM && @t[@i + S] == L::WORD && @t[@i + S + 1] == :ad && f & L::WORDY == 0 # D44: "10 August 88 AD"
         @i += 2 * S
         return Date.new(@t[@i - 2 * S + 1], m, day, nil, false)
       end
@@ -373,7 +373,7 @@ module Acute
     end
 
     # D48: "2555 BE", a year of the Buddhist era, 543 years ahead; only from 2400, so "by 2025 be ready" is not one
-    def buddhist?(i) = @t[i + S + 1] == :be && @t[i + S] == L::WORD && @t[i] == L::NUM && @t[i + 2] & L::DIGITS == 4 && @t[i + 1] >= 2400
+    def buddhist?(i) = @t[i + S] == L::WORD && @t[i + S + 1] == :be && @t[i] == L::NUM && @t[i + 2] & L::DIGITS == 4 && @t[i + 1] >= 2400
 
     def buddhist(v)
       @i += 2 * S
@@ -397,12 +397,12 @@ module Acute
       @i += S
       return Date.new(v, nil, nil, nil, true) if flags & L::SHORT != 0 # "halloween '11"
       # D48: "the 24", "the 3 of next month": after "the", a bare number ending the phrase is a day of the month
-      if at >= S && @t[at - S + 1] == :the && @t[at - S] == L::WORD && digits <= 2 && !zero && v >= 1 && v <= 31 &&
+      if at >= S && @t[at - S] == L::WORD && @t[at - S + 1] == :the && digits <= 2 && !zero && v >= 1 && v <= 31 &&
          (@i >= @n || (@t[@i + 1] == :of && @t[@i] == L::WORD))
         return of(Date.new(nil, nil, v, nil, false))
       end
       @i += 2 * S if in_the_meridiem?
-      if @t[@i + 1] == :around && @t[@i + S] == L::MER && @t[@i] == L::WORD && @t[at + 4] == @t[@i + 3] # D48: "3ish pm"
+      if @t[@i] == L::WORD && @t[@i + 1] == :around && @t[@i + S] == L::MER && @t[at + 4] == @t[@i + 3] # D48: "3ish pm"
         @approx = true
         @i += S
       end

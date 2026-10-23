@@ -121,7 +121,7 @@ module Acute
 
     def top
       w = @t[@i + 1]
-      if w == :anytime && @t[@i] == L::WORD && OPEN[@t[@i + S + 1]] # D48: "anytime after 2014"
+      if @t[@i] == L::WORD && w == :anytime && OPEN[@t[@i + S + 1]] # D48: "anytime after 2014"
         @i += S
         w = @t[@i + 1]
       end
@@ -146,7 +146,7 @@ module Acute
         @approx = true
         body
       else
-        (w == :for && for_from) || open_after(body(w))
+        (@t[@i] == L::WORD && w == :for && for_from) || open_after(body(w))
       end
     end
 
