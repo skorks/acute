@@ -43,7 +43,7 @@ require "acute/chronic"
 Chronic.parse("tomorrow 3pm", now: Time.now)
 ```
 
-Each layer marks the real gem as loaded, so a gem that does `require "chronic"` (`chronic_duration` or `gitlab_chronic_duration`, `numerizer`, likewise) afterwards gets acute's and doesn't replace it. If the real gem was loaded first, the layer warns once to require the layer first, or drop the gem; acute's methods override the gem's either way. The layer must be on `$LOAD_PATH`, as it is when installed.
+Each layer marks the real gem as loaded, so a gem that does `require "chronic"` (`gitlab-chronic`, `chronic_duration` or `gitlab_chronic_duration`, `numerizer`, likewise) afterwards gets acute's and doesn't replace it. If the real gem was loaded first, the layer warns once to require the layer first, or drop the gem; acute's methods override the gem's either way. The layer must be on `$LOAD_PATH`, as it is when installed.
 
 The answers follow acute's rules, so a few differ from chronic's. chronic's own test suite runs against this layer, and every place it disagrees is listed, with its rule, in [test/chronic/differences.yml](../test/chronic/differences.yml). The [compatibility notes](rules.md#compatibility-layers) explain how each option is read.
 
