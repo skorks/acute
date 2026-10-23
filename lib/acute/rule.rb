@@ -93,7 +93,8 @@ module Acute
 
     def to_s
       p = @parts
-      months = p.months.empty? || p.freq == :yearly ? "" : " in #{list(p.months.map { MONTH_NAMES[_1] })}"
+      # R25: BYMONTH repeats each year, which "in March" alone, a window (R13), doesn't
+      months = p.months.empty? || p.freq == :yearly ? "" : " in #{list(p.months.map { MONTH_NAMES[_1] })}, every year"
       said = clocks
       if said&.start_with?("every") && p.interval == 1 # the clocks' phrase stands for every day
         return "#{said}#{months}#{tail}" if p.freq == :daily
@@ -115,6 +116,7 @@ module Acute
                every(UNITS[p.freq])
              end
       out << months
+      out << "," unless months.empty? || p.secs.empty?
       out << " #{said || "at #{list(p.secs.map { Describe.clock(_1) })}"}" unless p.secs.empty?
       out << tail
     end

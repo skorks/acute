@@ -29,7 +29,7 @@ Each layer also stands in for the fork's own `require "gitlab-chronic"` or `requ
 ```ruby
 Acute::Rule.from_cron("0 9 * * 1-5").to_s         # => "every weekday at 9am"
 Acute::Rule.from_cron("*/15 9-17 * * 1-5").to_s   # => "every 15 minutes from 9am to 6pm on weekdays"
-Acute::Rule.from_cron("0 0 * 3 *").to_s           # => "every day in March at 12am"
+Acute::Rule.from_cron("0 0 * 3 *").to_s           # => "every day in March, every year, at 12am"
 ```
 
 The words read back to the same rule, and so to the same line:
