@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/skorks/acute/v1.0.0/schema/verdict.json",
+  "$id": "https://raw.githubusercontent.com/skorks/acute/v1.0.1/schema/verdict.json",
   "title": "Acute::Verdict",
   "description": "Whether a time worked out elsewhere is what the text says. ok is true for match, inside and alternative.",
   "type": "object",
