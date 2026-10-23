@@ -63,23 +63,23 @@ What each keeps:
 
 | | Zone and DST | COUNT, UNTIL | EXDATE ("except") | Rules of whole days |
 |---|---|---|---|---|
-| rrule | yes | yes | no | yes |
+| rrule | yes | yes | with `exdate:` | yes |
 | montrose | yes | yes | yes | no: raises |
 | ice_cube, `from_ical` | the process's zone, not the rule's | yes | yes | as Times at midnight |
 | ice_cube, built from `dtstart` and `rrule` | yes | yes | no | as Times at midnight |
 
 ### rrule
 
-Pass the RRULE, the first occurrence and the zone:
+Pass the RRULE, the first occurrence, the zone and the exceptions:
 
 <!-- no-doc-test -->
 ```ruby
 require "rrule"
-RRule.parse(r.rrule, dtstart: r.dtstart, tzid: r.zone).first(3)
+RRule.parse(r.rrule, dtstart: r.dtstart, tzid: r.zone, exdate: r.exdates).first(3)
 # => [2026-10-23 15:00:00.000000000 EDT -04:00, 2026-11-06 15:00:00.000000000 EST -05:00, 2026-11-20 15:00:00.000000000 EST -05:00]
 ```
 
-A rule of whole days gives Dates. An "except" is lost: it is an EXDATE line in `to_ical`, and `rrule` holds only the RRULE.
+A rule of whole days gives Dates. `rrule` holds only the RRULE, so an "except" travels in `exdates`: Times in the rule's zone, or Dates for a rule of whole days. Without `exdate:` it is lost.
 
 ### montrose
 

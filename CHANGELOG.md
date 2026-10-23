@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Added:** `Rule#exdates`, the rule's "except" dates as `first` gives occurrences (Times in the rule's zone, or Dates for a rule of whole days), also in `to_h`, JSON and `schema/rule.json`; docs/migrating.md passes them to the rrule gem.
 - **Fixed:** a rule's window swallowed the clock after it: "every day in march at 9am" ran all day on 1 March only, and "every day next week at 9am" and "every monday next month at 10am" had no clock or no reading. A clock after the window is each occurrence's, as one before it is (R13). And a cron line's months, as `0 9 * 3 *`, were described as "every day in March at 9am", which reads back as one March (R13); the description is now "every day in March, every year, at 9am", and "in March and June, every year" reads as BYMONTH, so each such description reads back to its cron line (R25).
 - **Changed:** `Duration#iso8601` writes a duration of all negative parts with one leading minus, "-PT2H30M", not "PT-2H-30M", as ISO 8601-2 does; mixed signs keep a minus on each negative part. Both read back (D52).
 - **Fixed:** `Acute.duration` gave nil for a zero length ("0 seconds", "0 days", "zero minutes"); it is now the empty Duration, as "PT0S" is. `parse` and rules are unchanged (D52).

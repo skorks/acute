@@ -152,6 +152,8 @@ module Acute
 
       def out(o) = @timed ? Time.at(o[0], in: @zone.offset_at(o[0])) : ::Date.jd(o + EPOCH_JD)
 
+      def excepted = (@timed ? zoned(@exdates) : @exdates).map { out(_1) }
+
       def walk(lo, &) = SUB[@freq] ? sub_walk(lo, &) : day_walk(lo, &)
 
       private

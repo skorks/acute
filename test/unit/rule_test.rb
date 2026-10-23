@@ -17,6 +17,30 @@ class RuleTest < Minitest::Test
     assert_equal "-04:00", r.dtstart.strftime("%:z")
   end
 
+  def test_a_timed_rules_exdates_are_times_in_its_zone
+    r = rule("every friday at 3pm except october 30")
+    assert_equal [Time.new(2026, 10, 30, 15, 0, 0, "-04:00")], r.exdates
+    plain = rule("every friday at 3pm").between(Date.new(2026, 10, 30), Date.new(2026, 10, 31))
+    assert_equal plain, r.exdates # the Times the rule gives on that day without the exception
+  end
+
+  def test_an_all_day_rules_exdates_are_dates
+    assert_equal [Date.new(2026, 11, 2), Date.new(2026, 11, 4)], rule("every day except november 2 and november 4").exdates
+  end
+
+  def test_a_rule_without_exceptions_has_no_exdates
+    assert_equal [], rule("every friday at 3pm").exdates
+    assert_predicate rule("every friday at 3pm").exdates, :frozen?
+  end
+
+  def test_exdates_are_in_to_h_and_json
+    r = rule("every friday at 3pm except october 30")
+    assert_equal ["2026-10-30T15:00:00-04:00"], r.to_h[:exdates]
+    assert_equal ["2026-10-30T15:00:00-04:00"], JSON.parse(r.to_json)["exdates"]
+    assert_equal ["2026-11-02", "2026-11-04"], rule("every day except november 2 and november 4").to_h[:exdates]
+    assert_equal [], rule("every friday at 3pm").to_h[:exdates]
+  end
+
   def test_r6_a_weekday_range_is_each_day_of_it
     weekdays = "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"
     assert_equal "#{weekdays};BYHOUR=19;BYMINUTE=20", rule("every Monday through Friday at 19:20").rrule
@@ -203,7 +227,7 @@ class RuleTest < Minitest::Test
   def test_to_h_and_json
     r = rule("Every day at 9")
     h = { kind: "rule", text: "Every day at 9", description: "every day at 9am", rrule: "FREQ=DAILY;BYHOUR=9;BYMINUTE=0",
-          dtstart: "2026-10-18T09:00:00-04:00", zone: "America/New_York", ical: r.to_ical,
+          dtstart: "2026-10-18T09:00:00-04:00", exdates: [], zone: "America/New_York", ical: r.to_ical,
           cron: "0 9 * * *", cron_reason: nil }
     assert_equal h, r.to_h
     assert_equal h.transform_keys(&:to_s), JSON.parse(r.to_json)
