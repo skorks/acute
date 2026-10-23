@@ -9,6 +9,7 @@
 - **Fixed:** word order changed a clock range's day: "monday 3-5pm in march" ran from the coming Monday 15:00 to 1 March 17:00. A day before the range and a longer period after it are now both ends', so it is 1 March 15:00–17:00, as "3-5pm monday in march" is (D44).
 - **Fixed:** a clock in brackets was not read: "[5pm]" was nil, and `extract` of "meet [5pm] tomorrow" mentioned "5pm] tomorrow". Brackets around a clock are dropped, as around a word, and a mention across a bracket takes both (D48).
 - **Fixed:** `extract` found nothing between curly quotes or single quotes: "he said “3 days” then" and "'for 3 days'" were []. Curly double quotes are quotes as '"' is, and a single quote around a word is a quote, not an apostrophe (D48).
+- **Fixed:** a signed shift followed by a clock was nil: "+2 days at 5pm" now gives 5pm two days on, as "in 2 days at 5pm" does, and so do "-1 day at noon" and "+1 week at 9am" (D44).
 
 ## 1.0.1
 

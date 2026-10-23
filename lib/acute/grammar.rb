@@ -241,8 +241,13 @@ module Acute
           end
           next
         elsif (k == L::PLUS || k == L::DASH) && @i + S < @n && signed?(last)
-          signed = true
-          break
+          unless last.nil?
+            signed = true
+            break
+          end
+          start = @i # D44: "+2 days at 5pm": a leading signed shift is an atom, so a clock after it pairs as with "in 2 days"
+          a = signed_shifts(nil)
+          return a if Failure === a
         elsif (k == L::PLUS || (k == L::DASH && ((machine?(last) && @t[@i + 4] == @t[@i + S + 3]) || dash_offset?(last)))) && @i + S < @n &&
               (off = offset(@i + S))
           zone = k == L::PLUS ? off : -off
@@ -287,7 +292,6 @@ module Acute
         dates += 1 if Date === a
         at = false
       end
-      return signed_shifts(nil) if signed && last.nil?
       return failure(:incomplete) if at || last.nil?
       node = last
       if a2 && !atoms && dates < 2
