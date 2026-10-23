@@ -30,7 +30,7 @@ A Rule has:
 
 | Method | Gives |
 |---|---|
-| `rrule`, `dtstart`, `to_ical` | the RRULE value, the first occurrence, and all the iCalendar lines (DTSTART, RRULE, any EXDATE) |
+| `rrule`, `dtstart`, `exdates`, `to_ical` | the RRULE value, the first occurrence, the "except" occurrences (Times, or Dates for whole days; `[]` if none), and all the iCalendar lines (DTSTART, RRULE, any EXDATE) |
 | `to_s` | the rule in words, which reads back to the same rule; `description` in the JSON |
 | `text` | the input it was read from: the whole text, a mention's own words, or the cron line |
 | `now` | the now it was read at, in its zone; `next` counts from it |
@@ -41,7 +41,7 @@ A Rule has:
 
 ```ruby
 puts r.to_json
-# {"kind":"rule","text":"every weekday at 9am","description":"every weekday at 9am","rrule":"FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0","dtstart":"2026-10-19T09:00:00-04:00","zone":"America/New_York","ical":"DTSTART;TZID=America/New_York:20261019T090000\nRRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0","cron":"0 9 * * 1-5","cron_reason":null}
+# {"kind":"rule","text":"every weekday at 9am","description":"every weekday at 9am","rrule":"FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0","dtstart":"2026-10-19T09:00:00-04:00","exdates":[],"zone":"America/New_York","ical":"DTSTART;TZID=America/New_York:20261019T090000\nRRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;BYHOUR=9;BYMINUTE=0","cron":"0 9 * * 1-5","cron_reason":null}
 ```
 
 ## Occurrences

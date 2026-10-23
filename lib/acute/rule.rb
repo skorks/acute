@@ -85,6 +85,9 @@ module Acute
       Time.at(utc, in: Zone.for(@zone).offset_at(utc))
     end
 
+    # The EXDATEs as `first` gives occurrences: Times in the zone when the rule has a clock, else Dates
+    def exdates = expander.excepted.freeze
+
     def to_ical
       lines = ["DTSTART#{form}:#{stamp(@start)}", "RRULE:#{rrule}"]
       lines << "EXDATE#{form}:#{@exdates.map { stamp(_1) }.join(",")}" unless @exdates.empty?
@@ -126,6 +129,7 @@ module Acute
     def to_h
       line, reason = cron_or_reason
       { kind: "rule", text: @text, description: to_s, rrule: rrule, dtstart: @timed ? dtstart.iso8601 : dtstart.to_s,
+        exdates: exdates.map { @timed ? _1.iso8601 : _1.to_s },
         zone: @zone, ical: to_ical, cron: line, cron_reason: reason }
     end
 
