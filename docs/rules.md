@@ -454,6 +454,7 @@ Examples: "1/2/2015", "1.2.2015".
 - **D40.** A clock range already under way is today's, one answer: "9-5" said at noon → today 09:00–17:00.
 - **D44.** One that runs past midnight and began yesterday is under way until it ends: "from 23 to 3pm" said at 13:37 starts at last night's 23:00.
 - **D44.** Atoms before or after a clock range belong to both ends: "monday 8-9am", "9:30 - 11:00 CST".
+- **D44.** So do both at once, the shorter within the longer, whatever the order: "monday 3-5pm in march" is "3-5pm monday in march", 1 March 15:00–17:00. Two of the same size are the two ends: "monday 9am to friday 5pm".
 - **D44.** A range after a day is within it: "tomorrow from 2 to 4pm", "Friday between 1PM and 4 PM". "tomorrow from 9am" is incomplete, as "from 9am" is.
 - **D51.** A zone after it is the day's too: "Friday, between 9-6 PT" is 09:00 to 18:00 Pacific on Friday. Only after a weekday: a numeric date keeps its readings.
 - **D48.** A clock range, then "of" and a date, is on that date: "from 5 to 6pm of April 22".
