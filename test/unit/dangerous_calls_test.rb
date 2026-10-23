@@ -21,6 +21,8 @@ class DangerousCallsTest < Minitest::Test
     "acute/mcp.rb: File.expand_path" => "the bundled schema/ directory, from __dir__",
     "acute/mcp.rb: File.join" => "a bundled schema's path: a name from OUTPUTS or a $ref inside a bundled schema",
     "acute/mcp.rb: File.read" => "reads that bundled schema; no request field reaches the path",
+    "acute/shadow.rb: File.expand_path" => "acute's own lib directory, from __dir__",
+    "acute/shadow.rb: File.join" => "a feature path under that directory, from fixed gem names",
     "acute/tool.rb: File.expand_path" => "the bundled tool schemas' paths, from __dir__ and the fixed NAMES",
     "acute/tool.rb: File.read" => "reads those bundled tool schemas once, at load"
   }.freeze

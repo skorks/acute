@@ -1,4 +1,5 @@
 require_relative "../acute"
+require_relative "shadow"
 
 # chronic 0.10.2's API on acute's parser, for code written against chronic. It takes chronic's options and
 # returns what chronic returns, but the answers follow acute's rules (D46).
@@ -174,3 +175,4 @@ module Chronic
     end
   end
 end
+Acute::Shadow.call("acute/chronic", "chronic", "chronic")

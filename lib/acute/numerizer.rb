@@ -1,4 +1,5 @@
 require_relative "../acute"
+require_relative "shadow"
 require_relative "numerize"
 
 # numerizer 0.2.0's API on acute's lexer: number words, ordinals and fractions in a text become digits, and the
@@ -6,3 +7,4 @@ require_relative "numerize"
 class Numerizer
   def self.numerize(string) = Acute::Numerize.call(string)
 end
+Acute::Shadow.call("acute/numerizer", "numerizer", "numerizer")
