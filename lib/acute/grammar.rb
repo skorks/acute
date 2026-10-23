@@ -177,8 +177,11 @@ module Acute
       ts = @i
       to = day_and_year(from, ts)
       return to if to
+      mid = @mid
       to = item(true)
       return to if Failure === to
+      # D50: the end took a "from" or "between" only body reads: "tomorrow through sunday from 9 to 5"
+      return failure(:incomplete) if @mid && !mid
       range(from, to, fs, fe, ts)
     end
 

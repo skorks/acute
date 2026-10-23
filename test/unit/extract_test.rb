@@ -321,6 +321,19 @@ class ExtractTest < Minitest::Test
     assert_equal([[:rule, "every 8 hours"]], mentions("take one every 8 hours").map { _1.take(2) })
   end
 
+  def test_e6_r13_a_rule_with_a_window_named_without_in_is_one_mention
+    x = extract("everyday next month")
+    assert_equal([[:rule, "everyday next month", 0...19]], x.mentions.map { [_1.kind, _1.text, _1.offset] })
+    assert_equal "DTSTART;VALUE=DATE:20261101\nRRULE:FREQ=DAILY;UNTIL=20261130", x.mentions[0].value.to_ical
+  end
+
+  def test_d50_a_range_does_not_end_in_a_dangling_from
+    assert_equal([[:time, "tomorrow through sunday"], [:time, "from 9 to 5"]],
+                 mentions("tomorrow through sunday from 9 to 5").map { _1.take(2) })
+    assert_equal([[:time, "monday to friday"], [:time, "from 9 to 5"]],
+                 mentions("monday to friday from 9 to 5").map { _1.take(2) })
+  end
+
   def test_e6_lenient_parse_finds_no_rule
     assert_equal Time.new(2026, 11, 1, 0, 0, 0, "-04:00"), Acute.parse("pay on the 1st of every month", now: "2026-10-17T14:00", zone: NY, strict: false).begin
   end
