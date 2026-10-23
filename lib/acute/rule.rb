@@ -183,13 +183,10 @@ module Acute
       end
     end
 
-    # "every 15 minutes from 9am to 6pm": its end the step after the last where that is the top of an hour, so
-    # it reads back as R27's end left out, else the last itself
+    # "every 15 minutes from 9am to 6pm": its end the step after the last, so it reads back as R27's end left out
     def stepping(step, first, last)
       stop = last + step
-      stop = if stop >= DAY then "midnight"
-             else Describe.clock(stop % 3600 == 0 ? stop : last)
-             end
+      stop = stop >= DAY ? "midnight" : Describe.clock(stop)
       "#{step % 3600 == 0 ? every_n(step / 3600, "hour") : every_n(step / 60, "minute")} from #{Describe.clock(first)} to #{stop}"
     end
 
