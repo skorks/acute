@@ -35,7 +35,7 @@ acute is a rewrite from scratch, with a different design:
 
 ## Moving over
 
-`require "acute/chronic"` gives you chronic's API, `Chronic.parse` with chronic's options, answered by acute. `require "acute/chronic_duration"` does the same for chronic_duration.
+`require "acute/chronic"` gives you chronic's API, `Chronic.parse` with chronic's options, answered by acute. `require "acute/chronic_duration"` does the same for chronic_duration, and `require "acute/numerizer"` for numerizer.
 
 ```ruby
 require "acute/chronic"

@@ -1,6 +1,7 @@
 require_relative "../test_helper"
 require_relative "../../lib/acute/chronic"
 require_relative "../../lib/acute/chronic_duration"
+require_relative "../../lib/acute/numerizer"
 
 # The compatibility layers parse with their defaults in any Ractor. Their process-wide settings
 # (Chronic.time_class, ChronicDuration.hours_per_day) stay the main Ractor's, as in the originals.
@@ -32,6 +33,10 @@ class RactorCompatTest < Minitest::Test
     assert_equal [5400, 9000, "1 hr", "1 hour 30 minutes"], out
   end
 
+  def test_numerizer_numerizes_in_a_ractor
+    assert_equal("42.75, 24th", in_ractor { Numerizer.numerize("forty two and three quarters, twenty-fourth") })
+  end
+
   def test_a_named_zone_resolves_in_a_ractor
     parse_zoned = -> { Acute.parse!("tomorrow 3pm", now: "2026-10-17T14:00", zone: "Asia/Kathmandu").iso8601 }
     assert_equal "2026-10-18T15:00:00+05:45", parse_zoned.call
@@ -41,6 +46,6 @@ class RactorCompatTest < Minitest::Test
 
   def test_the_constants_are_shareable
     [Chronic::Parser::DEFAULT_OPTIONS, ChronicDuration::UNITS, ChronicDuration::MAPPINGS, ChronicDuration::DIVIDERS,
-     ChronicDuration.const_get(:Numerizer)::DIRECT_NUMS].each { assert Ractor.shareable?(_1) }
+     Acute::Numerize::BIG].each { assert Ractor.shareable?(_1) }
   end
 end

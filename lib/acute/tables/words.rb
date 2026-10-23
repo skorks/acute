@@ -191,6 +191,17 @@ module Acute
       "nineteenth" => [:ordinal, 19].freeze,
       "twentieth" => [:ordinal, 20].freeze,
       "thirtieth" => [:ordinal, 30].freeze,
+      "fortieth" => [:ordinal, 40].freeze,
+      "fiftieth" => [:ordinal, 50].freeze,
+      "sixtieth" => [:ordinal, 60].freeze,
+      "seventieth" => [:ordinal, 70].freeze,
+      "eightieth" => [:ordinal, 80].freeze,
+      "ninetieth" => [:ordinal, 90].freeze,
+      "hundredth" => [:ordinal, 100].freeze,
+      "thousandth" => [:ordinal, 1000].freeze,
+      "millionth" => [:ordinal, 1000000].freeze,
+      "billionth" => [:ordinal, 1000000000].freeze,
+      "trillionth" => [:ordinal, 1000000000000].freeze,
       "morning" => [:part, :morning].freeze,
       "afternoon" => [:part, :afternoon].freeze,
       "evening" => [:part, :evening].freeze,
@@ -328,6 +339,8 @@ module Acute
       "thousand" => [:word, :thousand].freeze,
       "hundred" => [:word, :hundred].freeze,
       "million" => [:word, :million].freeze,
+      "billion" => [:word, :billion].freeze,
+      "trillion" => [:word, :trillion].freeze,
       "oh" => [:word, :oh].freeze,
       "o" => [:word, :oh].freeze,
       "zero" => [:word, :oh].freeze,
@@ -378,6 +391,10 @@ module Acute
       "tonite" => [:part, :tonight].freeze,
       "febuary" => [:month, 2].freeze,
       "wensday" => [:weekday, 3].freeze,
+      "fourty" => [:number, 40].freeze,
+      "fourtieth" => [:ordinal, 40].freeze,
+      "ninteen" => [:number, 19].freeze,
+      "nineth" => [:ordinal, 9].freeze,
     }.freeze
 
     PHRASES = {
@@ -651,6 +668,6 @@ module Acute
 
     PLURAL = ["thanksgivings", "springs", "summers", "autumns", "falls", "winters", "seasons", "sundays", "mondays", "tuesdays", "wednesdays", "thursdays", "fridays", "saturdays", "weekends", "weekdays", "black fridays", "memorial days", "secs", "seconds", "mins", "minutes", "hrs", "hours", "days", "wks", "weeks", "fortnights", "months", "quarters", "yrs", "years", "decades", "centuries", "mornings", "afternoons", "evenings", "nights"].freeze
 
-    HINT_WORDS = ["a.d", "a.m", "about", "acdt", "acst", "additional", "aedt", "aest", "after", "afternoon", "afternoons", "ago", "akdt", "akst", "all", "alternate", "and", "annual", "annually", "anytime", "approx", "approximately", "apr", "april", "around", "aug", "august", "autumn", "autumns", "awst", "b.e", "back", "before", "beginning", "between", "bimonthly", "biweekly", "bom", "boy", "bst", "c.e", "cdt", "central", "centuries", "century", "cest", "cet", "christmas", "circa", "closest", "coming", "commencing", "cst", "current", "daily", "day", "days", "dec", "decade", "decades", "december", "during", "each", "earlier", "early", "easter", "eastern", "edt", "eest", "eet", "eight", "eighteen", "eighteenth", "eighth", "eighties", "eighty", "eleven", "eleventh", "end", "eod", "eom", "eoy", "est", "evening", "evenings", "every", "everyday", "except", "excluding", "extra", "fall", "falls", "feb", "february", "fifteen", "fifteenth", "fifth", "fifties", "fifty", "final", "first", "five", "following", "for", "forties", "fortnight", "fortnight's", "fortnightly", "fortnights", "forty", "four", "fourteen", "fourteenth", "fourth", "fri", "frid", "friday", "fridays", "from", "gmt", "half", "halloween", "hence", "hkt", "hour", "hourly", "hours", "hrs", "hst", "hundred", "ish", "ist", "jan", "january", "jst", "jul", "july", "jun", "june", "juneteenth", "kst", "kwanzaa", "last", "late", "later", "lunch", "lunchtime", "mar", "march", "may", "mdt", "mid", "midday", "middle", "midnight", "midweek", "million", "min", "mins", "minute", "minutes", "mon", "monday", "mondays", "month", "month's", "monthly", "months", "more", "morning", "mornings", "mountain", "msk", "mst", "nearest", "next", "night", "nights", "nine", "nineteen", "nineteenth", "nineties", "ninety", "ninth", "noon", "nov", "november", "now", "nzdt", "nzst", "o'clock", "occurrence", "occurrences", "oclock", "oct", "october", "once", "one", "onward", "onwards", "other", "out", "p.m", "pacific", "past", "pdt", "pentecost", "prev", "previous", "pst", "qtr", "qtrs", "quarter", "quarterly", "quarters", "remainder", "rest", "roughly", "sat", "saturday", "saturdays", "season", "seasons", "sec", "second", "seconds", "secs", "semiannual", "semiannually", "sep", "sept", "september", "seven", "seventeen", "seventeenth", "seventh", "seventies", "seventy", "sgt", "since", "six", "sixteen", "sixteenth", "sixth", "sixties", "sixty", "sometime", "sometimes", "spring", "springs", "start", "starting", "summer", "summers", "sun", "sunday", "sundays", "ten", "tenth", "thanksgiving", "thanksgivings", "the", "third", "thirteen", "thirteenth", "thirties", "thirtieth", "thirty", "this", "thousand", "three", "through", "thru", "thu", "thur", "thurs", "thursday", "thursdays", "til", "till", "times", "tmr", "tmrw", "today", "today's", "todays", "tomorrow", "tomorrow's", "tomorrows", "tonight", "tonight's", "tue", "tues", "tuesday", "tuesdays", "twelfth", "twelve", "twenties", "twentieth", "twenty", "two", "until", "untill", "upcoming", "utc", "wed", "wednesday", "wednesdays", "week", "week's", "weekday", "weekdays", "weekend", "weekends", "weekly", "weeks", "whitsun", "whitsunday", "winter", "winters", "within", "wkend", "wks", "workweek", "xmas", "year", "year's", "yearly", "years", "yesterday", "yesterday's", "yrs", "zero"].freeze
+    HINT_WORDS = ["a.d", "a.m", "about", "acdt", "acst", "additional", "aedt", "aest", "after", "afternoon", "afternoons", "ago", "akdt", "akst", "all", "alternate", "and", "annual", "annually", "anytime", "approx", "approximately", "apr", "april", "around", "aug", "august", "autumn", "autumns", "awst", "b.e", "back", "before", "beginning", "between", "billion", "billionth", "bimonthly", "biweekly", "bom", "boy", "bst", "c.e", "cdt", "central", "centuries", "century", "cest", "cet", "christmas", "circa", "closest", "coming", "commencing", "cst", "current", "daily", "day", "days", "dec", "decade", "decades", "december", "during", "each", "earlier", "early", "easter", "eastern", "edt", "eest", "eet", "eight", "eighteen", "eighteenth", "eighth", "eighties", "eightieth", "eighty", "eleven", "eleventh", "end", "eod", "eom", "eoy", "est", "evening", "evenings", "every", "everyday", "except", "excluding", "extra", "fall", "falls", "feb", "february", "fifteen", "fifteenth", "fifth", "fifties", "fiftieth", "fifty", "final", "first", "five", "following", "for", "forties", "fortieth", "fortnight", "fortnight's", "fortnightly", "fortnights", "forty", "four", "fourteen", "fourteenth", "fourth", "fri", "frid", "friday", "fridays", "from", "gmt", "half", "halloween", "hence", "hkt", "hour", "hourly", "hours", "hrs", "hst", "hundred", "hundredth", "ish", "ist", "jan", "january", "jst", "jul", "july", "jun", "june", "juneteenth", "kst", "kwanzaa", "last", "late", "later", "lunch", "lunchtime", "mar", "march", "may", "mdt", "mid", "midday", "middle", "midnight", "midweek", "million", "millionth", "min", "mins", "minute", "minutes", "mon", "monday", "mondays", "month", "month's", "monthly", "months", "more", "morning", "mornings", "mountain", "msk", "mst", "nearest", "next", "night", "nights", "nine", "nineteen", "nineteenth", "nineties", "ninetieth", "ninety", "ninth", "noon", "nov", "november", "now", "nzdt", "nzst", "o'clock", "occurrence", "occurrences", "oclock", "oct", "october", "once", "one", "onward", "onwards", "other", "out", "p.m", "pacific", "past", "pdt", "pentecost", "prev", "previous", "pst", "qtr", "qtrs", "quarter", "quarterly", "quarters", "remainder", "rest", "roughly", "sat", "saturday", "saturdays", "season", "seasons", "sec", "second", "seconds", "secs", "semiannual", "semiannually", "sep", "sept", "september", "seven", "seventeen", "seventeenth", "seventh", "seventies", "seventieth", "seventy", "sgt", "since", "six", "sixteen", "sixteenth", "sixth", "sixties", "sixtieth", "sixty", "sometime", "sometimes", "spring", "springs", "start", "starting", "summer", "summers", "sun", "sunday", "sundays", "ten", "tenth", "thanksgiving", "thanksgivings", "the", "third", "thirteen", "thirteenth", "thirties", "thirtieth", "thirty", "this", "thousand", "thousandth", "three", "through", "thru", "thu", "thur", "thurs", "thursday", "thursdays", "til", "till", "times", "tmr", "tmrw", "today", "today's", "todays", "tomorrow", "tomorrow's", "tomorrows", "tonight", "tonight's", "trillion", "trillionth", "tue", "tues", "tuesday", "tuesdays", "twelfth", "twelve", "twenties", "twentieth", "twenty", "two", "until", "untill", "upcoming", "utc", "wed", "wednesday", "wednesdays", "week", "week's", "weekday", "weekdays", "weekend", "weekends", "weekly", "weeks", "whitsun", "whitsunday", "winter", "winters", "within", "wkend", "wks", "workweek", "xmas", "year", "year's", "yearly", "years", "yesterday", "yesterday's", "yrs", "zero"].freeze
   end
 end

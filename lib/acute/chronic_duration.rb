@@ -1,5 +1,5 @@
-require "strscan"
 require_relative "../acute"
+require_relative "numerize"
 
 # chronic_duration's API, 0.10.6 and GitLab's 0.12.0 fork, on acute. Its tokeniser, number words and fixed unit
 # lengths are kept, so answers match the gems. Where the gem would skip words and acute reads the whole text as
@@ -193,7 +193,7 @@ module ChronicDuration
   def cleanup(string) = clean(string)[0]
 
   def clean(string)
-    res = filter_by_type(Numerizer.numerize(string.downcase))
+    res = filter_by_type(Acute::Numerize.call(string.downcase))
     res = res.gsub(FLOAT) { " #{_1} " }.squeeze(" ").strip
     filter_through_white_list(res)
   end
@@ -222,89 +222,11 @@ module ChronicDuration
     res.unshift(1) if !res.empty? && MAPPINGS[res[0]]
     [res.join(" "), skipped]
   end
-
-  # numerizer 0.2.0, which both gems use for number words
-  module Numerizer
-    DIRECT_NUMS = [
-      ["eleven", "11"], ["twelve", "12"], ["thirteen", "13"], ["fourteen", "14"], ["fifteen", "15"], ["sixteen", "16"],
-      ["seventeen", "17"], ["eighteen", "18"], ["nineteen", "19"], ["ninteen", "19"], ["zero", "0"], ["ten", "10"],
-      ['\ba[\b^$]', "1"]
-    ].freeze
-    SINGLE_NUMS = [
-      ["one", 1], ["two", 2], ["three", 3], ["four", 4], ["five", 5], ["six", 6], ["seven", 7],
-      ["eight", 8], ["nine", 9]
-    ].freeze
-    TEN_PREFIXES = [
-      ["twenty", 20], ["thirty", 30], ["forty", 40], ["fourty", 40], ["fifty", 50], ["sixty", 60],
-      ["seventy", 70], ["eighty", 80], ["ninety", 90]
-    ].freeze
-    BIG_PREFIXES = [
-      ["hundred", 100], ["thousand", 1000], ["million", 1_000_000], ["billion", 1_000_000_000],
-      ["trillion", 1_000_000_000_000]
-    ].freeze
-    FRACTIONS = [
-      ["half", 2], ["third(s)?", 3], ["fourth(s)?", 4], ["quarter(s)?", 4], ["fifth(s)?", 5],
-      ["sixth(s)?", 6], ["seventh(s)?", 7], ["eighth(s)?", 8], ["nineth(s)?", 9]
-    ].freeze
-    SINGLE_ORDINALS = [
-      ["first", 1], ["third", 3], ["fourth", 4], ["fifth", 5], ["sixth", 6], ["seventh", 7],
-      ["eighth", 8], ["ninth", 9]
-    ].freeze
-    DIRECT_ORDINALS = [
-      ["tenth", "10"], ["eleventh", "11"], ["twelfth", "12"], ["thirteenth", "13"], ["fourteenth", "14"],
-      ["fifteenth", "15"], ["sixteenth", "16"], ["seventeenth", "17"], ["eighteenth", "18"], ["nineteenth", "19"],
-      ["twentieth", "20"], ["thirtieth", "30"], ["fourtieth", "40"], ["fiftieth", "50"], ["sixtieth", "60"],
-      ["seventieth", "70"], ["eightieth", "80"], ["ninetieth", "90"]
-    ].freeze
-    # The inner pairs too, so a Ractor can read them
-    [DIRECT_NUMS, SINGLE_NUMS, TEN_PREFIXES, BIG_PREFIXES, FRACTIONS, SINGLE_ORDINALS, DIRECT_ORDINALS].each { Ractor.make_shareable(_1) }
-
-    module_function
-
-    def numerize(string)
-      string = string.dup
-      string.gsub!(/ +|([^\d])-([^\d])/, '\1 \2')
-      (DIRECT_NUMS + SINGLE_NUMS).each do |word, n|
-        string.gsub!(/(^|\W)#{word}(?=$|\W)/i, "\\1<num>#{n}")
-      end
-      TEN_PREFIXES.each do |tp, t|
-        SINGLE_NUMS.each { |dn, d| string.gsub!(/(^|\W)#{tp}#{dn}(?=$|\W)/i, "\\1<num>#{t + d}") }
-        SINGLE_ORDINALS.each { |dn, d| string.gsub!(/(^|\W)#{tp}(\s)?#{dn}(?=$|\W)/i, "\\1<num>#{t + d}#{dn[-2, 2]}") }
-        string.gsub!(/(^|\W)#{tp}(?=$|\W)/i, "\\1<num>#{t}")
-      end
-      FRACTIONS.each do |word, d|
-        string.gsub!(/a #{word}(?=$|\W)/i, "<num>1/#{d}")
-        string.gsub!(/\s#{word}(?=$|\W)/i, "/#{d}")
-      end
-      (DIRECT_ORDINALS + SINGLE_ORDINALS).each do |word, n|
-        string.gsub!(/(^|\W)#{word}(?=$|\W)/i, "\\1<num>#{n}#{word[-2, 2]}")
-      end
-      # a fraction after a number adds to it
-      string.gsub!(%r{(\d+)(?: | and |-)+(<num>|\s)*(\d+)\s*/\s*(\d+)}i) { ($1.to_f + ($3.to_f / $4.to_f)).to_s }
-      BIG_PREFIXES.each do |word, n|
-        string.gsub!(/(?:<num>)?(\d*) *#{word}/i) { $1.empty? ? n.to_s : "<num>#{n * $1.to_i}" }
-        andition(string)
-      end
-      andition(string)
-      string.gsub("<num>", "")
-    end
-
-    # "<num>20 <num>4" is 24, and "<num>100 and <num>5" 105
-    def andition(string)
-      sc = StringScanner.new(string)
-      while sc.scan_until(/<num>(\d+)( | and )<num>(\d+)(?=[^\w]|$)/i)
-        next unless sc[2].include?("and") || sc[1].size > sc[3].size
-        string[(sc.pos - sc.matched_size)..(sc.pos - 1)] = "<num>#{sc[1].to_i + sc[3].to_i}"
-        sc.reset
-      end
-    end
-  end
-  private_constant :Numerizer
 end
 
-# Ported from chronic_duration 0.10.6 and gitlab_chronic_duration 0.12.0, and from numerizer 0.2.0:
+# Ported from chronic_duration 0.10.6 and gitlab_chronic_duration 0.12.0:
 #
-# Copyright (c) Henry Poydar (chronic_duration); Copyright (c) 2008 Tom Preston-Werner (numerizer)
+# Copyright (c) Henry Poydar
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the "Software"), to deal in the Software without restriction, including without limitation

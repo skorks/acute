@@ -1,7 +1,7 @@
 module Acute
   # Atoms led by digits or a number word: clocks, numeric and ISO dates, years
   class Grammar
-    MULTIPLIERS = { hundred: 100, thousand: 1000, million: 1_000_000 }.freeze
+    MULTIPLIERS = { hundred: 100, thousand: 1000, million: 1_000_000, billion: 1_000_000_000, trillion: 1_000_000_000_000 }.freeze
 
     private
 

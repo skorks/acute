@@ -150,7 +150,7 @@ The tools, their failures and how zone and now are set: [docs/agents.md](docs/ag
 
 ## Coming from chronic
 
-`require "acute/chronic"` gives you chronic's API, `Chronic.parse` with chronic's options, answered by acute; `require "acute/chronic_duration"` does the same for chronic_duration. A few answers differ, following acute's rules: [docs/chronic.md](docs/chronic.md#moving-over).
+`require "acute/chronic"` gives you chronic's API, `Chronic.parse` with chronic's options, answered by acute; `require "acute/chronic_duration"` does the same for chronic_duration, and `require "acute/numerizer"` for numerizer's `Numerizer.numerize`. A few answers differ, following acute's rules: [docs/chronic.md](docs/chronic.md#moving-over).
 
 ## Performance
 
