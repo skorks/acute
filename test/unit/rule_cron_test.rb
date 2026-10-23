@@ -211,6 +211,35 @@ class RuleCronTest < Minitest::Test
     end
   end
 
+  # R28: the minute marks those descriptions say read back to the same times. "in March" is R13's window, so
+  # that rule ends where the month does rather than repeating each year, and only its times are compared
+  def test_r28_minute_marks_read_back
+    ["5,10 * * * *", "5 * * * *", "15 * * * 1", "5,10 9-17 * * *", "10,40 */2 * * *", "0-10 9-17 * * *",
+     "0-10 9-17/2 * * *", "0-10 * * * *", "*/7 * * * *", "0-30/10 * 1 * *", "0-10 9,11 * * *",
+     "5,10 9,11,15,16,20 * * 6", "5,10 * * * 1-5"].each do |line|
+      assert_equal from(line), rule(from(line).to_s), line
+    end
+    march = from("5,10 * * 3 *")
+    assert_equal march.each.first(100), rule(march.to_s).each.first(100)
+  end
+
+  def test_r28_minute_marks_need_an_hour_grid
+    assert_nil rule("every 5 hours at :05") # n must divide the day
+    assert_nil rule("every hour from 9:30am to 5pm at :05")
+    assert_nil rule("every day at :05")
+    assert_nil rule("every hour at 9am in the 9am hour")
+    assert_nil rule("every minute from :10 to :05")
+    assert_nil rule("every hour at :05 at :10")
+    assert_equal "FREQ=DAILY;BYHOUR=0,3,6,9,12,15,18,21;BYMINUTE=0,15,30", rule("every 15 minutes between :00 and :30 of every 3 hours").rrule
+    assert_equal "FREQ=DAILY;INTERVAL=2;BYHOUR=9;BYMINUTE=5", rule("every 2 days at :05 in the 9am hour").rrule
+  end
+
+  def test_r28_a_minute_mark_is_its_own_token_and_reads_only_in_a_rule
+    assert_equal([[Acute::Lexer::MINUTE, 5]], Acute::Lexer.lex(":05").each_slice(Acute::Lexer::STRIDE).map { _1[0, 2] })
+    [":60", "x:05", ":05am", ":5", ":055"].each { refute_equal Acute::Lexer::MINUTE, Acute::Lexer.lex(_1)[0], _1 }
+    assert_nil Acute.parse("at :05")
+  end
+
   def test_r27_description_reads_back_to_the_same_rrule
     ["0-10 11 * * *", "0 9-17 * * *"].each do |line|
       r = from(line)

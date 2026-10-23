@@ -5,9 +5,10 @@ module Acute
     # interval: units between occurrences; days: weekdays picked (0 = Sunday); nths: [n, wday] within the month
     # (R8); monthdays: days of the month, -1 the last; setpos: BYSETPOS over Monday to Friday; month and date:
     # what was said (R9); until, start, within, except and window hold one-off trees; length the Units of "for 6
-    # weeks"
+    # weeks"; minutes the minute marks said and minute_span [first, last, step] of "every 15 minutes from :00 to
+    # :45", hours the Clocks of "in the 9am and 11am hours" (R28)
     Recur = Struct.new(:interval, :unit, :days, :nths, :monthdays, :setpos, :month, :date, :clocks, :part,
-                       :until, :start, :within, :except_days, :except, :count, :length, :window)
+                       :until, :start, :within, :except_days, :except, :count, :length, :window, :minutes, :minute_span, :hours)
 
     # R5
     FREQUENCY = { daily: [:day, 1], hourly: [:hour, 1], weekly: [:week, 1], monthly: [:month, 1], yearly: [:year, 1],
@@ -52,7 +53,7 @@ module Acute
     end
 
     def rule
-      r = Recur.new(nil, nil, [], [], [], nil, nil, nil, [], nil, nil, nil, nil, [], [], nil, nil, nil)
+      r = Recur.new(nil, nil, [], [], [], nil, nil, nil, [], nil, nil, nil, nil, [], [], nil, nil, nil, [], nil, [])
       every = false
       while @i < @n
         k = @t[@i]
@@ -88,7 +89,7 @@ module Acute
           if k == L::WORD && ((w = @t[@i + 1]) == :every || w == :the) && @t[@i + S] == L::UNIT && @t[@i + S + 1] == :month
             every ||= w == :every
             @i += 2 * S
-          elsif k != L::MONTH
+          elsif k != L::MONTH && !(r.minute_span && !r.unit && k == L::WORD && @t[@i + 1] == :every) # R28: "of every hour"
             return failure(:conflict)
           end
         elsif k == L::WORD && v == :except
@@ -117,12 +118,36 @@ module Acute
           @i += S
           r.start = tail_phrase
           return r.start if Failure === r.start
+        elsif k == L::WORD && (v == :from || v == :between) && r.unit == :minute && @t[@i + S] == L::MINUTE
+          # R28: "every 15 minutes from :00 to :45" runs in each hour; the hours, if said, come after
+          return failure(:conflict) if r.minute_span || !r.minutes.empty?
+          j = @i + 2 * S
+          w = @t[j + 1]
+          return failure(:conflict) unless @t[j + S] == L::MINUTE &&
+                                           (v == :between ? w == :and : @t[j] == L::DASH || w == :to || w == :through)
+          r.minute_span = [@t[@i + S + 1], @t[j + S + 1], r.interval || 1]
+          r.unit = r.interval = nil
+          @i = j + 2 * S
         elsif k == L::WORD && (v == :from || v == :between) && r.unit && !r.window # R27: "every 15 minutes from 9 to 5"
           stop = @i + S
           stop += S while stop < @n && !window_end?(stop)
           r.window = Grammar.new(@t[@i...stop]).phrase
           return r.window if Failure === r.window
           @i = stop
+        elsif k == L::WORD && v == :in && (r.minute_span || !r.minutes.empty?) && @t[@i + S + 1] == :the && @t[@i + S] == L::WORD
+          @i += 2 * S # R28: "at :05 in the 9am and 11am hours"
+          loop do
+            at = @i
+            c = atom(true)
+            return c if Failure === c
+            return failure(:conflict, at) unless Clock === c
+            r.hours << c
+            next if clock_at?(@i) # "the 9am, 11am and 3pm hours": a comma lexes as a space
+            break unless @t[@i] == L::WORD && @t[@i + 1] == :and && clock_at?(@i + S)
+            @i += S
+          end
+          return failure(:conflict) unless @t[@i] == L::UNIT && @t[@i + 1] == :hour
+          @i += S
         elsif (k == L::WORD && v == :in) || (k == L::REL && (v == :next || v == :this)) # R13: "in november", "next month"
           return failure(:conflict) if r.within
           @i += S if k == L::WORD
@@ -182,6 +207,15 @@ module Acute
           return failure(:conflict) if d.year || r.month
           r.month = d.month
           r.date = d if d.day
+        elsif k == L::MINUTE || (k == L::AT && @t[@i + S] == L::MINUTE) # R28: "at :05 and :10"
+          return failure(:conflict) if r.minute_span || !r.minutes.empty?
+          @i += S if k == L::AT
+          loop do
+            r.minutes << @t[@i + 1]
+            @i += S
+            break unless @t[@i] == L::WORD && @t[@i + 1] == :and && @t[@i + S] == L::MINUTE
+            @i += S
+          end
         elsif k == L::AT || clock_at?(@i) || k == L::NUM
           @i += S if k == L::AT
           loop do
@@ -270,11 +304,12 @@ module Acute
       node
     end
 
-    # A window's clock range ends at the days it is on, or at the next rule word
+    # A window's clock range ends at the days it is on, its minute marks (R28), or the next rule word
     def window_end?(j)
       k = @t[j]
       w = @t[j + 1]
-      (k == L::WORD && (TAIL[w] || w == :on || w == :every)) || k == L::WDAY || k == L::WEEKEND ||
+      (k == L::WORD && (TAIL[w] || w == :on || w == :every)) || k == L::WDAY || k == L::WEEKEND || k == L::MINUTE ||
+        (k == L::AT && @t[j + S] == L::MINUTE) ||
         (k == L::UNIT && w == :business_day) || (k == L::NUM && @t[j + S + 1] == :times)
     end
 
