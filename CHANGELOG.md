@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Changed:** digits beside a part of day are a clock that part allows: "1140 in the morning" → 11:40 and "tonight 1140" → 23:40, not the year 1140; "815 in the morning" and "134 this afternoon" read too. "2027 in the morning" and "christmas 2015 in the evening" stay years (D5, D52).
 - **Added:** `require "acute/numerizer"` gives numerizer's `Numerizer.numerize`, answered by acute (D46). The chronic_duration layer reads its numbers through it.
 - **Added:** billion, trillion, ordinals up to trillionth, and the misspellings fourty, fourtieth, ninteen and nineth (D18).
 - **Fixed:** a month before the fiscal year's start month had no reading: "march FY2027" with `fiscal_year_start: 7` was nil. It is now March 2027, inside the fiscal year (D38).

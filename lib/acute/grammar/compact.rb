@@ -39,7 +39,8 @@ module Acute
     end
 
     # D44: "330 pm", "at 730 in the evening", "tonight 815": three digits marked as a time, by am or pm after
-    # them or "at" or a part of day before, are its hour and minutes; so are four before am or pm, "1140 a.m." (D5)
+    # them, "at" before, or a part of day beside them (D52), are its hour and minutes; so are four before am or pm,
+    # "1140 a.m." (D5)
     def three_digits(v, at)
       h = v / 100
       m = v % 100
@@ -67,9 +68,10 @@ module Acute
       Clock.new(v, 0, 0, nil, nil, true, false)
     end
 
-    # D5: a time with a leading zero, after "at", or with "h"/"hrs"; otherwise a year
+    # D5: a time with a leading zero, after "at", with "h"/"hrs", or beside a part of day that allows it (D52);
+    # otherwise a year
     def four_digits(v, flags, at)
-      if flags & L::ZERO != 0 || (at >= S && @t[at - S] == L::AT) || @t[at + S] == L::UNIT
+      if flags & L::ZERO != 0 || (at >= S && @t[at - S] == L::AT) || @t[at + S] == L::UNIT || part_clock?(v, at)
         return failure(:invalid_date, at) if v / 100 > 23 || v % 100 > 59
         Clock.new(v / 100, v % 100, 0, nil, nil, flags & L::ZERO != 0, false)
       else

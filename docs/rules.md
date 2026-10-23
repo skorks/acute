@@ -114,10 +114,11 @@ Four digits are a year unless something marks them as a time:
 - a suffix: "1530h", "1530 hrs", "0600 hours";
 - a leading zero: "0600";
 - am or pm after them: "1140 a.m." (**D44.**)
+- a part of day just before or after them, when they make a clock that part of day allows: "1140 in the morning" → 11:40, "tonight 1140" → 23:40. The part fixes am or pm, as with any clock. "2027 in the morning" stays the year, since 20:27 is not morning; so does "1975 in the evening", since 19:75 is no clock, and "christmas 2015 in the evening", where a holiday comes first. (**D52.**)
 
 So "christmas 2015" → 25 December 2015, "tomorrow at 1530" → 15:30, and "1530" alone → the year 1530.
 
-- **D44.** Three digits are a time only when am or pm follows them, or "at" or a part of day comes before them: "330 p.m.", "at 730 in the evening", "tonight 815". "134 this afternoon" → nil.
+- **D44.** Three digits are a time only when am or pm follows them, "at" comes before them, or a part of day comes before or after them: "330 p.m.", "at 730 in the evening", "tonight 815", "815 in the morning" (**D52.**).
 - **D48.** A 24-hour clock before "hours" is that clock: "06:00 hours", "18:30 hours". "1:30 hours" is not read, since it could be a length.
 
 ### D6. Midnight with a day
