@@ -72,6 +72,23 @@ class ExtractTest < Minitest::Test
     assert_equal "[5pm] tomorrow", extract("lunch [5pm] tomorrow").mentions[0].text[/\[5pm\] tomorrow/]
   end
 
+  def test_d48_curly_and_single_quotes_are_quotes_as_straight_double_ones_are
+    assert_equal [[:duration, "for 3 days", 9...19]], mentions("he said \"for 3 days\" then")
+    assert_equal [[:duration, "for 3 days", 9...19]], mentions("he said “for 3 days” then")
+    assert_equal [[:duration, "3 days", 9...15]], mentions("he said “3 days” then")
+    assert_equal [[:duration, "for 3 days", 1...11]], mentions("“for 3 days”")
+    assert_equal [[:duration, "for 3 days", 9...19]], mentions("he said ‘for 3 days’ then")
+    assert_equal [[:duration, "for 3 days", 9...19]], mentions("he said 'for 3 days' then")
+    assert_equal [[:time, "tomorrow", 1...9]], mentions("‘tomorrow’")
+  end
+
+  def test_d48_an_apostrophe_is_still_an_apostrophe
+    assert_equal [[:time, "tomorrow’s", 4...14]], mentions("see tomorrow’s game")
+    assert_equal [[:time, "presidents’ day", 0...15]], mentions("presidents’ day")
+    assert_equal [[:time, "presidents' day", 0...15]], mentions("presidents' day")
+    assert_equal [[:time, "in ’90s", 5...12]], mentions("back in ’90s")
+  end
+
   def test_e3_lowercase_english_words_are_not_mentions
     assert_equal [], mentions("this may or may not work")
     assert_equal [], mentions("Sat on the mat. May I go?")

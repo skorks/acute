@@ -709,6 +709,7 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 - **D48.** A possessive reads as its word: "tomorrow's", "this year's summer".
 - **D48.** "for" and "during" before a time are dropped: "for the past month", "during March". Before a length, "for" makes a duration (E2).
 - **D48.** Brackets around a word or a clock are dropped: "[Sept] 04", "[5pm] tomorrow". A number alone in brackets is a footnote: "march 3 [2]" is nil.
+- **D48.** Curly quotes are quotes, as '"' is: `extract` of "he said “3 days” then" mentions "3 days". So is a single quote, straight or curly, before a word or after one it doesn't end: "'for 3 days'". Inside a word, before a year's two digits, or ending a word that has it ("presidents' day"), it is an apostrophe.
 
 ## Extraction
 
