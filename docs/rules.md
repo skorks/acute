@@ -644,6 +644,7 @@ Holidays whose date isn't a formula stay out: lunar and Hebrew calendars, dates 
 - **D49.** More than 10,000 business days (about 40 years) in one call is a failure, not a long wait: "in 10001 business days" → nil, and `parse!` says so. Every count in a call draws on the 10,000, so in one `extract` of "in 6000 business days or in 6000 business days" the second is not a time. So is a `business_days:` object that says 10,000 days in one call are not business days. Days and weeks are plain arithmetic and have no limit.
 - **Fiscal years** need `fiscal_year_start:`, the month the year starts. Without it, "FY27" → nil.
 - **D38.** "FY27" is the fiscal year that ends in 2027: with `fiscal_year_start: 7` → 1 July 2026 to 30 June 2027.
+- **D38.** A month in a fiscal year is the one inside it: with `fiscal_year_start: 7`, "march FY27" → March 2027 and "august FY27" → August 2026.
 - **D44.** "this/next/last fiscal year" (or "financial year") count from the fiscal year holding today.
 
 ## Time zones

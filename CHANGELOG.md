@@ -4,6 +4,7 @@
 
 - **Added:** `require "acute/numerizer"` gives numerizer's `Numerizer.numerize`, answered by acute (D46). The chronic_duration layer reads its numbers through it.
 - **Added:** billion, trillion, ordinals up to trillionth, and the misspellings fourty, fourtieth, ninteen and nineth (D18).
+- **Fixed:** a month before the fiscal year's start month had no reading: "march FY2027" with `fiscal_year_start: 7` was nil. It is now March 2027, inside the fiscal year (D38).
 
 ## 1.0.1
 
