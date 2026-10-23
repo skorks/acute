@@ -708,7 +708,7 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 - **D44.** "!" or "?" at the end is dropped.
 - **D48.** A possessive reads as its word: "tomorrow's", "this year's summer".
 - **D48.** "for" and "during" before a time are dropped: "for the past month", "during March". Before a length, "for" makes a duration (E2).
-- **D48.** Brackets around a word are dropped.
+- **D48.** Brackets around a word or a clock are dropped: "[Sept] 04", "[5pm] tomorrow". A number alone in brackets is a footnote: "march 3 [2]" is nil.
 
 ## Extraction
 
@@ -745,6 +745,7 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 - **D44.** No mention starts inside a written number: nothing in "123-12-1234".
 - **D44.** A mention includes its "this", "next" or "last": "this Q3".
 - **D38.** A mention can carry alternatives, like a Result.
+- **D48.** A mention that reads across one of a pair of brackets takes the other too: "meet [5pm] tomorrow" mentions "[5pm] tomorrow". One inside both is without them: "meet [5pm]" mentions "5pm".
 
 ## Durations
 

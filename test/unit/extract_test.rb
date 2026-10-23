@@ -61,6 +61,17 @@ class ExtractTest < Minitest::Test
     assert_equal [[:time, "'40s", 6...10]], mentions("loved '40s music")
   end
 
+  def test_d48_a_mention_across_a_bracket_takes_both_brackets
+    assert_equal [[:time, "[5pm] tomorrow", 5...19]], mentions("meet [5pm] tomorrow")
+    assert_equal "2026-10-18 17:00:00 -04:00", wall(extract("meet [5pm] tomorrow").mentions[0].value.begin)
+    assert_equal [[:time, "lunch [5pm] tomorrow", 0...20]], mentions("lunch [5pm] tomorrow") # as "lunch 5pm tomorrow"
+    assert_equal [[:time, "[Sept] 04, 2014", 4...19]], mentions("see [Sept] 04, 2014 here")
+    assert_equal [[:time, "5pm", 6...9]], mentions("meet [5pm]")
+    assert_equal [[:time, "lunch [5pm]", 0...11]], mentions("lunch [5pm]")
+    assert_equal [[:time, "march 3", 0...7]], mentions("march 3 [2]")
+    assert_equal "[5pm] tomorrow", extract("lunch [5pm] tomorrow").mentions[0].text[/\[5pm\] tomorrow/]
+  end
+
   def test_e3_lowercase_english_words_are_not_mentions
     assert_equal [], mentions("this may or may not work")
     assert_equal [], mentions("Sat on the mat. May I go?")

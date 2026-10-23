@@ -19,6 +19,16 @@ class LexerTest < Minitest::Test
     assert_equal ['AT(0) "@"', 'NAMED(12, flags=0x100) "NOON"', 'DAY(-1, flags=0x100) "Yesterday"'], tokens("@NOON, Yesterday")
   end
 
+  def test_clock_in_brackets_loses_them_and_a_footnote_keeps_them
+    assert_equal ['CLOCK(53000, flags=0x1) "5:30"', 'MER(12) "pm"'], tokens("[5:30 pm]")
+    assert_equal ['CLOCK(170000, flags=0x2) "17:00"'], tokens("[17:00]")
+    assert_equal Acute::Failure.new(:unknown_word, 8, 9), L.lex("march 3 [2]")
+    assert_equal Acute::Failure.new(:unknown_word, 0, 1), L.lex("[5pm")
+    u = []
+    L.lex("[5 pm tomorrow] x [1", u)
+    assert_equal [0, 1, 14, 15, 16, 17, 18, 19], u
+  end
+
   def test_unknown_word_is_a_failure_with_byte_range
     assert_equal Acute::Failure.new(:unknown_word, 9, 14), L.lex("tomorrow foo's")
     assert_equal Acute::Failure.new(:unknown_word, 0, 2), L.lex("é")
