@@ -34,7 +34,7 @@ class RactorCompatTest < Minitest::Test
   end
 
   def test_numerizer_numerizes_in_a_ractor
-    assert_equal("42.75, 24th", in_ractor { Numerizer.numerize("forty two and three quarters, twenty-fourth") })
+    assert_equal("42.75, 24th, 105th", in_ractor { Numerizer.numerize("forty two and three quarters, twenty-fourth, a hundred and fifth") })
   end
 
   def test_a_named_zone_resolves_in_a_ractor
@@ -46,6 +46,6 @@ class RactorCompatTest < Minitest::Test
 
   def test_the_constants_are_shareable
     [Chronic::Parser::DEFAULT_OPTIONS, ChronicDuration::UNITS, ChronicDuration::MAPPINGS, ChronicDuration::DIVIDERS,
-     Acute::Numerize::BIG].each { assert Ractor.shareable?(_1) }
+     Acute::Grammar::MULTIPLIERS].each { assert Ractor.shareable?(_1) }
   end
 end

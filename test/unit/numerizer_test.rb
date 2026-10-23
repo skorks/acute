@@ -33,7 +33,7 @@ class NumerizerTest < Minitest::Test
       "a hundred and five" => "105", "two thousand and eighteen" => "2018", "ten thousand and 5 hundred" => "10500",
       "one hundredth" => "100th", "five eighths" => "5/8", "zero" => "0", "twelve zero three" => "12 0 3",
       "3 and a half" => "3.5", "three 1/2" => "3.5", "2005 third quarter" => "2005 3rd quarter",
-      "second" => "second", "a second" => "a second", "7 days" => "7 days"
+      "second" => "second", "a second" => "a second", "7 days" => "7 days", "a thousand and, five" => "1000 and, 5"
     }.each { |text, digits| assert_equal digits, Numerizer.numerize(text), text }
   end
 
