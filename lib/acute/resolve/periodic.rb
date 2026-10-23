@@ -212,6 +212,8 @@ module Acute
           p = Period.ymd(s.b)
           y = node.year || p / 10_000
           m = node.month || p / 100 % 100
+          # D38: a month before the span's own starts in the next year ("march FY2027" from July)
+          y += 1 if node.month && !node.year && m < p / 100 % 100
         end
         if node.day
           return [] unless m >= 1 && m <= 12 && node.day >= 1 && (node.day <= 28 || node.day <= Calendar.days_in_month(y, m))
