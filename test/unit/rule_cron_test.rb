@@ -206,21 +206,39 @@ class RuleCronTest < Minitest::Test
       "0-30/10 * 1 * *" => "the 1st of every month every 10 minutes from :00 to :30 of every hour",
       "0-10 9,11 * * *" => "every minute from :00 to :10 in the 9am and 11am hours",
       "5,10 9,11,15,16,20 * * 6" => "every Saturday at :05 and :10 in the 9am, 11am, 3pm, 4pm and 8pm hours",
-      "5,10 * * 3 *" => "every hour at :05 and :10 in March" }.each do |line, english|
+      "5,10 * * 3 *" => "every hour at :05 and :10 in March, every year" }.each do |line, english|
       assert_equal english, from(line).to_s, line
     end
   end
 
-  # R28: the minute marks those descriptions say read back to the same times. "in March" is R13's window, so
-  # that rule ends where the month does rather than repeating each year, and only its times are compared
+  # R28: the minute marks those descriptions say read back to the same times
   def test_r28_minute_marks_read_back
     ["5,10 * * * *", "5 * * * *", "15 * * * 1", "5,10 9-17 * * *", "10,40 */2 * * *", "0-10 9-17 * * *",
      "0-10 9-17/2 * * *", "0-10 * * * *", "*/7 * * * *", "0-30/10 * 1 * *", "0-10 9,11 * * *",
-     "5,10 9,11,15,16,20 * * 6", "5,10 * * * 1-5"].each do |line|
+     "5,10 9,11,15,16,20 * * 6", "5,10 * * * 1-5", "5,10 * * 3 *"].each do |line|
       assert_equal from(line), rule(from(line).to_s), line
     end
-    march = from("5,10 * * 3 *")
-    assert_equal march.each.first(100), rule(march.to_s).each.first(100)
+  end
+
+  # R25: a month field's description says it repeats each year, so it reads back as BYMONTH rather than as
+  # R13's one window
+  def test_r25_a_month_fields_description_reads_back
+    ["0 9 * 3 *", "5,10 * * 3 *", "0 9 * 3,6 *", "*/30 9-10 * dec *", "30 8 * 6-8 1-5", "0 9 * */4 *", "0 0 * 7 *",
+     "15 * * 3 1"].each do |line|
+      r = from(line)
+      assert_equal r, rule(r.to_s), line
+      assert_equal r.cron, rule(r.to_s).cron, line
+    end
+  end
+
+  # R25, R13: "in March, every year" is BYMONTH; "in March" alone is the next March, its clock each day's
+  def test_r25_every_year_tells_bymonth_from_a_window
+    assert_equal "FREQ=DAILY;BYMONTH=3;BYHOUR=9;BYMINUTE=0", rule("every day in march, every year, at 9am").rrule
+    assert_equal "FREQ=WEEKLY;BYMONTH=3,6,7;BYDAY=MO", rule("mondays in march, june and july every year").rrule
+    assert_equal rule("every day at 9am in march"), rule("every day in march at 9am")
+    assert_nil rule("yearly in march, every year")
+    assert_nil rule("every march 5 in march, every year")
+    assert_nil rule("every day in march every year in june every year")
   end
 
   def test_r28_minute_marks_need_an_hour_grid
@@ -279,18 +297,19 @@ class RuleCronTest < Minitest::Test
 
   # R25: a month field is BYMONTH, read as the other fields are: numbers, names, lists, ranges and steps
   def test_r25_a_month_field_is_bymonth
-    { "0 9 * 3 *" => ["FREQ=DAILY;BYMONTH=3;BYHOUR=9;BYMINUTE=0", "every day in March at 9am", "2027-03-01T09:00:00-05:00"],
-      "0 9 * mar,jun *" => ["FREQ=DAILY;BYMONTH=3,6;BYHOUR=9;BYMINUTE=0", "every day in March and June at 9am", "2027-03-01T09:00:00-05:00"],
-      "0 9 * */4 *" => ["FREQ=DAILY;BYMONTH=1,5,9;BYHOUR=9;BYMINUTE=0", "every day in January, May and September at 9am",
+    { "0 9 * 3 *" => ["FREQ=DAILY;BYMONTH=3;BYHOUR=9;BYMINUTE=0", "every day in March, every year, at 9am", "2027-03-01T09:00:00-05:00"],
+      "0 9 * mar,jun *" => ["FREQ=DAILY;BYMONTH=3,6;BYHOUR=9;BYMINUTE=0", "every day in March and June, every year, at 9am",
+                            "2027-03-01T09:00:00-05:00"],
+      "0 9 * */4 *" => ["FREQ=DAILY;BYMONTH=1,5,9;BYHOUR=9;BYMINUTE=0", "every day in January, May and September, every year, at 9am",
                         "2027-01-01T09:00:00-05:00"],
       "30 8 * 6-8 1-5" => ["FREQ=WEEKLY;BYMONTH=6,7,8;BYDAY=MO,TU,WE,TH,FR;BYHOUR=8;BYMINUTE=30",
-                           "every weekday in June, July and August at 8:30am", "2027-06-01T08:30:00-04:00"],
-      "0 9 * 7 *" => ["FREQ=DAILY;BYMONTH=7;BYHOUR=9;BYMINUTE=0", "every day in July at 9am", "2027-07-01T09:00:00-04:00"],
+                           "every weekday in June, July and August, every year, at 8:30am", "2027-06-01T08:30:00-04:00"],
+      "0 9 * 7 *" => ["FREQ=DAILY;BYMONTH=7;BYHOUR=9;BYMINUTE=0", "every day in July, every year, at 9am", "2027-07-01T09:00:00-04:00"],
       "0 9 1 1,8 *" => ["FREQ=YEARLY;BYMONTH=1,8;BYMONTHDAY=1;BYHOUR=9;BYMINUTE=0", "every year on the 1st of January and August at 9am",
                         "2027-01-01T09:00:00-05:00"],
       "0 9 1,15 7 *" => ["FREQ=YEARLY;BYMONTH=7;BYMONTHDAY=1,15;BYHOUR=9;BYMINUTE=0", "every year on July 1 and 15 at 9am",
                          "2027-07-01T09:00:00-04:00"],
-      "*/30 9-10 * dec *" => ["FREQ=DAILY;BYMONTH=12;BYHOUR=9,10;BYMINUTE=0,30", "every 30 minutes from 9am to 11am in December",
+      "*/30 9-10 * dec *" => ["FREQ=DAILY;BYMONTH=12;BYHOUR=9,10;BYMINUTE=0,30", "every 30 minutes from 9am to 11am in December, every year",
                               "2026-12-01T09:00:00-05:00"] }.each do |line, (rrule, english, start)|
       r = from(line)
       assert_equal rrule, r.rrule, line

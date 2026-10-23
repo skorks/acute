@@ -6,9 +6,11 @@ module Acute
     # (R8); monthdays: days of the month, -1 the last; setpos: BYSETPOS over Monday to Friday; month and date:
     # what was said (R9); until, start, within, except and window hold one-off trees; length the Units of "for 6
     # weeks"; minutes the minute marks said and minute_span [first, last, step] of "every 15 minutes from :00 to
-    # :45", hours the Clocks of "in the 9am and 11am hours" (R28)
+    # :45", hours the Clocks of "in the 9am and 11am hours" (R28); months those of "in March and June, every
+    # year" (R25)
     Recur = Struct.new(:interval, :unit, :days, :nths, :monthdays, :setpos, :month, :date, :clocks, :part,
-                       :until, :start, :within, :except_days, :except, :count, :length, :window, :minutes, :minute_span, :hours)
+                       :until, :start, :within, :except_days, :except, :count, :length, :window, :minutes, :minute_span, :hours,
+                       :months)
 
     # R5
     FREQUENCY = { daily: [:day, 1], hourly: [:hour, 1], weekly: [:week, 1], monthly: [:month, 1], yearly: [:year, 1],
@@ -53,7 +55,7 @@ module Acute
     end
 
     def rule
-      r = Recur.new(nil, nil, [], [], [], nil, nil, nil, [], nil, nil, nil, nil, [], [], nil, nil, nil, [], nil, [])
+      r = Recur.new(nil, nil, [], [], [], nil, nil, nil, [], nil, nil, nil, nil, [], [], nil, nil, nil, [], nil, [], [])
       every = false
       while @i < @n
         k = @t[@i]
@@ -148,10 +150,15 @@ module Acute
           end
           return failure(:conflict) unless @t[@i] == L::UNIT && @t[@i + 1] == :hour
           @i += S
+        elsif k == L::WORD && v == :in && (stop = yearly_months(@i + S)) # R25: "in March and June, every year"
+          return failure(:conflict) unless r.months.empty?
+          (@i...stop).step(S) { |j| r.months << @t[j + 1] if @t[j] == L::MONTH }
+          @i = stop
         elsif (k == L::WORD && v == :in) || (k == L::REL && (v == :next || v == :this)) # R13: "in november", "next month"
           return failure(:conflict) if r.within
           @i += S if k == L::WORD
-          r.within = tail_phrase
+          # R13: a clock after the window is the rule's, each occurrence's: "every day in march at 9am"
+          r.within = tail_phrase(false, true)
           return r.within if Failure === r.within
         elsif k == L::WORD && v == :for
           @i += S
@@ -295,9 +302,18 @@ module Acute
       [out, plural]
     end
 
-    # The one-off phrase up to the next rule word, or with and_stop: true also up to "and"
-    def tail_phrase(and_stop = false)
+    # R25: where "March, June and July, every year" starting at j ends, or nil when j starts no such list
+    def yearly_months(j)
+      return unless @t[j] == L::MONTH
+      j += S while @t[j] == L::MONTH || (@t[j] == L::WORD && @t[j + 1] == :and && @t[j + S] == L::MONTH)
+      j + 2 * S if @t[j] == L::WORD && @t[j + 1] == :every && @t[j + S] == L::UNIT && @t[j + S + 1] == :year
+    end
+
+    # The one-off phrase up to the next rule word, or with and_stop: true also up to "and", and with at_stop:
+    # true up to "at"
+    def tail_phrase(and_stop = false, at_stop = false)
       stop = tail_end(@i, and_stop)
+      stop = (@i...stop).step(S).find { @t[_1] == L::AT } || stop if at_stop
       return failure(:incomplete) if stop == @i
       node = Grammar.new(@t[@i...stop]).phrase
       @i = stop

@@ -62,6 +62,7 @@ module Acute
           freq ||= :daily
         end
         return :conflict unless freq
+        return :conflict if r.months.any? && freq == :yearly # R25: "in March, every year" is a yearly date's month
         return :conflict if r.part && r.clocks.empty? # R15: "every morning"
         return :conflict if [r.until, r.within, r.length].compact.size > 1 || (r.count && (r.until || r.within || r.length))
 
@@ -75,7 +76,7 @@ module Acute
           return x if Symbol === x
           from = x.begin if x.begin && (r.start || x.begin > from)
         end
-        rule = Rule::Parts.new(freq, interval, month ? [month] : [], monthdays, r.nths.any? ? [] : days, r.nths, r.setpos, secs)
+        rule = Rule::Parts.new(freq, interval, month ? [month] : r.months.uniq.sort, monthdays, r.nths.any? ? [] : days, r.nths, r.setpos, secs)
         start = dtstart(rule, from, ctx)
         return :invalid_date unless start
 
