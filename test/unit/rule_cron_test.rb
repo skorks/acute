@@ -266,6 +266,56 @@ class RuleCronTest < Minitest::Test
     end
   end
 
+  # R23: cron counts its steps from midnight and January, so where DTSTART isn't now the description says so,
+  # and a step on named days is cron's grid on those days. Read back at an even and an odd hour, and where the
+  # next 1st is in a month cron skips.
+  def test_r23_cron_steps_read_back_from_to_s
+    lines = ["0 */3 * * *", "0 */6 * * *", "0 */2 * * *", "0 * * * *", "*/15 * * * *", "0 */2 * * 1-5", "*/30 * * * 6,0",
+             "0 0 1 */3 *", "0 0 1 */2 *", "0 0 7 2-12/3 *", "0 0 1,15 11 *", "0 9 1,15 7 *"]
+    ["2026-10-23T14:00", "2026-10-23T15:00", "2026-11-05T14:07:31"].each do |now|
+      lines.each do |line|
+        r = from(line, now: now)
+        back = rule(r.to_s, now: now)
+        assert_equal r.to_ical, back&.to_ical, "#{line} at #{now}: #{r}"
+        assert_equal r.each.first(20), back.each.first(20), line
+        assert_equal r, back, line
+      end
+    end
+  end
+
+  def test_r23_descriptions_name_the_grid_cron_counts_from
+    { ["0 */3 * * *", "2026-10-23T14:00"] => "every 3 hours from midnight",
+      ["0 */3 * * *", "2026-10-23T15:00"] => "every 3 hours",
+      ["0 */2 * * *", "2026-10-23T15:00"] => "every other hour from midnight",
+      ["*/15 * * * *", "2026-10-23T14:07:31"] => "every 15 minutes from midnight",
+      ["0 */2 * * 1-5", "2026-10-23T15:00"] => "every 2 hours on weekdays",
+      ["0 0 1 */3 *", "2026-10-23T14:00"] => "the 1st of every 3 months from January at 12am",
+      ["0 0 1 */2 *", "2026-10-23T14:00"] => "the 1st of every other month from January at 12am",
+      ["0 0 7 2-12/3 *", "2026-10-23T14:00"] => "the 7th of every 3 months from February at 12am",
+      ["0 0 1,15 11 *", "2026-10-23T14:00"] => "every year on the 1st and 15th of November at 12am" }.each do |(line, now), english|
+      assert_equal english, from(line, now: now).to_s, line
+    end
+  end
+
+  def test_r23_a_step_counted_from_midnight_or_a_month
+    r = rule("every 3 hours from midnight", now: "2026-10-23T14:00")
+    assert_equal "FREQ=HOURLY;INTERVAL=3", r.rrule
+    assert_equal Time.new(2026, 10, 23, 15, 0, 0, "-04:00"), r.dtstart
+    assert_equal "0 */3 * * *", r.cron
+    assert_equal Time.new(2026, 10, 24, 0, 0, 0, "-04:00"), rule("every 3 hours from midnight", now: "2026-10-23T21:00:01").dtstart
+    assert_equal "FREQ=DAILY;BYHOUR=0,3;BYMINUTE=0", rule("every 3 hours from midnight to 6am").rrule
+    r = rule("the 1st of every 3 months from january", now: "2026-10-23T14:00")
+    assert_equal "FREQ=MONTHLY;INTERVAL=3;BYMONTHDAY=1", r.rrule
+    assert_equal Date.new(2027, 1, 1), r.dtstart
+    assert_equal "FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=1", rule("the 1st of every other month").rrule
+    assert_equal "FREQ=MONTHLY;INTERVAL=3;BYDAY=1MO", rule("the first monday of every 3 months").rrule
+    assert_equal "FREQ=WEEKLY;BYDAY=SA,SU;BYHOUR=#{(0..23).to_a.join(",")};BYMINUTE=0,30", rule("every 30 minutes on weekends").rrule
+    ["every 5 hours from midnight", "every 5 hours on weekdays", "every 30 seconds on weekdays", "every day from midnight",
+     "the 1st of every month from january", "the 1st of every 5 months from january", "every 3 months from january",
+     "the 1st of every 3 months from january 2027", "every 3 hours from noon", "every 3 hours from midnight from midnight",
+     "every 2 hours from midnight on weekdays", "every other month on the 1st of every 3 months"].each { assert_nil rule(_1), _1 }
+  end
+
   def test_r25_minute_lists_occur_where_cron_runs
     start = Time.utc(2026, 10, 14)
     stop = start + 3 * 86_400
@@ -307,7 +357,7 @@ class RuleCronTest < Minitest::Test
       "0 9 * 7 *" => ["FREQ=DAILY;BYMONTH=7;BYHOUR=9;BYMINUTE=0", "every day in July, every year, at 9am", "2027-07-01T09:00:00-04:00"],
       "0 9 1 1,8 *" => ["FREQ=YEARLY;BYMONTH=1,8;BYMONTHDAY=1;BYHOUR=9;BYMINUTE=0", "every year on the 1st of January and August at 9am",
                         "2027-01-01T09:00:00-05:00"],
-      "0 9 1,15 7 *" => ["FREQ=YEARLY;BYMONTH=7;BYMONTHDAY=1,15;BYHOUR=9;BYMINUTE=0", "every year on July 1 and 15 at 9am",
+      "0 9 1,15 7 *" => ["FREQ=YEARLY;BYMONTH=7;BYMONTHDAY=1,15;BYHOUR=9;BYMINUTE=0", "every year on the 1st and 15th of July at 9am",
                          "2027-07-01T09:00:00-04:00"],
       "*/30 9-10 * dec *" => ["FREQ=DAILY;BYMONTH=12;BYHOUR=9,10;BYMINUTE=0,30", "every 30 minutes from 9am to 11am in December, every year",
                               "2026-12-01T09:00:00-05:00"] }.each do |line, (rrule, english, start)|
