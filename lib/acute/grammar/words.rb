@@ -122,7 +122,7 @@ module Acute
       case v
       when :in
         @i += S
-        if @t[@i + 1] == :around # D14: "in about 5 hours"
+        if @t[@i] == L::WORD && @t[@i + 1] == :around # D14: "in about 5 hours"
           @approx = true
           @i += S
         end

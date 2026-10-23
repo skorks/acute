@@ -186,7 +186,7 @@ module Acute
     end
 
     # D44: "3 in the AM", "4:30 in the pm": am or pm after "in the" is the clock's
-    def in_the_meridiem? = @t[@i + 1] == :in && @t[@i + S + 1] == :the && @t[@i + 2 * S] == L::MER && @t[@i] == L::WORD
+    def in_the_meridiem? = @t[@i] == L::WORD && @t[@i + 1] == :in && @t[@i + 2 * S] == L::MER && @t[@i + S + 1] == :the
 
     # D44: "0am", "00:00 am": hour 0 with am is midnight, as said by those who write 24-hour clocks
     def midnight_am?(kind) = kind == L::MER && @t[@i + 1] == 0
