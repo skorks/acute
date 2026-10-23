@@ -17,6 +17,17 @@ class RuleTest < Minitest::Test
     assert_equal "-04:00", r.dtstart.strftime("%:z")
   end
 
+  def test_r6_a_weekday_range_is_each_day_of_it
+    weekdays = "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"
+    assert_equal "#{weekdays};BYHOUR=19;BYMINUTE=20", rule("every Monday through Friday at 19:20").rrule
+    assert_equal "#{weekdays};BYHOUR=9;BYMINUTE=0", rule("every monday to friday at 9am").rrule
+    assert_equal "#{weekdays};BYHOUR=9;BYMINUTE=0", rule("every mon-fri at 9").rrule
+    assert_equal "#{weekdays};BYHOUR=9;BYMINUTE=0", rule("mondays through fridays at 9am").rrule
+    assert_equal "FREQ=WEEKLY;BYDAY=MO,FR,SA,SU", rule("every friday through monday").rrule
+    assert_equal "FREQ=WEEKLY;BYDAY=MO,WE,TH,FR", rule("every monday and wednesday to friday").rrule
+    assert_equal "FREQ=WEEKLY;BYDAY=MO;UNTIL=20261023", rule("every monday until friday").rrule
+  end
+
   def test_r1_a_rule_of_whole_days_has_a_date
     r = rule("every monday except november 2")
     assert_equal Date.new(2026, 10, 19), r.dtstart

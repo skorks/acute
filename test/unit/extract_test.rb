@@ -304,6 +304,11 @@ class ExtractTest < Minitest::Test
     assert_equal "remind me, then call Sam", x.remainder
   end
 
+  def test_e6_a_weekday_range_rule_is_one_mention
+    assert_equal([[:rule, "every Monday through Friday at 19:20"]], mentions("standup every Monday through Friday at 19:20").map { _1.take(2) })
+    assert_equal([[:rule, "every mon-fri at 9"]], mentions("gym every mon-fri at 9 sharp").map { _1.take(2) })
+  end
+
   def test_e6_a_rule_wins_unless_a_time_reaches_further
     assert_equal([[:rule, "the 1st of every month"]], mentions("pay rent on the 1st of every month").map { _1.take(2) })
     assert_equal([[:rule, "every weekday at 9:30"]], mentions("standup every weekday at 9:30 in room 4").map { _1.take(2) })
