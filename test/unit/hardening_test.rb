@@ -115,8 +115,9 @@ class HardeningTest < Minitest::Test
   end
 
   # Linear means 8x the text costs about 8x the time; quadratic would cost 64x. Absolute limits fail on a slow runner,
-  # and a collection mid-run pushed a linear 4x past 8x on macOS CI, so each run starts collected,
-  # the step is 8x and the limit 24x.
+  # so each run starts collected and the test compares sizes. Somewhere past a few hundred KB of working memory
+  # the cost per byte steps up about 3x and stays there (fresh pages from the allocator, not GC; where depends on
+  # the platform), so a linear run that crosses it measures up to about 30x: the limit is 40x.
   def best_of_three(&)
     Array.new(3).map do
       GC.start
@@ -133,7 +134,7 @@ class HardeningTest < Minitest::Test
       large = unit * (240_000 / unit.size)
       t1 = best_of_three { Acute.extract(small, now: now) }
       t8 = best_of_three { Acute.extract(large, now: now) }
-      assert_operator t8 / t1, :<, 24, "#{unit}: 8x the text took #{(t8 / t1).round(1)}x as long (#{t1}s, #{t8}s)"
+      assert_operator t8 / t1, :<, 40, "#{unit}: 8x the text took #{(t8 / t1).round(1)}x as long (#{t1}s, #{t8}s)"
       assert_operator seconds { Acute.extract(large[0, 4096], now: now) }, :<, 0.5, unit
     end
     text = "#{"日本 " * 2000}the weekly sync, our daily standup, take it daily with food"
@@ -179,7 +180,7 @@ class HardeningTest < Minitest::Test
       t1 = best_of_three { Acute.extract(small) }
       t8 = best_of_three { Acute.extract(large) }
       assert_operator t1, :>=, 0.001, "#{name}: too quick to time"
-      assert_operator t8 / t1, :<, 24, "#{name}: 8x the text took #{(t8 / t1).round(1)}x as long (#{t1}s, #{t8}s)"
+      assert_operator t8 / t1, :<, 40, "#{name}: 8x the text took #{(t8 / t1).round(1)}x as long (#{t1}s, #{t8}s)"
     end
     assert_operator best_of_three { Acute.parse("a" * Acute::MAX_LENGTH) }, :<, 0.05
     assert_equal ["tomorrow"], Acute.extract("#{"x" * 100_000} tomorrow").mentions.map(&:text)
