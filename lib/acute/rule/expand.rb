@@ -101,7 +101,6 @@ module Acute
         @until = until_
         @exdates = exdates
         @dst = dst
-        @policy = dst == :reject ? nil : dst
         @notes = Notes.new
         @steps = STEPS
         @d0 = timed ? start.div(DAY) : start
@@ -112,7 +111,7 @@ module Acute
         @setpos = parts.setpos
         @secs = parts.secs.empty? && timed && !SUB[@freq] ? [start % DAY] : parts.secs.sort
         derive
-        @anchor = @zone.local_to_utc(start, @notes, @policy) if timed
+        @anchor = @zone.local_to_utc(start, @notes, @dst) if timed
       end
 
       def first = @timed ? @anchor : @d0
@@ -267,7 +266,7 @@ module Acute
         out = []
         walls.each do |w|
           @notes.dst = nil
-          utc = @zone.local_to_utc(w, @notes, @policy)
+          utc = @zone.local_to_utc(w, @notes, @dst)
           if @notes.dst
             next if @dst == :reject
             shifted = true
