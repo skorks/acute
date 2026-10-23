@@ -114,8 +114,9 @@ class HardeningTest < Minitest::Test
     Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
   end
 
-  # Linear means 4x the text costs about 4x the time; quadratic would cost 16x. Absolute limits fail on a slow runner,
-  # and a collection mid-run pushed a linear 4x past 8x on macOS CI, so each run starts collected and the limit is 11x.
+  # Linear means 8x the text costs about 8x the time; quadratic would cost 64x. Absolute limits fail on a slow runner,
+  # and a collection mid-run pushed a linear 4x past 8x on macOS CI, so each run starts collected,
+  # the step is 8x and the limit 24x.
   def best_of_three(&)
     Array.new(3).map do
       GC.start
@@ -128,11 +129,11 @@ class HardeningTest < Minitest::Test
   def test_t23_lone_frequency_words_keep_extract_linear
     now = Time.new(2026, 10, 22, 12, 0, 0, "-04:00")
     ["daily weekly monthly ", "daily "].each do |unit|
-      small = unit * (25_000 / unit.size)
-      large = unit * (100_000 / unit.size)
+      small = unit * (30_000 / unit.size)
+      large = unit * (240_000 / unit.size)
       t1 = best_of_three { Acute.extract(small, now: now) }
-      t4 = best_of_three { Acute.extract(large, now: now) }
-      assert_operator t4 / t1, :<, 11, "#{unit}: 4x the text took #{(t4 / t1).round(1)}x as long (#{t1}s, #{t4}s)"
+      t8 = best_of_three { Acute.extract(large, now: now) }
+      assert_operator t8 / t1, :<, 24, "#{unit}: 8x the text took #{(t8 / t1).round(1)}x as long (#{t1}s, #{t8}s)"
       assert_operator seconds { Acute.extract(large[0, 4096], now: now) }, :<, 0.5, unit
     end
     text = "#{"日本 " * 2000}the weekly sync, our daily standup, take it daily with food"
@@ -173,12 +174,12 @@ class HardeningTest < Minitest::Test
       "dotted url" => ->(n) { "https://#{"www.example." * (n / 12)}com/a" }
     }
     shapes.each do |name, shape|
-      small = shape.call(30_000)
-      large = shape.call(120_000)
+      small = shape.call(100_000)
+      large = shape.call(800_000)
       t1 = best_of_three { Acute.extract(small) }
-      t4 = best_of_three { Acute.extract(large) }
+      t8 = best_of_three { Acute.extract(large) }
       assert_operator t1, :>=, 0.001, "#{name}: too quick to time"
-      assert_operator t4 / t1, :<, 11, "#{name}: 4x the text took #{(t4 / t1).round(1)}x as long (#{t1}s, #{t4}s)"
+      assert_operator t8 / t1, :<, 24, "#{name}: 8x the text took #{(t8 / t1).round(1)}x as long (#{t1}s, #{t8}s)"
     end
     assert_operator best_of_three { Acute.parse("a" * Acute::MAX_LENGTH) }, :<, 0.05
     assert_equal ["tomorrow"], Acute.extract("#{"x" * 100_000} tomorrow").mentions.map(&:text)
