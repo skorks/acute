@@ -104,6 +104,37 @@ class RuleTest < Minitest::Test
     end
   end
 
+  # R8: ordinals over weekdays say each ordinal and each weekday in the order the BYDAY has them
+  def test_r8_ordinals_over_weekdays_read_back
+    { "every first monday and friday" => "the first Monday and Friday of every month",
+      "every first friday and monday" => "the first Friday and Monday of every month",
+      "every 2nd and 4th tuesday" => "the second and fourth Tuesday of every month",
+      "the first and last friday of every month" => "the first and last Friday of every month",
+      "every first and third monday and friday" => "the first and third Monday and Friday of every month",
+      "the second to last and last monday and friday of every month" =>
+        "the second to last and last Monday and Friday of every month",
+      "the first monday, wednesday and friday of every month" => "the first Monday, Wednesday and Friday of every month",
+      "every first monday and friday at 9am 5 times" => "the first Monday and Friday of every month at 9am 5 times" }
+      .each do |text, english|
+      r = rule(text)
+      assert_equal english, r.to_s, text
+      assert_equal r.to_ical, rule(r.to_s).to_ical, english
+    end
+  end
+
+  # R8: a BYDAY no phrase reads, its ordinals not the same for each weekday, says each ordinal with its weekday
+  def test_r8_ordinals_differing_by_weekday_say_each_pair
+    { [[1, 1], [-1, 5]] => "the first Monday and last Friday of every month",
+      [[2, 2], [4, 4]] => "the second Tuesday and fourth Thursday of every month",
+      [[1, 1], [3, 1], [1, 5]] => "the first Monday, third Monday and first Friday of every month",
+      [[1, 1], [1, 5], [3, 1]] => "the first Monday, first Friday and third Monday of every month" }.each do |nths, english|
+      parts = Acute::Rule::Parts.new(:monthly, 1, [], [], [], nths, nil, [])
+      r = Acute::Rule.new(parts, NY, Date.new(2026, 11, 2).jd - 2_440_588, false, nil, nil, [], false, now: Time.utc(2026, 10, 17).to_i, text: "built")
+      assert_equal english, r.to_s
+      assert_nil rule(r.to_s), "the grammar now reads #{english.inspect}: assert it reads back"
+    end
+  end
+
   def test_r12_excepted_times_read_back_to_the_same_exdates
     {
       "every hour except october 17 at 4pm" => "every hour except Oct 17, 2026 4pm",
