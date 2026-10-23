@@ -1,4 +1,5 @@
 require_relative "../acute"
+require_relative "shadow"
 
 # chronic_duration's API, 0.10.6 and GitLab's 0.12.0 fork, answered by acute (D46). Text is read by acute's lexer
 # and duration grammar, which also reads the gems' clock groups, a unit alone and a bare count; each unit read
@@ -168,3 +169,4 @@ module ChronicDuration
     digits.join(":")
   end
 end
+Acute::Shadow.call("acute/chronic_duration", "chronic_duration", "chronic_duration", "gitlab_chronic_duration")
