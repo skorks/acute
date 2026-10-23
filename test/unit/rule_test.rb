@@ -34,6 +34,13 @@ class RuleTest < Minitest::Test
     assert_equal "DTSTART;VALUE=DATE:20261019\nRRULE:FREQ=WEEKLY;BYDAY=MO\nEXDATE;VALUE=DATE:20261102", r.to_ical
   end
 
+  def test_d30_a_named_hour_after_a_clock_in_its_hour_is_one_time
+    r = rule("every day at 12:15 noon")
+    assert_equal "FREQ=DAILY;BYHOUR=12;BYMINUTE=15", r.rrule
+    assert_equal "every day at 12:15pm", r.to_s
+    assert_equal "FREQ=DAILY;BYHOUR=0;BYMINUTE=30", rule("every day at 12:30 midnight").rrule
+  end
+
   def test_r12_an_hourly_rule_leaves_out_every_occurrence_of_an_excepted_date
     [[Date.new(2026, 11, 1), 25], [Date.new(2027, 3, 14), 23]].product(%i[compatible reject]).each do |(day, hours), dst|
       all = rule("every hour", dst: dst).between(day, day)

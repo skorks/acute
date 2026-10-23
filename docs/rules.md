@@ -104,6 +104,7 @@ A time with seconds or a numeric UTC offset is 24-hour, with no am/pm alternativ
 Any time in the 12 o'clock hour without am/pm is pm, with no alternative (`twelve_oclock`): "12:03", "at 12", "half past twelve", "twelve oh three".
 
 - "12 in the morning" → 00:00.
+- "12 noon" and "12:00 midnight" are noon and midnight. After any other clock in the 12 o'clock hour, noon and midnight fix pm and am, as a meridiem does: "12:15 noon" → 12:15, "12:30 midnight" → 00:30. After a clock in another hour they don't fit: "3:00 noon" → nil.
 - "12 at night" and "12 in the evening" → midnight at the end of that day, as in D6.
 - **D40.** This beats the part-of-day rule: "12 in the evening" is not noon.
 
