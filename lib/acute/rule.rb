@@ -115,7 +115,8 @@ module Acute
                "the #{list(p.setpos.map { ordinal(_1) })} weekday of #{every("month")}"
              elsif p.freq == :yearly && !p.months.empty?
                names = p.months.map { MONTH_NAMES[_1] }
-               on = names.size == 1 && p.monthdays.size == 1 ? "#{names[0]} #{p.monthdays[0]}" : "the #{list(p.monthdays.map { nth(_1) })} of #{list(names)}"
+               days = p.monthdays.map { _1 == -1 ? "last day" : nth(_1) }
+               on = names.size == 1 && p.monthdays.size == 1 && p.monthdays[0] > 0 ? "#{names[0]} #{p.monthdays[0]}" : "the #{list(days)} of #{list(names)}"
                "#{every("year")} on #{on}" # R9: "the 1st and 15th of November" reads back, "November 1 and 15" doesn't
              elsif !p.monthdays.empty?
                "the #{list(p.monthdays.map { _1 == -1 ? "last day" : nth(_1) })} of #{every("month")}#{from_month}"

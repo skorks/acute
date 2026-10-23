@@ -3,8 +3,8 @@ module Acute
   # one-off parse, so phrase never comes here.
   class Grammar
     # interval: units between occurrences; days: weekdays picked (0 = Sunday); nths: [n, wday] within the month
-    # (R8); monthdays: days of the month, -1 the last; setpos: BYSETPOS over Monday to Friday; month and date:
-    # what was said (R9); until, start, within, except and window hold one-off trees; length the Units of "for 6
+    # (R8); monthdays: days of the month, -1 the last; setpos: BYSETPOS over Monday to Friday; month (the months)
+    # and date: what was said (R9); until, start, within, except and window hold one-off trees; length the Units of "for 6
     # weeks"; minutes the minute marks said and minute_span [first, last, step] of "every 15 minutes from :00 to
     # :45", hours the Clocks of "in the 9am and 11am hours" (R28); months those of "in March and June, every
     # year" (R25); anchor what the steps count from (R23), 0 for "from midnight", else the month of "from January"
@@ -264,10 +264,17 @@ module Acute
           r.part = v
           @i += S
         elsif k == L::MONTH
+          return failure(:conflict) if r.month
           d = month_atom
-          return failure(:conflict) if d.year || r.month
-          r.month = d.month
+          return failure(:conflict) if d.year
+          r.month = [d.month]
           r.date = d if d.day
+          while month_next?(@i) # R9: "the 1st of January and August", "January 1 and August 1": each month, one day
+            @i += S if @t[@i] == L::WORD
+            e = month_atom
+            return failure(:conflict) if e.year || e.day != d.day
+            r.month << e.month
+          end
         elsif k == L::MINUTE || (k == L::AT && @t[@i + S] == L::MINUTE) # R28: "at :05 and :10"
           return failure(:conflict) if r.minute_span || !r.minutes.empty?
           @i += S if k == L::AT
@@ -354,10 +361,14 @@ module Acute
       [out, plural]
     end
 
+    # Whether j goes on with a list of months, a month or "and" one: "March, June and July" (a comma lexes as a
+    # space)
+    def month_next?(j) = @t[j] == L::MONTH || (@t[j] == L::WORD && @t[j + 1] == :and && @t[j + S] == L::MONTH)
+
     # R25: where "March, June and July, every year" starting at j ends, or nil when j starts no such list
     def yearly_months(j)
       return unless @t[j] == L::MONTH
-      j += S while @t[j] == L::MONTH || (@t[j] == L::WORD && @t[j + 1] == :and && @t[j + S] == L::MONTH)
+      j += S while month_next?(j)
       j + 2 * S if @t[j] == L::WORD && @t[j + 1] == :every && @t[j + S] == L::UNIT && @t[j + S + 1] == :year
     end
 

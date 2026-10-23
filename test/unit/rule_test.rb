@@ -175,6 +175,24 @@ class RuleTest < Minitest::Test
     end
   end
 
+  # R9: a day of a list of months, as cron's 0 0 1 1,8 * describes itself, is each month on that day
+  def test_r9_a_day_of_several_months_is_yearly
+    { "every year on the 1st of January and August at 12am" => "FREQ=YEARLY;BYMONTH=1,8;BYMONTHDAY=1;BYHOUR=0;BYMINUTE=0",
+      "the 1st of january and august, every year" => "FREQ=YEARLY;BYMONTH=1,8;BYMONTHDAY=1",
+      "every year on the 1st and 15th of january and july" => "FREQ=YEARLY;BYMONTH=1,7;BYMONTHDAY=1,15",
+      "every year on the 1st of october, january, april and july" => "FREQ=YEARLY;BYMONTH=1,4,7,10;BYMONTHDAY=1",
+      "every year on the last day of march and september" => "FREQ=YEARLY;BYMONTH=3,9;BYMONTHDAY=-1",
+      "every january 1 and august 1" => "FREQ=YEARLY;BYMONTH=1,8;BYMONTHDAY=1" }.each do |text, rrule|
+      assert_equal rrule, rule(text).rrule, text
+    end
+    assert_equal rule("every year on the 1st of January and August"), rule("every january 1st and august 1st")
+    assert_equal "every year on the last day of March and September", rule("every year on the last day of march and september").to_s
+    assert_equal "every year on the last day of March", rule("every year on the last day of march").to_s
+    assert_nil rule("every january 1 and august 15") # BYMONTHDAY=1,15 would add January 15 and August 1
+    assert_nil rule("every january 1 and august")
+    assert_nil rule("every year on the 1st of january and the 15th of august")
+  end
+
   def test_r9_an_until_before_the_first_occurrence_is_no_rule
     assert_nil rule("every monday until last week")
     assert_nil rule("every day at 9am until 8am")
