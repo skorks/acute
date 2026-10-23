@@ -224,7 +224,7 @@ class RuleCronTest < Minitest::Test
   # R13's one window
   def test_r25_a_month_fields_description_reads_back
     ["0 9 * 3 *", "5,10 * * 3 *", "0 9 * 3,6 *", "*/30 9-10 * dec *", "30 8 * 6-8 1-5", "0 9 * */4 *", "0 0 * 7 *",
-     "15 * * 3 1"].each do |line|
+     "15 * * 3 1", "0 0 1 1,8 *", "0 9 1,15 1,7 *", "0 0 1 1,4,7,10 *"].each do |line|
       r = from(line)
       assert_equal r, rule(r.to_s), line
       assert_equal r.cron, rule(r.to_s).cron, line

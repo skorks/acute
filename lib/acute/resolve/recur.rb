@@ -55,15 +55,15 @@ module Acute
         days = EVERY_DAY if days.empty? && r.except_days.any? && (freq.nil? || freq == :daily)
         days -= r.except_days # R12
         return :invalid_date if days.empty? && r.days.any? || r.except_days.any? && days.empty?
-        month = r.month
+        months = r.month ? r.month.uniq.sort : []
         monthdays = r.monthdays.uniq
         if r.date
           d = r.date.sep ? Dates.orders(r.date, ctx)[0] : r.date
           return :invalid_date unless d
-          month = d.month
+          months = [d.month] unless r.month # "each 4/15" reads its order here
           monthdays = [d.day]
         end
-        if month
+        if months.any?
           return :conflict if monthdays.empty?
           freq ||= :yearly # R9
           return :conflict unless freq == :yearly
@@ -93,7 +93,7 @@ module Acute
           return x if Symbol === x
           from = x.begin if x.begin && (r.start || x.begin > from)
         end
-        rule = Rule::Parts.new(freq, interval, month ? [month] : r.months.uniq.sort, monthdays, r.nths.any? ? [] : days, r.nths, r.setpos, secs)
+        rule = Rule::Parts.new(freq, interval, months.any? ? months : r.months.uniq.sort, monthdays, r.nths.any? ? [] : days, r.nths, r.setpos, secs)
         start = r.anchor ? counted(rule, r.anchor, from, ctx) : dtstart(rule, from, ctx)
         return start if Symbol === start
         return :invalid_date unless start
