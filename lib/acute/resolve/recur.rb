@@ -184,6 +184,7 @@ module Acute
 
       # R2, R3, R14: the first occurrence on or after from, as local wall seconds (whole days: a day number)
       def self.dtstart(rule, from, ctx)
+        return if rule.never?
         local = ctx.local(from)
         first = local.div(DAY)
         day = first

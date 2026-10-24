@@ -421,7 +421,8 @@ class RuleCronTest < Minitest::Test
       "-1 * * * *" => [0...2, '"-1" is not a minute'],
       "007 * * * *" => [0...3, '"007" is not a minute (0-59)'],
       "@often" => [0...6, '"@often" is not a cron macro'],
-      "  0 0 30 2 *" => [2...12, "the line never runs"] }.each do |line, (position, message)|
+      "  0 0 30 2 *" => [2...12, "the line never runs"],
+      "0 0 31 4,6 *" => [0...12, "the line never runs"] }.each do |line, (position, message)|
       assert_nil from(line), line
       e = assert_raises(Acute::ParseError, line) { from!(line) }
       assert_equal :invalid_cron, e.code, line

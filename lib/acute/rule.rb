@@ -31,6 +31,11 @@ module Acute
         picked = (1..dim).select { |x| days.include?(Calendar.weekday(day - d + x)) }
         setpos.any? { |n| picked[n > 0 ? n - 1 : n] == d }
       end
+
+      # R9: a day of the month none of its months has, "every feb 30", so no search need look 8 years for it
+      def never?
+        months.any? && monthdays.any? && months.none? { |m| monthdays.any? { _1.abs <= Calendar.days_in_month(2000, m) } }
+      end
     end
 
     # text: the input it was read from; zone: the zone its wall times are in; duration: how long each occurrence
