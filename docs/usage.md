@@ -144,11 +144,18 @@ d.to_s      # => "1h 30m"
 d.to_s(:long)  # => "1 hour 30 minutes"
 ```
 
-`Acute.duration` reads ISO 8601 back, so `Acute.duration("PT1H30M") == d` ([D52](rules.md#durations)).
+`Acute.duration` reads ISO 8601 back, so `Acute.duration("PT1H30M") == d` ([D52](rules.md#durations)). A zero length is the empty Duration, and all negative parts take one leading minus:
+
+```ruby
+Acute.duration("0 seconds").iso8601   # => "PT0S"
+Acute.duration("-PT2H30M").iso8601    # => "-PT2H30M"
+Acute.duration("3 weeks plus 2 days").to_s   # => "3w 2d"
+Acute.duration("P1H")                 # => nil
+```
 
 A month stays a month rather than becoming a guess in seconds: `parts` keeps each unit (`{months: 1}`), and `seconds` raises when a part has no fixed length. `after(time)` adds the duration on the calendar, and `seconds(from: time)` counts it from that time. Its JSON is [schema/duration.json](../schema/duration.json), where `seconds` is null for such a duration.
 
-`Acute.read` returns whichever the text is, a time, a duration or a repeating time. Text that is both a time and a duration, such as "1530 hrs", is the time ([read](rules.md#read)).
+`Acute.read` returns whichever the text is, a time, a duration or a repeating time. Text that reads as nothing else is tried as a rule last, so "monday to friday from 9 to 5" is a Rule. Text that is both a time and a duration, such as "1530 hrs", is the time ([read](rules.md#read)).
 
 ## Dates inside other text
 
@@ -217,6 +224,6 @@ Every value has `to_h`, `to_json` and `as_json` (String keys). The schemas in [s
 
 ## The public API
 
-The public API, which follows semantic versioning from 1.0: the `Acute` module's methods; `Acute::Parser`, `Result`, `Duration`, `Rule`, `Extraction` and its `Mention`, `Verdict` and `Assumption`, by the methods documented here and in [recurrence.md](recurrence.md); `Acute::Error`, `ParseError` and `OptionError`; `Acute::Tool`; `acute/chronic` and `acute/chronic_duration`; and the `acute` command with `acute mcp`. Everything else, marked `# @api private` in the source, may change in any release: the lexer, grammar, resolver, zones, tables, the CLI and MCP classes, other constants, and the constructors of the values the calls return. What each kind of release may change: [stability.md](stability.md).
+The public API, which follows semantic versioning from 1.0: the `Acute` module's methods; `Acute::Parser`, `Result`, `Duration`, `Rule`, `Extraction` and its `Mention`, `Verdict` and `Assumption`, by the methods documented here and in [recurrence.md](recurrence.md); `Acute::Error`, `ParseError` and `OptionError`; `Acute::Tool`; `acute/chronic`, `acute/chronic_duration` and `acute/numerizer`; and the `acute` command with `acute mcp`. Everything else, marked `# @api private` in the source, may change in any release: the lexer, grammar, resolver, zones, tables, the CLI and MCP classes, other constants, and the constructors of the values the calls return. What each kind of release may change: [stability.md](stability.md).
 
 `Result`, `Rule`, `Duration`, `Verdict`, `Extraction`, `Mention` and `Assumption` are frozen. A Rule, and a parser without a caller's holidays object, are Ractor-shareable; `Ractor.make_shareable` makes a Result shareable too.
