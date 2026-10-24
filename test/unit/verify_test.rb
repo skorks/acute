@@ -163,12 +163,21 @@ class VerifyTest < Minitest::Test
     assert_equal :mismatch, Acute.verify("before friday", "2026-10-30", **opts).status
   end
 
+  # D45: checked by days, an end is the last day the reading covers
+  def test_an_end_in_days_is_until_its_last_day
+    opts = { now: "2026-10-23T14:00", zone: NY }
+    assert_includes Acute.verify("before 3pm", "2026-10-30", **opts).message, "until Fri 23 Oct"
+    assert_includes Acute.verify("until friday", "2026-11-30", **opts).message, "(or Fri 23 Oct – Fri 30 Oct)"
+    assert_includes Acute.verify("before friday", "2026-10-30", **opts).message, "until Thu 22 Oct"
+    assert_includes Acute.verify("before 3pm", Time.utc(2026, 10, 23, 20), **opts).message, "before"
+  end
+
   # D45: a date on a reading's first or last day is inside it, wherever in that day the reading starts or ends
   def test_a_date_on_the_boundary_day_of_a_reading
     opts = { now: "2026-10-23T14:00", zone: NY }
     {
       ["after 3pm", "2026-10-23"] => [:inside, "2026-10-23 is inside \"after 3pm\", which is from Fri 23 Oct."],
-      ["before 3pm", "2026-10-23"] => [:inside, "2026-10-23 is inside \"before 3pm\", which is before Sat 24 Oct."],
+      ["before 3pm", "2026-10-23"] => [:inside, "2026-10-23 is inside \"before 3pm\", which is until Fri 23 Oct."],
       ["since monday 9am", "2026-10-19"] =>
         [:inside, "2026-10-19 is inside \"since monday 9am\", which is Mon 19 Oct – Fri 23 Oct."],
       ["friday 3pm to saturday 5pm", "2026-10-24"] =>
