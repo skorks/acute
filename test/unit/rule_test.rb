@@ -200,6 +200,30 @@ class RuleTest < Minitest::Test
     assert_equal Date.new(2027, 2, 28), rule("every last day of february").dtstart
   end
 
+  def test_r9_a_weekday_on_a_date_can_be_decades_away
+    leap_mondays = [Date.new(2044, 2, 29), Date.new(2072, 2, 29), Date.new(2112, 2, 29)]
+    ["every monday feb 29", "every feb 29 on mondays"].each do |text|
+      r = rule(text)
+      assert_equal leap_mondays[0], r.dtstart, text
+      assert_equal leap_mondays, r.next(3), text
+    end
+    assert_equal Time.new(2044, 2, 29, 9, 0, 0, "-05:00"), rule("every monday feb 29 at 9am").dtstart
+    assert_equal Date.new(2026, 2, 13), rule("every friday the 13th of february", now: "2015-02-14T12:00").dtstart
+    assert_equal Date.new(2032, 2, 13), rule("every friday the 13th of february").dtstart
+  end
+
+  def test_r9_a_weekday_no_month_has_on_its_date_never_occurs
+    ["every first monday the 31st", "every last monday the 1st", "every year on the first monday of february the 29th"].each do |text|
+      assert_nil rule(text), text
+    end
+  end
+
+  def test_r9_a_day_already_passed_this_month_is_looked_for_in_later_months_of_its_kind
+    assert_equal Date.new(2027, 8, 13), rule("every friday the 13th", now: "2026-11-14T12:00").dtstart
+    assert_equal Time.new(2026, 11, 13, 9, 0, 0, "-05:00"), rule("every friday the 13th at 9am", now: "2026-11-13T08:00").dtstart
+    assert_equal Time.new(2027, 8, 13, 9, 0, 0, "-04:00"), rule("every friday the 13th at 9am", now: "2026-11-13T10:00").dtstart
+  end
+
   def test_r9_an_until_before_the_first_occurrence_is_no_rule
     assert_nil rule("every monday until last week")
     assert_nil rule("every day at 9am until 8am")

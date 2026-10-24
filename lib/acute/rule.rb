@@ -28,11 +28,16 @@ module Acute
         return false unless nths.empty? || nths.any? { |n, w| w == wday && (n > 0 ? (d - 1) / 7 + 1 == n : (dim - d) / 7 + 1 == -n) }
         return false unless days.empty? || days.include?(wday)
         return true unless setpos
-        picked = (1..dim).select { |x| days.include?(Calendar.weekday(day - d + x)) }
-        setpos.any? { |n| picked[n > 0 ? n - 1 : n] == d }
+        return false if days.empty?
+        w1 = Calendar.weekday(day - d + 1)
+        upto = picked(w1, d) # d is the upto-th day picked
+        setpos.any? { |n| n > 0 ? n == upto : -n == picked(w1, dim) - upto + 1 }
       end
 
-      # R9: a day of the month none of its months has, "every feb 30", so no search need look 8 years for it
+      # How many of the month's days 1 to last fall on the days, the month's 1st on weekday w1
+      def picked(w1, last) = days.sum { |w| (last - 1 - (w - w1) % 7).div(7) + 1 }
+
+      # R9: a day of the month none of its months has, "every feb 30", which no search need look for
       def never?
         months.any? && monthdays.any? && months.none? { |m| monthdays.any? { _1.abs <= Calendar.days_in_month(2000, m) } }
       end

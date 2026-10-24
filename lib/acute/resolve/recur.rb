@@ -9,7 +9,8 @@ module Acute
       FINE = { secondly: true, minutely: true, hourly: true }.freeze
       STEP = { secondly: 1, minutely: 60, hourly: 3600 }.freeze
       FINE_GRAIN = { second: true, minute: true, hour: true }.freeze
-      SEARCH = 8 * 366 + 1 # R9: the next 29 February can be 8 years away
+      SEARCH = 8 * 366 + 1 # R9: how far a rule with no day of the month, or a cron line, is looked for: the next 29 February can be 8 years away
+      ALL_MONTHS = (1..12).to_a.freeze
       EVERY_DAY = [0, 1, 2, 3, 4, 5, 6].freeze
       MAX_EXDATES = 24
 
@@ -187,15 +188,75 @@ module Acute
         return if rule.never?
         local = ctx.local(from)
         first = local.div(DAY)
+        return by_month(rule, first, local, from, ctx) if rule.monthdays.any?
         day = first
         while day < first + SEARCH
-          if rule.on?(day)
-            return day unless rule.secs.any? || FINE[rule.freq]
-            return day == first ? local : day * DAY if rule.secs.empty?
-            rule.secs.each { |s| return day * DAY + s if ctx.zone.local_to_utc(day * DAY + s, ctx) >= from }
-          end
+          hit = rule.on?(day) && occurrence(rule, day, first, local, from, ctx) and return hit
           day += 1
         end
+      end
+
+      # R9: a rule on days of the month looks at just those days, month by month. Whether a month the rule allows has
+      # one turns only on the month's length and the weekday it starts on: its kind. A rule with a day in no kind of
+      # its months never occurs; one with a day meets that kind within the Gregorian cycle's 400 years, though a
+      # weekday on a date, "every monday feb 29", can be 40 years away. A kind seen whole without a day is skipped.
+      def self.by_month(rule, first, local, from, ctx)
+        months = (rule.months.empty? ? ALL_MONTHS : rule.months).uniq.sort
+        good = {}
+        never = months.none? do |m|
+          LENGTHS[m].any? do |dim|
+            (0..6).any? { |w| good.fetch(dim * 7 + w) { good[dim * 7 + w] = any_day?(rule, MONTH_FIRSTS[(dim == 29 ? 0 : m) * 7 + w], dim) } }
+          end
+        end
+        return if never
+        ymd = Calendar.civil_from_days(first)
+        y = ymd / 10_000
+        i = months.index { _1 >= ymd / 100 % 100 }
+        unless i
+          y += 1
+          i = 0
+        end
+        (400 * months.size + 1).times do
+          m = months[i]
+          start = Calendar.days_from_civil(y, m, 1)
+          dim = Calendar.days_in_month(y, m)
+          kind = dim * 7 + Calendar.weekday(start)
+          unless good[kind] == false
+            month_days(rule, start, dim).each do |day|
+              next if day < first || !rule.on?(day)
+              hit = occurrence(rule, day, first, local, from, ctx) and return hit
+            end
+            good[kind] = false if start > first
+          end
+          i += 1
+          next unless i == months.size
+          i = 0
+          y += 1
+        end
+      end
+
+      def self.any_day?(rule, start, dim)
+        rule.monthdays.any? do |md|
+          x = md > 0 ? md : dim + md + 1
+          x >= 1 && x <= dim && rule.on?(start + x - 1)
+        end
+      end
+
+      # The month's days the rule names, in order
+      def self.month_days(rule, start, dim)
+        days = rule.monthdays.filter_map do |md|
+          x = md > 0 ? md : dim + md + 1
+          start + x - 1 if x >= 1 && x <= dim
+        end
+        days.sort
+      end
+
+      # The first occurrence on a day the rule is on, if one is on or after from
+      def self.occurrence(rule, day, first, local, from, ctx)
+        return day unless rule.secs.any? || FINE[rule.freq]
+        return day == first ? local : day * DAY if rule.secs.empty?
+        rule.secs.each { |s| return day * DAY + s if ctx.zone.local_to_utc(day * DAY + s, ctx) >= from }
+        nil
       end
 
       # R23: the first step on or after from counted as cron counts: "every 3 hours from midnight" on midnight's
@@ -251,6 +312,15 @@ module Acute
       end
 
       MON_FRI = G::MON_FRI
+      # R9: each month's lengths, and the day number of a 1st of each month (0 for a February of 29 days) on each
+      # weekday, from 2000 to 2027, which hold them all
+      LENGTHS = [nil, *(1..12).map { |m| m == 2 ? [28, 29].freeze : [Calendar::MONTH_DAYS[m]].freeze }].freeze
+      MONTH_FIRSTS = (2000..2027).each_with_object(Array.new(13 * 7)) do |y, firsts|
+        (1..12).each do |m|
+          start = Calendar.days_from_civil(y, m, 1)
+          firsts[(Calendar.days_in_month(y, m) == 29 ? 0 : m) * 7 + Calendar.weekday(start)] ||= start
+        end
+      end.freeze
     end
   end
 end
