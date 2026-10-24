@@ -384,11 +384,12 @@ module Acute
       node
     end
 
-    # R29: whether j starts "from 9 to 5" or "between 9 and 5", read as the from branch of recur reads it
+    # R29: whether j starts "from 9 to 5" or "between 9 and 5", read as the from branch of recur reads it but up
+    # to an "at", so the from branch also gets "from 9 to 5 at 9" and refuses it as it does without a window
     def clock_span?(j)
       return false unless @t[j] == L::WORD && ((w = @t[j + 1]) == :from || w == :between)
       stop = j + S
-      stop += S while stop < @n && !window_end?(stop)
+      stop += S while stop < @n && !window_end?(stop) && @t[stop] != L::AT
       span = Grammar.new(@t[j...stop]).phrase
       Range === span && Clock === span.from && Clock === span.to
     end

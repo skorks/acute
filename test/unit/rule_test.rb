@@ -297,6 +297,20 @@ class RuleTest < Minitest::Test
     assert_nil rule("every day in march from 9am")
   end
 
+  # R29 with R13: a span and a clock clash after a window as they do without one
+  def test_r29_a_span_and_a_clock_after_a_window_are_a_conflict
+    { "every day in march from 9 to 5 at 9" => "every day from 9 to 5 at 9",
+      "every weekday in march from 9 to 5 at 10" => "every weekday from 9 to 5 at 10",
+      "every day in march between 9 and 5 at 9" => "every day between 9 and 5 at 9",
+      "every day in march at 9 from 9 to 5" => "every day at 9 from 9 to 5",
+      "every 2 hours in march from 9 to 5 at 9" => "every 2 hours from 9 to 5 at 9" }.each do |windowed, bare|
+      [windowed, bare].each do |text|
+        assert_nil rule(text), text
+        assert_equal :conflict, assert_raises(Acute::ParseError) { Acute.recurrence!(text, **OPTS) }.code, text
+      end
+    end
+  end
+
   # R29: DURATION is exact time, so an occurrence across a clock change ends an hour off on the wall clock
   def test_r29_the_length_is_exact_time
     r = rule("every sunday from 1am to 4am")
