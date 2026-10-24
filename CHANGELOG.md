@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.0
 
 - **Changed:** `verify` writes a reading's end in whole days as the last day it covers, "until Fri 23 Oct", not "before Sat 24 Oct", when it checks a date (D45). An end with a clock keeps its wording.
 - **Fixed:** `verify` misjudged a date on the first or last day of a reading that starts or ends mid-day: "after 3pm" against today's date was a mismatch whose message named one day twice, "\"after 3pm\" is from Fri 23 Oct, not Fri 23 Oct.", and so were "before 3pm" against today, "since monday 9am" against that Monday and "friday 3pm to saturday 5pm" against either day. A date is checked against every day the reading touches, so each is now `:inside` (D45).
