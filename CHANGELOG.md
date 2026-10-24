@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.2
+
+- **Fixed:** a rule with a weekday on a date was nil when that date next fell on the weekday more than 8 years away: "every monday feb 29" is now 29 February 2044, then 2072 and 2112, and "every friday the 13th of february" no longer depends on how near the next one is. A rule on days of the month is looked for through the Gregorian calendar's 400-year cycle, and one no month can have, "every first monday the 31st", is nil (R9).
+- **Fixed:** a date that never occurs, as "every feb 30" or "every 31st of april", searched 8 years before giving nil, so `parse!` took about a millisecond to raise on it, and `Rule.from_cron("0 0 30 2 *")` as long to give nil. Both now answer at once (R9).
+
 ## 1.1.1
 
 1.1.0 was tagged but never published: its release check failed on test setup that CI lacked. 1.1.1 is the same code.
