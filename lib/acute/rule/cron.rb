@@ -130,6 +130,7 @@ module Acute
 
       # R2: the first run on or after now, as local wall seconds; with a step of months, only in those months
       def self.first(rule, months, ctx)
+        return if rule.never?
         today = ctx.local(ctx.now).div(DAY)
         (today...(today + Resolve::Recur::SEARCH)).each do |day|
           next unless rule.on?(day) && (!months || months.include?(Calendar.civil_from_days(day) / 100 % 100))

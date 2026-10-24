@@ -193,6 +193,13 @@ class RuleTest < Minitest::Test
     assert_nil rule("every year on the 1st of january and the 15th of august")
   end
 
+  def test_r9_a_day_none_of_its_months_has_never_occurs
+    ["every feb 30", "every 31st of april at midnight", "every 31st of april and june"].each { assert_nil rule(_1), _1 }
+    assert_equal Date.new(2027, 4, 30), rule("every 30th of february and april").dtstart
+    assert_equal Date.new(2028, 2, 29), rule("every feb 29").dtstart
+    assert_equal Date.new(2027, 2, 28), rule("every last day of february").dtstart
+  end
+
   def test_r9_an_until_before_the_first_occurrence_is_no_rule
     assert_nil rule("every monday until last week")
     assert_nil rule("every day at 9am until 8am")
