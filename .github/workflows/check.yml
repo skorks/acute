@@ -36,6 +36,8 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
+      # The real gems are shadow_test.rb's oracles; they pin different numerizers, so they stay out of the bundle
+      - run: gem install --no-document chronic:0.10.2 chronic_duration:0.10.6 gitlab_chronic_duration:0.12.0 numerizer:0.2.0
       - name: System zoneinfo, the corpus's oracle
         run: test -f /usr/share/zoneinfo/America/New_York
       # Chronic gives system-local Times, and macOS's zoneinfo has no pre-1900 LMT, so its chronic stage
@@ -66,6 +68,7 @@ jobs:
         with:
           ruby-version: "4.0"
           bundler-cache: true
+      - run: gem install --no-document chronic:0.10.2 chronic_duration:0.10.6 gitlab_chronic_duration:0.12.0 numerizer:0.2.0
       # The chronic stage's oracle is chronic's system-local Times under TZ=America/New_York, which Windows' C
       # runtime doesn't read, so its Times stay UTC. The speed stages' CPU clocks give NaN here; they are
       # report-only in CI anyway
@@ -82,6 +85,7 @@ jobs:
         with:
           ruby-version: "4.0"
           bundler-cache: true
+      - run: gem install --no-document chronic:0.10.2 chronic_duration:0.10.6 gitlab_chronic_duration:0.12.0 numerizer:0.2.0
       - run: bundle exec bin/check --only lint
       - run: bundle exec bin/check --only coverage
       - run: bundle exec bin/check --only gem

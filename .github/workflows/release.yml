@@ -27,6 +27,7 @@ jobs:
         with:
           ruby-version: "4.0"
       - run: bundle install
+      - run: gem install --no-document chronic:0.10.2 chronic_duration:0.10.6 gitlab_chronic_duration:0.12.0 numerizer:0.2.0
       - run: bundle exec bin/check
 
   release:
