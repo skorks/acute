@@ -162,4 +162,26 @@ class VerifyTest < Minitest::Test
     assert_equal :alternative, Acute.verify("before friday", "2026-10-23T10:00", **opts).status
     assert_equal :mismatch, Acute.verify("before friday", "2026-10-30", **opts).status
   end
+
+  # D45: a date on a reading's first or last day is inside it, wherever in that day the reading starts or ends
+  def test_a_date_on_the_boundary_day_of_a_reading
+    opts = { now: "2026-10-23T14:00", zone: NY }
+    {
+      ["after 3pm", "2026-10-23"] => [:inside, "2026-10-23 is inside \"after 3pm\", which is from Fri 23 Oct."],
+      ["before 3pm", "2026-10-23"] => [:inside, "2026-10-23 is inside \"before 3pm\", which is before Sat 24 Oct."],
+      ["since monday 9am", "2026-10-19"] =>
+        [:inside, "2026-10-19 is inside \"since monday 9am\", which is Mon 19 Oct – Fri 23 Oct."],
+      ["friday 3pm to saturday 5pm", "2026-10-24"] =>
+        [:inside, "2026-10-24 is inside \"friday 3pm to saturday 5pm\", which is Fri 23 Oct – Sat 24 Oct."],
+      ["until friday 5pm", "2026-10-23"] =>
+        [:match, "2026-10-23 matches \"until friday 5pm\": Fri 23 Oct. It can also mean Fri 23 Oct – Fri 30 Oct; ask " \
+                 "the user if that matters."],
+      ["after friday", "2026-10-23"] =>
+        [:mismatch, "\"after friday\" is from Sat 24 Oct (or from Sat 31 Oct), not Fri 23 Oct."],
+      ["after 3pm", "2026-10-22"] => [:mismatch, "\"after 3pm\" is from Fri 23 Oct, not Thu 22 Oct."]
+    }.each do |(text, date), (status, message)|
+      v = Acute.verify(text, date, **opts)
+      assert_equal [status, message], [v.status, v.message], text
+    end
+  end
 end

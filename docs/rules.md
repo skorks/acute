@@ -843,7 +843,7 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 ### verify
 
 - **D45.** The value may be a Time, a Date, a Range of either, or an ISO 8601 string. A string is read in the same zone: "2026-10-23T15:00" is 3pm there.
-- **D45.** A date is checked by its days, a time by its instant. "2026-10-23" matches "next friday 3pm".
+- **D45.** A date is checked by its days, a time by its instant. "2026-10-23" matches "next friday 3pm". A reading holds every day it touches, so a date on its first or last day is inside it: "2026-10-23" is inside "after 3pm" said that day, and that Monday's date is inside "since monday 9am".
 - **D45.** The statuses, checked in this order:
 
 | Status | Meaning | `ok?` |
