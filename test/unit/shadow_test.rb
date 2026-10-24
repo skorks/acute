@@ -8,11 +8,25 @@ class ShadowTest < Minitest::Test
   LIB = File.expand_path("../../lib", __dir__)
 
   def run_ruby(code, gem_name: nil)
-    gem_lib = gem_name && Gem::Specification.find_by_name(gem_name).full_require_paths
+    gem_lib = gem_name && oracle_lib(gem_name)
     args = [RbConfig.ruby, "-I", LIB, *Array(gem_lib).flat_map { |dir| ["-I", dir] }, "-e", code]
-    out, err, status = Open3.capture3(*args)
+    out, err, status = unbundled { Open3.capture3(*args) }
     assert_predicate status, :success?, err
     [out.strip, err]
+  end
+
+  # chronic_duration and gitlab_chronic_duration pin different numerizers, so the oracle gems can't share a bundle:
+  # they're installed with `gem install`, and found and run outside it
+  def unbundled(&)
+    defined?(Bundler) ? Bundler.with_unbundled_env(&) : yield
+  end
+
+  def oracle_lib(name)
+    out, status = unbundled do
+      Open3.capture2(RbConfig.ruby, "-e", "puts Gem::Specification.find_by_name(ARGV[0]).full_require_paths", name)
+    end
+    assert_predicate status, :success?, "gem install #{name}"
+    out.split("\n")
   end
 
   def test_later_require_of_chronic_keeps_acutes_parse
