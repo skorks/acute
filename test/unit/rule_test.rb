@@ -283,6 +283,20 @@ class RuleTest < Minitest::Test
     end
   end
 
+  # R29 with R13: a span of clocks after the window is the rule's hours, as one before it is
+  def test_r29_hours_after_a_window_are_each_occurrences
+    { "every day in march from 9 to 5" => "every day from 9 to 5 in march",
+      "every weekday in march from 9 to 5" => "every weekday from 9 to 5 in march",
+      "every day in march between 9 and 5" => "every day between 9 and 5 in march",
+      "every 2 hours in march from 9 to 5" => "every 2 hours from 9 to 5 in march" }.each do |after, before|
+      assert_equal rule(before), rule(after), after
+    end
+    r = rule("every day in march from 9 to 5")
+    assert_equal "PT8H", r.duration.iso8601
+    assert_equal "FREQ=DAILY;BYHOUR=9;BYMINUTE=0;UNTIL=20270401T035959Z", r.rrule
+    assert_nil rule("every day in march from 9am")
+  end
+
   # R29: DURATION is exact time, so an occurrence across a clock change ends an hour off on the wall clock
   def test_r29_the_length_is_exact_time
     r = rule("every sunday from 1am to 4am")

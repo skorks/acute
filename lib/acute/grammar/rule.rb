@@ -211,7 +211,8 @@ module Acute
         elsif (k == L::WORD && v == :in) || (k == L::REL && (v == :next || v == :this)) # R13: "in november", "next month"
           return failure(:conflict) if r.within
           @i += S if k == L::WORD
-          # R13: a clock after the window is the rule's, each occurrence's: "every day in march at 9am"
+          # R13: a clock after the window is the rule's, each occurrence's: "every day in march at 9am", and so is
+          # a span of clocks (R29): "every day in march from 9 to 5"
           r.within = tail_phrase(false, true)
           return r.within if Failure === r.within
         elsif k == L::WORD && v == :for
@@ -372,15 +373,24 @@ module Acute
       j + 2 * S if @t[j] == L::WORD && @t[j + 1] == :every && @t[j + S] == L::UNIT && @t[j + S + 1] == :year
     end
 
-    # The one-off phrase up to the next rule word, or with and_stop: true also up to "and", and with at_stop:
-    # true up to "at"
-    def tail_phrase(and_stop = false, at_stop = false)
+    # The one-off phrase up to the next rule word, or with and_stop: true also up to "and", and with clock_stop:
+    # true up to "at" or a span of clocks
+    def tail_phrase(and_stop = false, clock_stop = false)
       stop = tail_end(@i, and_stop)
-      stop = (@i...stop).step(S).find { @t[_1] == L::AT } || stop if at_stop
+      stop = (@i...stop).step(S).find { @t[_1] == L::AT || clock_span?(_1) } || stop if clock_stop
       return failure(:incomplete) if stop == @i
       node = Grammar.new(@t[@i...stop]).phrase
       @i = stop
       node
+    end
+
+    # R29: whether j starts "from 9 to 5" or "between 9 and 5", read as the from branch of recur reads it
+    def clock_span?(j)
+      return false unless @t[j] == L::WORD && ((w = @t[j + 1]) == :from || w == :between)
+      stop = j + S
+      stop += S while stop < @n && !window_end?(stop)
+      span = Grammar.new(@t[j...stop]).phrase
+      Range === span && Clock === span.from && Clock === span.to
     end
 
     # A window's clock range ends at the days it is on, its minute marks (R28), or the next rule word
