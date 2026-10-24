@@ -345,4 +345,15 @@ class ExtractTest < Minitest::Test
   def test_e6_lenient_parse_finds_no_rule
     assert_equal Time.new(2026, 11, 1, 0, 0, 0, "-04:00"), Acute.parse("pay on the 1st of every month", now: "2026-10-17T14:00", zone: NY, strict: false).begin
   end
+
+  def test_to_h_and_to_json_carry_the_mentions
+    x = Acute.extract("lunch tomorrow at noon", now: "2026-10-23T14:00", zone: "America/New_York")
+    h = x.to_h
+    assert_equal %i[kind text remainder mentions], h.keys
+    assert_equal "extraction", h[:kind]
+    assert_equal "", h[:remainder]
+    assert_equal({ kind: "time", text: "lunch tomorrow at noon", offset: [0, 22] }, h[:mentions][0].slice(:kind, :text, :offset))
+    assert_equal "2026-10-24T12:00:00-04:00", h[:mentions][0][:value][:time]
+    assert_equal JSON.parse(x.to_json), JSON.parse(JSON.generate(h))
+  end
 end

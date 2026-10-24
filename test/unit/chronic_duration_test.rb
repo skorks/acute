@@ -197,4 +197,9 @@ class ChronicDurationTest < Minitest::Test
     assert_equal "4 hrs", ChronicDuration.output(4 * 3600 + 60 + 1, opts)
     assert_equal 300, ChronicDuration.parse("5", { default_unit: "minutes" }.freeze)
   end
+
+  def test_number_words_with_tens_hundreds_and_and
+    assert_equal 1500, ChronicDuration.parse("twenty five minutes")
+    assert_equal 6300, ChronicDuration.parse("one hundred and five minutes")
+  end
 end

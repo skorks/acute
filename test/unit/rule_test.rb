@@ -403,4 +403,13 @@ class RuleTest < Minitest::Test
     assert_equal rule("every monday at 9am"), p.recurrence("every monday at 9am")
     assert_equal rule("daily"), p.recurrence!("daily")
   end
+
+  def test_refusals_in_the_rule_grammar_and_resolver
+    now = { now: "2026-10-23T14:00", zone: NY }
+    { "every 2/30" => :invalid_date, "weekly on march 5" => :conflict,
+      "the 6th monday of every month" => :invalid_date }.each do |text, code|
+      assert_nil Acute.recurrence(text, **now), text
+      assert_equal code, assert_raises(Acute::ParseError, text) { Acute.recurrence!(text, **now) }.code, text
+    end
+  end
 end
