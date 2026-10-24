@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Changed:** `verify` writes a reading's end in whole days as the last day it covers, "until Fri 23 Oct", not "before Sat 24 Oct", when it checks a date (D45). An end with a clock keeps its wording.
 - **Fixed:** `verify` misjudged a date on the first or last day of a reading that starts or ends mid-day: "after 3pm" against today's date was a mismatch whose message named one day twice, "\"after 3pm\" is from Fri 23 Oct, not Fri 23 Oct.", and so were "before 3pm" against today, "since monday 9am" against that Monday and "friday 3pm to saturday 5pm" against either day. A date is checked against every day the reading touches, so each is now `:inside` (D45).
 - **Fixed:** a span of clocks and a clock after a rule's window were read as a one-day window: "every day in march from 9 to 5 at 9" was 1 March at 9am. Like "every day from 9 to 5 at 9", it is now nil, a conflict; so too "every weekday in march from 9 to 5 at 10" and "every 2 hours in march from 9 to 5 at 9" (R29).
 - **Fixed:** hours after a rule's window were read as part of it: "every day in march from 9 to 5" was all day on 1 March only. A span of clocks after the window is each occurrence's, as one before it is: 9am each day of March for 8 hours, as "every day from 9 to 5 in march" gives; so too "between 9 and 5", "every weekday in march from 9 to 5" and "every 2 hours in march from 9 to 5" (BYHOUR=9,11,13,15) (R29).

@@ -854,7 +854,7 @@ Text with words acute doesn't know returns nil. "meet bob tuesday" → nil; extr
 | `:mismatch` | anything else | false |
 | `:unparsed` | the text can't be read | false |
 
-- **D45.** Messages write days as "Fri 23 Oct" whatever the locale, and add the year only when it isn't now's.
+- **D45.** Messages write days as "Fri 23 Oct" whatever the locale, and add the year only when it isn't now's. In days, an end is the last day the reading covers, written "until Fri 23 Oct", not "before Sat 24 Oct"; a start is "from Fri 23 Oct", and a closed range ends on its last day. An end with a clock keeps it.
 - **D45.** A Verdict's JSON is `kind`, `text`, `status`, `ok`, `message` and `expected`.
 
 ### with

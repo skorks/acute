@@ -168,7 +168,7 @@ module Acute
       [b && day_start(day_of(b)), e && day_start(day_of(e - 1) + 1)]
     end
 
-    # "Fri 23 Oct", "Fri 23 Oct, 3pm", "Sat 17 Oct – Sun 18 Oct", "from Sat 24 Oct": one form whatever the
+    # "Fri 23 Oct", "Fri 23 Oct, 3pm", "Sat 17 Oct – Sun 18 Oct", "from Sat 24 Oct", "until Fri 23 Oct": one form whatever the
     # locale, as the reader is a model
     def label(x)
       if Result === x
@@ -180,7 +180,7 @@ module Acute
         e = x.e
       end
       return "from #{edge(b)}" unless e
-      return "before #{edge(e)}" unless b
+      return (@days ? "until #{day(day_of(e - 1))}" : "before #{edge(e)}") unless b
       return days(b, e) if aligned?(b) && aligned?(e)
       return "#{moment(b)} – #{Describe.clock(secs_of(e))}" if day_of(b) == day_of(e)
       "#{moment(b)} – #{moment(e)}"
