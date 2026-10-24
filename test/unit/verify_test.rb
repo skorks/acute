@@ -154,4 +154,12 @@ class VerifyTest < Minitest::Test
     assert_raises(ArgumentError) { verify(nil, "2026-10-18") }
     assert_raises(ArgumentError) { verify("tomorrow", "2026-10-18", context: :sideways) }
   end
+
+  def test_open_ended_readings
+    opts = { now: "2026-10-23T14:00", zone: NY }
+    assert_equal :inside, Acute.verify("after 3pm", "2026-10-23T16:00", **opts).status
+    assert_equal :mismatch, Acute.verify("after 3pm", "2026-10-23T10:00", **opts).status
+    assert_equal :alternative, Acute.verify("before friday", "2026-10-23T10:00", **opts).status
+    assert_equal :mismatch, Acute.verify("before friday", "2026-10-30", **opts).status
+  end
 end
