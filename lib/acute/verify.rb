@@ -139,12 +139,13 @@ module Acute
 
     def moment_iso_at(t) = t.getlocal(@zone.offset_at(t.to_i)).strftime("%FT%T%:z")
 
-    # :match when the reading is the value, :inside when the value lies within it
+    # :match when the reading is the value, :inside when the value lies within it: a date within its days, so
+    # "after 3pm" holds today's date
     def relation(r)
       v = @value
-      span = [r.begin&.to_i, r.end&.to_i]
+      span = @days ? cover(r) : [r.begin&.to_i, r.end&.to_i]
       if @days
-        return :match if cover(r) == [v.b, v.e]
+        return :match if span == [v.b, v.e]
       elsif v.instant
         return :match if r.instant? && r.time.to_i == v.point
         return r.instant? || !within?(span, v.point, v.point + 1) ? nil : :inside
