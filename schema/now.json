@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/skorks/acute/v1.1.0/schema/now.json",
+  "$id": "https://raw.githubusercontent.com/skorks/acute/v1.1.1/schema/now.json",
   "title": "Acute::Tool now",
   "description": "The current time in the app's zone. dst is true while the zone is on daylight saving time; next_change is the next change of UTC offset, null when the zone has none to come.",
   "type": "object",

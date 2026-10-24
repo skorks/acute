@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/skorks/acute/v1.1.0/schema/failure.json",
+  "$id": "https://raw.githubusercontent.com/skorks/acute/v1.1.1/schema/failure.json",
   "title": "Acute failure",
   "description": "What a tool, or the acute command with --json, gives when it can't answer: the text can't be read, or a tool's arguments are wrong. error never quotes the input; text and unread do.",
   "type": "object",

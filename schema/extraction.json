@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/skorks/acute/v1.1.0/schema/extraction.json",
+  "$id": "https://raw.githubusercontent.com/skorks/acute/v1.1.1/schema/extraction.json",
   "title": "Acute::Extraction",
   "description": "The times, lengths and rules mentioned in a text, in order, and the text without them.",
   "type": "object",
