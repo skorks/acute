@@ -121,6 +121,7 @@ Cron has no zone: the line is the wall time in the rule's zone, so run it with `
 Cron can't express:
 
 - a start, an end or an exception: "until", a count, "starting", "in july", "except" ([R21](rules.md#cron));
+- a length: "every weekday from 9 to 5" has `cron_reason` "cron has no length" ([R29](rules.md#windows-of-the-day));
 - seconds;
 - intervals that don't divide their field: "every 40 minutes", "every other day", "every other friday" ([R23](rules.md#cron));
 - a weekday counted in its month or a day counted from its end: "every second tuesday", "the last friday", "the last day of every month" ([R24](rules.md#cron)).
@@ -137,6 +138,16 @@ Acute::Rule.from_cron("nope")   # => nil
 Acute::Rule.from_cron!("0 0 30 2 *")
 # Acute::ParseError: the line never runs
 #   e.code => :invalid_cron
+```
+
+A month field is BYMONTH. Each line's `to_s` reads back to the same line, months, steps and minute marks included:
+
+```ruby
+Acute::Rule.from_cron("0 9 * 3 *", now:, zone:).to_s     # => "every day in March, every year, at 9am"
+Acute::Rule.from_cron("0 0 1 1,8 *", now:, zone:).to_s   # => "every year on the 1st of January and August at 12am"
+Acute::Rule.from_cron("0 */3 * * *", now:, zone:).to_s   # => "every 3 hours from midnight"
+Acute::Rule.from_cron("5,10 * * * *", now:, zone:).to_s  # => "every hour at :05 and :10"
+Acute.recurrence("every hour at :05 and :10", now:, zone:).cron   # => "5,10 * * * *"
 ```
 
 What it reads, and the lines it can't hold: [R25 and R26](rules.md#cron).

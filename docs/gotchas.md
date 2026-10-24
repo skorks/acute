@@ -99,11 +99,12 @@ Acute.parse!("march 8 2026 2:30am", now:, zone:, dst: :reject)
 
 ## "1530" is a year
 
-Four digits alone are a year. "at", a leading zero, am/pm or "hrs" make them a time ([D5](rules.md#d5-a-bare-four-digit-number)):
+Four digits alone are a year. "at", a leading zero, am/pm, "hrs" or a part of day beside them make them a time ([D5](rules.md#d5-a-bare-four-digit-number)):
 
 ```ruby
 Acute.parse("1530", now:, zone:).grain        # => :year
 Acute.parse("at 1530", now:, zone:).time      # => 2026-10-17 15:30:00 -0400
+Acute.parse("1140 in the morning", now:, zone:).time   # => 2026-10-18 11:40:00 -0400
 ```
 
 ## Adding days under Rails jumps an hour
